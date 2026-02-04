@@ -1,5 +1,3 @@
-
-
 This README is designed to look like an industry-standard production project while highlighting the academic rigor required for a senior project. It aligns perfectly with your Software Design Document (SDD).
 Educational Adventure Pathway (EAP) 🎓
 An AI-Powered Platform for Ethiopian Students Pursuing International Education.
@@ -47,11 +45,6 @@ The project follows a Feature-Based Modular Architecture to ensure high maintain
 Frontend Structure
 code
 Text
-
-
-
-
-
 src/
 ├── app/ # Next.js Routes & Layouts
 ├── features/   # Domain-specific logic (The "Subsystems")
