@@ -39,11 +39,19 @@ Language: TypeScript
 Database: MongoDB (Mongoose ODM)
 Cache: Redis (for session management)
 AI/ML: OpenAI API / Gemini API (for recommendations and voice analysis)
+
+
+
 📂 Project Architecture
 The project follows a Feature-Based Modular Architecture to ensure high maintainability and scalability (as per SDD Section 2.2).
 Frontend Structure
 code
 Text
+
+
+
+
+
 src/
 ├── app/               # Next.js Routes & Layouts
 ├── features/          # Domain-specific logic (The "Subsystems")
@@ -53,6 +61,11 @@ src/
 ├── components/        # Global UI components (Shadcn)
 ├── lib/               # Shared configurations (Axios, TanStack Client)
 └── types/             # TS Interfaces (Matched to SDD Data Dictionary)
+
+
+
+
+
 Backend Structure
 code
 Text
@@ -63,6 +76,10 @@ src/
 │   └── payment/       # Subsystem 6: Escrow & Gateways
 ├── middleware/        # AuthGuard, RoleChecker
 └── config/            # DB and Cloudinary setup
+
+
+
+
 🚀 Getting Started
 Prerequisites
 Node.js (v18+)
@@ -86,6 +103,10 @@ Bash
 cd frontend
 npm install
 npm run dev
+
+
+
+
 📊 Software Design Alignment
 This implementation strictly adheres to the technical specifications outlined in the project's documentation:
 Requirement Traceability: All functional requirements (FR1-FR53) are mapped to specific modules.
