@@ -53,14 +53,14 @@ Text
 
 
 src/
-├── app/               # Next.js Routes & Layouts
-├── features/          # Domain-specific logic (The "Subsystems")
-│   ├── scholarship/   # Components, Hooks, and Services for Subsystem 2
-│   ├── assessment/    # UI and logic for Subsystem 3
-│   └── counselor/     # Booking logic for Subsystem 5
-├── components/        # Global UI components (Shadcn)
-├── lib/               # Shared configurations (Axios, TanStack Client)
-└── types/             # TS Interfaces (Matched to SDD Data Dictionary)
+├── app/ # Next.js Routes & Layouts
+├── features/   # Domain-specific logic (The "Subsystems")
+│   ├── scholarship/# Components, Hooks, and Services for Subsystem 2
+│   ├── assessment/# UI and logic for Subsystem 3
+│   └── counselor/# Booking logic for Subsystem 5
+├── components/ # Global UI components (Shadcn)
+├── lib/ # Shared configurations (Axios, TanStack Client)
+└── types/# TS Interfaces (Matched to SDD Data Dictionary)
 
 
 
@@ -70,12 +70,12 @@ Backend Structure
 code
 Text
 src/
-├── modules/           # Modular Subsystems
-│   ├── auth/          # Subsystem 1: Security & Roles
-│   ├── scholarship/   # Subsystem 2: AI Logic
-│   └── payment/       # Subsystem 6: Escrow & Gateways
-├── middleware/        # AuthGuard, RoleChecker
-└── config/            # DB and Cloudinary setup
+├── modules/# Modular Subsystems
+│   ├── auth/# Subsystem 1: Security & Roles
+│   ├── scholarship/# Subsystem 2: AI Logic
+│   └── payment/# Subsystem 6: Escrow & Gateways
+├── middleware/# AuthGuard, RoleChecker
+└── config/# DB and Cloudinary setup
 
 
 
