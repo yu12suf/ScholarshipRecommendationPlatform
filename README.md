@@ -10,6 +10,12 @@ An AI-Powered Platform for Ethiopian Students Pursuing International Education.
 ![alt text](https://img.shields.io/badge/Data%20Fetching-TanStack%20Query-red)
 
 ![alt text](https://img.shields.io/badge/Database-MongoDB-brightgreen)
+
+
+
+
+
+
 📌 Project Overview
 The Educational Adventure Pathway is a comprehensive digital ecosystem designed to support Ethiopian students in their journey toward international education. By integrating AI-powered scholarship discovery, English proficiency assessments, and a secure counselor-student marketplace, EAP addresses the fragmentation and high barriers to entry in the global education landscape.
 This project was developed as a Senior Research Project, following the 4+1 Architectural View Model and Modular Subsystem Decomposition.
@@ -86,6 +92,5 @@ Requirement Traceability: All functional requirements (FR1-FR53) are mapped to s
 Design Goals: Prioritizes Scalability (modular services) and Security (Role-Based Access Control & Escrow).
 Physical Data Model: Database schemas follow the Data Dictionary (SDD Section 3.3).
 👨‍💻 Contributors
-[Your Name] - Lead Developer / Software Architect
 📄 License
 This project is developed for academic evaluation purposes as part of the Department of Software Engineering Senior Project requirements.
