@@ -3,7 +3,7 @@ import express, { Application, Request, Response, NextFunction } from "express";
 
 // import dashboardRoutes from "./dashboard/routers";
 // import { errorHandler } from "./middlewares/ErrorHandler";
-import routes from "./routes";
+import routes from "./routes/index.js";
 
 import cookieParser from "cookie-parser";
 import expressupload from "express-fileupload";

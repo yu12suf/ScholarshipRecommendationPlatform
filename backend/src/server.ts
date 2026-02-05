@@ -1,7 +1,7 @@
 
 
 // import { getConfigs } from "./config/configs";
-import app from "./app.ts";
+import app from "./app.js";
 
 async function start() {
     console.log("🚀 Initializing server...");
