@@ -37,6 +37,24 @@ export class AuthController {
     }
   }
 
+  static async googleLogin(req: Request, res: Response) {
+    try {
+      const { idToken } = req.body;
+      const tokens = await AuthService.googleLogin(idToken);
+
+      res.json({
+        success: true,
+        message: "Google login successful",
+        data: tokens,
+      });
+    } catch (error: any) {
+      res.status(401).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
   static async refreshToken(req: Request, res: Response) {
     try {
       const { refreshToken } = req.body;

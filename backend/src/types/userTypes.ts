@@ -8,7 +8,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  password: string;
+  password?: string;
+  googleId?: string;
   role: UserRole;
   isActive: boolean;
   createdAt: Date;
@@ -18,7 +19,8 @@ export interface User {
 export interface CreateUserDto {
   name: string;
   email: string;
-  password: string;
+  password?: string;
+  googleId?: string;
   role?: UserRole;
 }
 
@@ -27,6 +29,7 @@ export interface UpdateUserDto {
   email?: string;
   role?: UserRole;
   isActive?: boolean;
+  googleId?: string;
 }
 
 export interface UserResponse {

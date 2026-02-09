@@ -2,6 +2,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { OAuth2Client } from "google-auth-library";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { RefreshTokenRepository } from "../repositories/RefreshTokenRepository.js";
 import { PasswordResetTokenRepository } from "../repositories/PasswordResetTokenRepository.js";
@@ -28,8 +29,60 @@ export class AuthService {
     }
   }
 
+  private static googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
+
+  static async googleLogin(idToken: string): Promise<AuthTokens> {
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID as string,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email || !payload.sub) {
+        throw new Error("Invalid Google token");
+      }
+
+      const { email, name, sub: googleId } = payload;
+
+      // Check if user exists by googleId
+      let user = await UserRepository.findByGoogleId(googleId);
+
+      if (!user) {
+        // Check if user exists by email
+        user = await UserRepository.findByEmail(email);
+
+        if (user) {
+          // Update existing user with googleId
+          await UserRepository.update(user.id, { googleId } as any);
+          user.googleId = googleId;
+        } else {
+          // Create new user
+          user = await UserRepository.create({
+            email: email!,
+            name: (name || email!.split("@")[0]) as string,
+            googleId: googleId!,
+          });
+        }
+      }
+
+      if (!user!.isActive) {
+        throw new Error("Account is deactivated. Please contact support.");
+      }
+
+      // Generate tokens
+      return await this.generateTokens(user);
+    } catch (error: any) {
+      throw new Error(error.message || "Google login failed");
+    }
+  }
+
   static async register(userData: CreateUserDto): Promise<UserResponse> {
     const { email, password, name } = userData;
+
+    if (!password) {
+      throw new Error("Password is required for email registration");
+    }
 
     // Validate password complexity
     this.validatePassword(password);
@@ -75,6 +128,9 @@ export class AuthService {
     }
 
     // Verify password
+    if (!user.password) {
+      throw new Error("Please login with Google for this account");
+    }
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       throw new Error("Invalid credentials");
@@ -221,6 +277,9 @@ export class AuthService {
     }
 
     // Verify current password
+    if (!user.password) {
+      throw new Error("Cannot change password for Google-only account");
+    }
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {
       throw new Error("Current password is incorrect");

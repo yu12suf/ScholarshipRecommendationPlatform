@@ -4,13 +4,13 @@ import { User, CreateUserDto, UpdateUserDto, UserRole } from "../types/userTypes
 
 export class UserRepository {
     static async create(userData: CreateUserDto): Promise<User> {
-        const { name, email, password, role = UserRole.STUDENT } = userData;
+        const { name, email, password, googleId, role = UserRole.STUDENT } = userData;
         const query = `
-      INSERT INTO users (name, email, password, role, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, NOW(), NOW())
+      INSERT INTO users (name, email, password, google_id, role, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       RETURNING *
     `;
-        const values = [name, email, password, role];
+        const values = [name, email, password, googleId, role];
 
         const result = await pool.query(query, values);
         return this.toDomain(result.rows[0]);
@@ -48,6 +48,12 @@ export class UserRepository {
         return result.rows[0] ? this.toDomain(result.rows[0]) : null;
     }
 
+    static async findByGoogleId(googleId: string): Promise<User | null> {
+        const query = "SELECT * FROM users WHERE google_id = $1";
+        const result = await pool.query(query, [googleId]);
+        return result.rows[0] ? this.toDomain(result.rows[0]) : null;
+    }
+
     static async findById(id: number): Promise<User | null> {
         const query = "SELECT * FROM users WHERE id = $1";
         const result = await pool.query(query, [id]);
@@ -71,7 +77,8 @@ export class UserRepository {
             isActive: 'is_active',
             name: 'name',
             email: 'email',
-            role: 'role'
+            role: 'role',
+            googleId: 'google_id'
         };
 
         const setClause = fields
@@ -133,6 +140,7 @@ export class UserRepository {
             name: row.name,
             email: row.email,
             password: row.password,
+            googleId: row.google_id,
             role: row.role as UserRole,
             isActive: row.is_active,
             createdAt: row.created_at,

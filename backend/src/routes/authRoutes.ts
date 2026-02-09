@@ -30,6 +30,7 @@ router.post(
   validate(loginValidation),
   AuthController.login,
 );
+router.post("/google-login", authLimiter, AuthController.googleLogin);
 router.post("/refresh-token", authLimiter, AuthController.refreshToken);
 router.post(
   "/forgot-password",

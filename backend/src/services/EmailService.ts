@@ -15,7 +15,7 @@ export class EmailService {
     to: string,
     token: string,
   ): Promise<void> {
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    const resetLink = `${process.env.BACKEND_URL}/reset-password?token=${token}`;
 
     const mailOptions = {
       from: process.env.SMTP_FROM || "noreply@example.com",
