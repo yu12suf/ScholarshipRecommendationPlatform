@@ -6,38 +6,35 @@ export enum UserRole {
 
 export interface User {
   id: number;
-  username: string;
+  name: string;
   email: string;
   password: string;
   role: UserRole;
   isActive: boolean;
-  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CreateUserDto {
-  username: string;
+  name: string;
   email: string;
   password: string;
   role?: UserRole;
 }
 
 export interface UpdateUserDto {
-  username?: string;
+  name?: string;
   email?: string;
   role?: UserRole;
   isActive?: boolean;
-  emailVerified?: boolean;
 }
 
 export interface UserResponse {
   id: number;
-  username: string;
+  name: string;
   email: string;
   role: UserRole;
   isActive: boolean;
-  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

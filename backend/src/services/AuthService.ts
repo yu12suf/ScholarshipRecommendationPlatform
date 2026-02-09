@@ -5,7 +5,6 @@ import crypto from "crypto";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { RefreshTokenRepository } from "../repositories/RefreshTokenRepository.js";
 import { PasswordResetTokenRepository } from "../repositories/PasswordResetTokenRepository.js";
-import { EmailVerificationTokenRepository } from "../repositories/EmailVerificationTokenRepository.js";
 import {
   LoginCredentials,
   AuthTokens,
@@ -18,8 +17,22 @@ import { CreateUserDto, UserResponse } from "../types/userTypes.js";
 import { EmailService } from "./EmailService.js";
 
 export class AuthService {
+  private static validatePassword(password: string): void {
+    // At least 8 characters, one uppercase, one lowercase, one number, one special character
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      throw new Error(
+        "Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character."
+      );
+    }
+  }
+
   static async register(userData: CreateUserDto): Promise<UserResponse> {
-    const { email, password, username } = userData;
+    const { email, password, name } = userData;
+
+    // Validate password complexity
+    this.validatePassword(password);
 
     // Check if user exists
     const existingUserByEmail = await UserRepository.findByEmail(email);
@@ -27,9 +40,9 @@ export class AuthService {
       throw new Error("User with this email already exists");
     }
 
-    const existingUserByUsername = await UserRepository.findByUsername(username);
-    if (existingUserByUsername) {
-      throw new Error("Username is already taken");
+    const existingUserByName = await UserRepository.findByName(name);
+    if (existingUserByName) {
+      throw new Error("Name is already taken");
     }
 
     // Hash password
@@ -40,9 +53,6 @@ export class AuthService {
       ...userData,
       password: hashedPassword,
     });
-
-    // Generate email verification token
-    await this.generateEmailVerificationToken(user.id);
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
@@ -62,11 +72,6 @@ export class AuthService {
     // Check if user is active
     if (!user.isActive) {
       throw new Error("Account is deactivated. Please contact support.");
-    }
-
-    // Check if email is verified
-    if (!user.emailVerified) {
-      throw new Error("Please verify your email before logging in");
     }
 
     // Verify password
@@ -151,7 +156,14 @@ export class AuthService {
   }
 
   static async resetPassword(data: ResetPasswordDto): Promise<void> {
-    const { token, newPassword } = data;
+    const { token, newPassword, confirmPassword } = data;
+
+    if (newPassword !== confirmPassword) {
+      throw new Error("Passwords do not match");
+    }
+
+    // Validate password complexity
+    this.validatePassword(newPassword);
 
     // Find reset token
     const resetToken = await PasswordResetTokenRepository.findByToken(token);
@@ -193,7 +205,14 @@ export class AuthService {
     userId: number,
     data: ChangePasswordDto,
   ): Promise<void> {
-    const { currentPassword, newPassword } = data;
+    const { currentPassword, newPassword, confirmPassword } = data;
+
+    if (newPassword !== confirmPassword) {
+      throw new Error("Passwords do not match");
+    }
+
+    // Validate password complexity
+    this.validatePassword(newPassword);
 
     // Find user
     const user = await UserRepository.findById(userId);
@@ -218,52 +237,6 @@ export class AuthService {
 
     // Send password changed notification
     await EmailService.sendPasswordChangedNotification(user.email);
-  }
-
-  static async verifyEmail(token: string): Promise<void> {
-    // Find verification token
-    const verificationToken =
-      await EmailVerificationTokenRepository.findByToken(token);
-    if (!verificationToken) {
-      throw new Error("Invalid or expired verification token");
-    }
-
-    if (verificationToken.expiresAt < new Date()) {
-      throw new Error("Verification token has expired");
-    }
-
-    // Find user
-    const user = await UserRepository.findById(verificationToken.userId);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    // Update user email verification status
-    await UserRepository.update(user.id, { emailVerified: true });
-
-    // Delete verification token
-    await EmailVerificationTokenRepository.deleteByUserId(user.id);
-
-    // Send welcome email
-    await EmailService.sendWelcomeEmail(user.email, user.username);
-  }
-
-  static async resendVerificationEmail(email: string): Promise<void> {
-    // Find user
-    const user = await UserRepository.findByEmail(email);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    if (user.emailVerified) {
-      throw new Error("Email is already verified");
-    }
-
-    // Delete old verification tokens
-    await EmailVerificationTokenRepository.deleteByUserId(user.id);
-
-    // Generate new verification token
-    await this.generateEmailVerificationToken(user.id);
   }
 
   private static async generateTokens(user: any): Promise<AuthTokens> {
@@ -299,28 +272,6 @@ export class AuthService {
     await RefreshTokenRepository.create(user.id, refreshToken, expiresAt);
 
     return { accessToken, refreshToken };
-  }
-
-  private static async generateEmailVerificationToken(
-    userId: number,
-  ): Promise<void> {
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 1); // 1 day expiry
-
-    // Save verification token
-    await EmailVerificationTokenRepository.create(
-      userId,
-      verificationToken,
-      expiresAt,
-    );
-
-    // Get user for email
-    const user = await UserRepository.findById(userId);
-    if (user) {
-      // Send verification email
-      await EmailService.sendVerificationEmail(user.email, verificationToken);
-    }
   }
 
   static async validateToken(token: string): Promise<JwtPayload | null> {

@@ -42,11 +42,10 @@ export const seedAdminUser = async () => {
 
     // Use UserRepository to perform the query
     await UserRepository.createIfNotExists({
-      username: "Yoseph",
+      name: "Yoseph",
       email: "josefdagne5@gmail.com",
       password: hashedPassword,
       role: UserRole.ADMIN,
-      email_verified: true,
       is_active: true
     });
   } catch (error) {

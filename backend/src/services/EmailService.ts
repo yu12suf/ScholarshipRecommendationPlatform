@@ -11,37 +11,6 @@ export class EmailService {
     },
   });
 
-  static async sendVerificationEmail(to: string, token: string): Promise<void> {
-    const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
-
-    const mailOptions = {
-      from: process.env.SMTP_FROM || "noreply@example.com",
-      to,
-      subject: "Verify Your Email Address",
-      html: `
-        <h2>Welcome to Our Platform!</h2>
-        <p>Please verify your email address by clicking the link below:</p>
-        <a href="${verificationLink}" style="
-          display: inline-block;
-          padding: 10px 20px;
-          background-color: #007bff;
-          color: white;
-          text-decoration: none;
-          border-radius: 5px;
-          margin: 10px 0;
-        ">
-          Verify Email
-        </a>
-        <p>Or copy and paste this link in your browser:</p>
-        <p>${verificationLink}</p>
-        <p>This link will expire in 24 hours.</p>
-        <p>If you didn't create an account, please ignore this email.</p>
-      `,
-    };
-
-    await this.transporter.sendMail(mailOptions);
-  }
-
   static async sendPasswordResetEmail(
     to: string,
     token: string,
@@ -92,25 +61,9 @@ export class EmailService {
     await this.transporter.sendMail(mailOptions);
   }
 
-  static async sendWelcomeEmail(to: string, username: string): Promise<void> {
-    const mailOptions = {
-      from: process.env.SMTP_FROM || "noreply@example.com",
-      to,
-      subject: "Welcome to Our Platform!",
-      html: `
-        <h2>Welcome ${username}!</h2>
-        <p>Thank you for verifying your email address.</p>
-        <p>Your account is now fully activated and ready to use.</p>
-        <p>If you have any questions, feel free to contact our support team.</p>
-      `,
-    };
-
-    await this.transporter.sendMail(mailOptions);
-  }
-
   static async sendAccountDeactivatedEmail(
     to: string,
-    username: string,
+    name: string,
   ): Promise<void> {
     const mailOptions = {
       from: process.env.SMTP_FROM || "noreply@example.com",
@@ -118,7 +71,7 @@ export class EmailService {
       subject: "Account Deactivated",
       html: `
         <h2>Account Deactivated</h2>
-        <p>Dear ${username},</p>
+        <p>Dear ${name},</p>
         <p>Your account has been deactivated by an administrator.</p>
         <p>If you believe this is a mistake, please contact our support team.</p>
       `,

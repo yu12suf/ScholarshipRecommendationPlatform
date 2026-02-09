@@ -4,40 +4,38 @@ import { User, CreateUserDto, UpdateUserDto, UserRole } from "../types/userTypes
 
 export class UserRepository {
     static async create(userData: CreateUserDto): Promise<User> {
-        const { username, email, password, role = UserRole.STUDENT } = userData;
+        const { name, email, password, role = UserRole.STUDENT } = userData;
         const query = `
-      INSERT INTO users (username, email, password, role, created_at, updated_at)
+      INSERT INTO users (name, email, password, role, created_at, updated_at)
       VALUES ($1, $2, $3, $4, NOW(), NOW())
       RETURNING *
     `;
-        const values = [username, email, password, role];
+        const values = [name, email, password, role];
 
         const result = await pool.query(query, values);
         return this.toDomain(result.rows[0]);
     }
 
     static async createIfNotExists(
-        userData: CreateUserDto & { email_verified?: boolean; is_active?: boolean },
+        userData: CreateUserDto & { is_active?: boolean },
     ): Promise<void> {
         const {
-            username,
+            name,
             email,
             password,
             role = UserRole.STUDENT,
-            email_verified = false,
             is_active = true,
         } = userData;
         const query = `
-      INSERT INTO users (username, email, password, role, email_verified, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      INSERT INTO users (name, email, password, role, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       ON CONFLICT (email) DO NOTHING
     `;
         const values = [
-            username,
+            name,
             email,
             password,
             role,
-            email_verified,
             is_active,
         ];
 
@@ -56,9 +54,9 @@ export class UserRepository {
         return result.rows[0] ? this.toDomain(result.rows[0]) : null;
     }
 
-    static async findByUsername(username: string): Promise<User | null> {
-        const query = "SELECT * FROM users WHERE username = $1";
-        const result = await pool.query(query, [username]);
+    static async findByName(name: string): Promise<User | null> {
+        const query = "SELECT * FROM users WHERE name = $1";
+        const result = await pool.query(query, [name]);
         return result.rows[0] ? this.toDomain(result.rows[0]) : null;
     }
 
@@ -71,8 +69,7 @@ export class UserRepository {
 
         const fieldMap: Record<string, string> = {
             isActive: 'is_active',
-            emailVerified: 'email_verified',
-            username: 'username',
+            name: 'name',
             email: 'email',
             role: 'role'
         };
@@ -133,12 +130,11 @@ export class UserRepository {
     private static toDomain(row: any): User {
         return {
             id: row.id,
-            username: row.username,
+            name: row.name,
             email: row.email,
             password: row.password,
             role: row.role as UserRole,
             isActive: row.is_active,
-            emailVerified: row.email_verified,
             createdAt: row.created_at,
             updatedAt: row.updated_at,
         };

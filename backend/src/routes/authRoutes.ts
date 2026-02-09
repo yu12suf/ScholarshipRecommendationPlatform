@@ -12,7 +12,6 @@ import {
 import {
   authLimiter,
   passwordResetLimiter,
-  emailVerificationLimiter,
   createAccountLimiter,
 } from "../middlewares/rateLimiter.js";
 
@@ -43,16 +42,6 @@ router.post(
   passwordResetLimiter,
   validate(resetPasswordValidation),
   AuthController.resetPassword,
-);
-router.post(
-  "/verify-email",
-  emailVerificationLimiter,
-  AuthController.verifyEmail,
-);
-router.post(
-  "/resend-verification",
-  emailVerificationLimiter,
-  AuthController.resendVerificationEmail,
 );
 
 // Protected routes

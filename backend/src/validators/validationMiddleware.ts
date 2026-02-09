@@ -19,11 +19,10 @@ export const validate = (validations: any[]) => {
 
 // Validation schemas
 export const registerValidation = [
-  body('username')
+  body('name')
     .trim()
-    .notEmpty().withMessage('Username is required')
-    .isLength({ min: 3, max: 30 }).withMessage('Username must be between 3 and 30 characters')
-    .matches(/^[a-zA-Z0-9_.]+$/).withMessage('Username can only contain letters, numbers, dots and underscores'),
+    .notEmpty().withMessage('Name is required')
+    .isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters'),
 
   body('email')
     .trim()
@@ -67,7 +66,16 @@ export const resetPasswordValidation = [
     .notEmpty().withMessage('New password is required')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character')
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character'),
+
+  body('confirmPassword')
+    .notEmpty().withMessage('Confirm password is required')
+    .custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    })
 ];
 
 export const changePasswordValidation = [
@@ -84,13 +92,21 @@ export const changePasswordValidation = [
         throw new Error('New password must be different from current password');
       }
       return true;
+    }),
+
+  body('confirmPassword')
+    .notEmpty().withMessage('Confirm password is required')
+    .custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
     })
 ];
 
 export const updateProfileValidation = [
-  body('username')
+  body('name')
     .optional()
     .trim()
-    .isLength({ min: 3, max: 30 }).withMessage('Username must be between 3 and 30 characters')
-    .matches(/^[a-zA-Z0-9_.]+$/).withMessage('Username can only contain letters, numbers, dots and underscores')
+    .isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters')
 ];

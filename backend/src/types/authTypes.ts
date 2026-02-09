@@ -23,15 +23,13 @@ export interface ForgotPasswordDto {
 export interface ResetPasswordDto {
   token: string;
   newPassword: string;
-}
-
-export interface VerifyEmailDto {
-  token: string;
+  confirmPassword: string;
 }
 
 export interface ChangePasswordDto {
   currentPassword: string;
   newPassword: string;
+  confirmPassword: string;
 }
 
 export interface RefreshToken {
@@ -48,13 +46,5 @@ export interface PasswordResetToken {
   token: string;
   expiresAt: Date;
   used: boolean;
-  createdAt: Date;
-}
-
-export interface EmailVerificationToken {
-  id: number;
-  userId: number;
-  token: string;
-  expiresAt: Date;
   createdAt: Date;
 }
