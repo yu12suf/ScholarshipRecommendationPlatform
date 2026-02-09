@@ -71,7 +71,7 @@ export const resetPasswordValidation = [
   body('confirmPassword')
     .notEmpty().withMessage('Confirm password is required')
     .custom((value, { req }) => {
-      if (value !== req.body.newPassword) {
+      if (req.body && value !== req.body.newPassword) {
         throw new Error('Passwords do not match');
       }
       return true;
@@ -88,7 +88,7 @@ export const changePasswordValidation = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character')
     .custom((value, { req }) => {
-      if (value === req.body.currentPassword) {
+      if (req.body && value === req.body.currentPassword) {
         throw new Error('New password must be different from current password');
       }
       return true;
@@ -97,7 +97,7 @@ export const changePasswordValidation = [
   body('confirmPassword')
     .notEmpty().withMessage('Confirm password is required')
     .custom((value, { req }) => {
-      if (value !== req.body.newPassword) {
+      if (req.body && value !== req.body.newPassword) {
         throw new Error('Passwords do not match');
       }
       return true;
