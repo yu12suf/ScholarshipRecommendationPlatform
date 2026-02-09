@@ -2,6 +2,7 @@
 
 // import { getConfigs } from "./config/configs";
 import app from "./app.js";
+import { connectDB } from "./config/database.js";
 
 async function start() {
     console.log("🚀 Initializing server...");
@@ -17,6 +18,10 @@ async function start() {
     });
 
     // Load configurations and connect to DB asynchronously
-    
+    try {
+        await connectDB();
+    } catch (err) {
+        console.error("Failed to connect to database:", err);
+    }
 }
 start();

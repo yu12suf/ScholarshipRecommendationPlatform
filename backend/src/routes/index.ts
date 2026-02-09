@@ -1,5 +1,7 @@
-import  userRouter from "./user.js"
+import userRouter from "./userRoutes.js";
+import authRouter from "./authRoutes.js";
 
-export default{
-    userRouter
-}
+export default {
+    userRouter,
+    authRouter,
+};
