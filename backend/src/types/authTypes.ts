@@ -1,4 +1,4 @@
-import { UserRole } from "./userTypes";
+import { UserRole } from "./userTypes.js";
 
 export interface LoginCredentials {
   email: string;
@@ -32,4 +32,29 @@ export interface VerifyEmailDto {
 export interface ChangePasswordDto {
   currentPassword: string;
   newPassword: string;
+}
+
+export interface RefreshToken {
+  id: number;
+  userId: number;
+  token: string;
+  expiresAt: Date;
+  createdAt: Date;
+}
+
+export interface PasswordResetToken {
+  id: number;
+  userId: number;
+  token: string;
+  expiresAt: Date;
+  used: boolean;
+  createdAt: Date;
+}
+
+export interface EmailVerificationToken {
+  id: number;
+  userId: number;
+  token: string;
+  expiresAt: Date;
+  createdAt: Date;
 }

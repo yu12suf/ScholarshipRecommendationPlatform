@@ -1,20 +1,20 @@
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { UserModel } from "../models/User.js";
-import { RefreshTokenModel } from "../models/RefreshToken.js";
-import { PasswordResetTokenModel } from "../models/PasswordResetToken.js";
-import { EmailVerificationTokenModel } from "../models/EmailVerificationToken.js";
+import { UserRepository } from "../repositories/UserRepository.js";
+import { RefreshTokenRepository } from "../repositories/RefreshTokenRepository.js";
+import { PasswordResetTokenRepository } from "../repositories/PasswordResetTokenRepository.js";
+import { EmailVerificationTokenRepository } from "../repositories/EmailVerificationTokenRepository.js";
 import {
   LoginCredentials,
   AuthTokens,
   JwtPayload,
   ForgotPasswordDto,
   ResetPasswordDto,
-  VerifyEmailDto,
   ChangePasswordDto,
 } from "../types/authTypes.js";
-import { CreateUserDto, UserRole, UserResponse } from "../types/userTypes.js";
+import { CreateUserDto, UserResponse } from "../types/userTypes.js";
 import { EmailService } from "./EmailService.js";
 
 export class AuthService {
@@ -22,12 +22,12 @@ export class AuthService {
     const { email, password, username } = userData;
 
     // Check if user exists
-    const existingUserByEmail = await UserModel.findByEmail(email);
+    const existingUserByEmail = await UserRepository.findByEmail(email);
     if (existingUserByEmail) {
       throw new Error("User with this email already exists");
     }
 
-    const existingUserByUsername = await UserModel.findByUsername(username);
+    const existingUserByUsername = await UserRepository.findByUsername(username);
     if (existingUserByUsername) {
       throw new Error("Username is already taken");
     }
@@ -36,7 +36,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = await UserModel.create({
+    const user = await UserRepository.create({
       ...userData,
       password: hashedPassword,
     });
@@ -54,7 +54,7 @@ export class AuthService {
     const { email, password } = credentials;
 
     // Find user
-    const user = await UserModel.findByEmail(email);
+    const user = await UserRepository.findByEmail(email);
     if (!user) {
       throw new Error("Invalid credentials");
     }
@@ -89,19 +89,19 @@ export class AuthService {
     ) as JwtPayload;
 
     // Check if refresh token exists in database
-    const tokenRecord = await RefreshTokenModel.findByToken(refreshToken);
+    const tokenRecord = await RefreshTokenRepository.findByToken(refreshToken);
     if (!tokenRecord) {
       throw new Error("Invalid refresh token");
     }
 
     // Check if token is expired
     if (tokenRecord.expiresAt < new Date()) {
-      await RefreshTokenModel.deleteByToken(refreshToken);
+      await RefreshTokenRepository.deleteByToken(refreshToken);
       throw new Error("Refresh token expired");
     }
 
     // Get user
-    const user = await UserModel.findById(decoded.userId);
+    const user = await UserRepository.findById(decoded.userId);
     if (!user || !user.isActive) {
       throw new Error("User not found or inactive");
     }
@@ -110,24 +110,24 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
 
     // Delete old refresh token
-    await RefreshTokenModel.deleteByToken(refreshToken);
+    await RefreshTokenRepository.deleteByToken(refreshToken);
 
     return tokens;
   }
 
   static async logout(refreshToken: string): Promise<void> {
-    await RefreshTokenModel.deleteByToken(refreshToken);
+    await RefreshTokenRepository.deleteByToken(refreshToken);
   }
 
   static async logoutAll(userId: number): Promise<void> {
-    await RefreshTokenModel.deleteByUserId(userId);
+    await RefreshTokenRepository.deleteByUserId(userId);
   }
 
   static async forgotPassword(data: ForgotPasswordDto): Promise<void> {
     const { email } = data;
 
     // Find user
-    const user = await UserModel.findByEmail(email);
+    const user = await UserRepository.findByEmail(email);
     if (!user) {
       // Don't reveal that user doesn't exist for security
       return;
@@ -144,7 +144,7 @@ export class AuthService {
     expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
 
     // Save reset token
-    await PasswordResetTokenModel.create(user.id, resetToken, expiresAt);
+    await PasswordResetTokenRepository.create(user.id, resetToken, expiresAt);
 
     // Send reset email
     await EmailService.sendPasswordResetEmail(user.email, resetToken);
@@ -154,7 +154,7 @@ export class AuthService {
     const { token, newPassword } = data;
 
     // Find reset token
-    const resetToken = await PasswordResetTokenModel.findByToken(token);
+    const resetToken = await PasswordResetTokenRepository.findByToken(token);
     if (!resetToken) {
       throw new Error("Invalid or expired reset token");
     }
@@ -168,7 +168,7 @@ export class AuthService {
     }
 
     // Find user
-    const user = await UserModel.findById(resetToken.userId);
+    const user = await UserRepository.findById(resetToken.userId);
     if (!user || !user.isActive) {
       throw new Error("User not found or inactive");
     }
@@ -177,13 +177,13 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await UserModel.updatePassword(user.id, hashedPassword);
+    await UserRepository.updatePassword(user.id, hashedPassword);
 
     // Mark token as used
-    await PasswordResetTokenModel.markAsUsed(token);
+    await PasswordResetTokenRepository.markAsUsed(token);
 
     // Delete all refresh tokens (force logout from all devices)
-    await RefreshTokenModel.deleteByUserId(user.id);
+    await RefreshTokenRepository.deleteByUserId(user.id);
 
     // Send password changed notification
     await EmailService.sendPasswordChangedNotification(user.email);
@@ -196,7 +196,7 @@ export class AuthService {
     const { currentPassword, newPassword } = data;
 
     // Find user
-    const user = await UserModel.findById(userId);
+    const user = await UserRepository.findById(userId);
     if (!user) {
       throw new Error("User not found");
     }
@@ -211,10 +211,10 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await UserModel.updatePassword(user.id, hashedPassword);
+    await UserRepository.updatePassword(user.id, hashedPassword);
 
     // Delete all refresh tokens (force logout from all devices)
-    await RefreshTokenModel.deleteByUserId(user.id);
+    await RefreshTokenRepository.deleteByUserId(user.id);
 
     // Send password changed notification
     await EmailService.sendPasswordChangedNotification(user.email);
@@ -223,7 +223,7 @@ export class AuthService {
   static async verifyEmail(token: string): Promise<void> {
     // Find verification token
     const verificationToken =
-      await EmailVerificationTokenModel.findByToken(token);
+      await EmailVerificationTokenRepository.findByToken(token);
     if (!verificationToken) {
       throw new Error("Invalid or expired verification token");
     }
@@ -233,16 +233,16 @@ export class AuthService {
     }
 
     // Find user
-    const user = await UserModel.findById(verificationToken.userId);
+    const user = await UserRepository.findById(verificationToken.userId);
     if (!user) {
       throw new Error("User not found");
     }
 
     // Update user email verification status
-    await UserModel.update(user.id, { emailVerified: true });
+    await UserRepository.update(user.id, { emailVerified: true });
 
     // Delete verification token
-    await EmailVerificationTokenModel.deleteByUserId(user.id);
+    await EmailVerificationTokenRepository.deleteByUserId(user.id);
 
     // Send welcome email
     await EmailService.sendWelcomeEmail(user.email, user.username);
@@ -250,7 +250,7 @@ export class AuthService {
 
   static async resendVerificationEmail(email: string): Promise<void> {
     // Find user
-    const user = await UserModel.findByEmail(email);
+    const user = await UserRepository.findByEmail(email);
     if (!user) {
       throw new Error("User not found");
     }
@@ -260,7 +260,7 @@ export class AuthService {
     }
 
     // Delete old verification tokens
-    await EmailVerificationTokenModel.deleteByUserId(user.id);
+    await EmailVerificationTokenRepository.deleteByUserId(user.id);
 
     // Generate new verification token
     await this.generateEmailVerificationToken(user.id);
@@ -296,7 +296,7 @@ export class AuthService {
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
     // Store refresh token in database
-    await RefreshTokenModel.create(user.id, refreshToken, expiresAt);
+    await RefreshTokenRepository.create(user.id, refreshToken, expiresAt);
 
     return { accessToken, refreshToken };
   }
@@ -309,14 +309,14 @@ export class AuthService {
     expiresAt.setDate(expiresAt.getDate() + 1); // 1 day expiry
 
     // Save verification token
-    await EmailVerificationTokenModel.create(
+    await EmailVerificationTokenRepository.create(
       userId,
       verificationToken,
       expiresAt,
     );
 
     // Get user for email
-    const user = await UserModel.findById(userId);
+    const user = await UserRepository.findById(userId);
     if (user) {
       // Send verification email
       await EmailService.sendVerificationEmail(user.email, verificationToken);

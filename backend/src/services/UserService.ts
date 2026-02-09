@@ -1,9 +1,10 @@
-import { UserModel } from "../models/User.js";
+
+import { UserRepository } from "../repositories/UserRepository.js";
 import { UpdateUserDto, UserRole, UserResponse } from "../types/userTypes.js";
 
 export class UserService {
   static async getProfile(userId: number): Promise<UserResponse> {
-    const user = await UserModel.findById(userId);
+    const user = await UserRepository.findById(userId);
     if (!user) {
       throw new Error("User not found");
     }
@@ -20,7 +21,7 @@ export class UserService {
     // Don't allow role changes through profile update
     const { role, ...safeUpdates } = updates;
 
-    const updatedUser = await UserModel.update(userId, safeUpdates);
+    const updatedUser = await UserRepository.update(userId, safeUpdates);
     if (!updatedUser) {
       throw new Error("User not found");
     }
@@ -31,7 +32,7 @@ export class UserService {
 
   static async getAllUsers(limit = 10, page = 1): Promise<UserResponse[]> {
     const offset = (page - 1) * limit;
-    const users = await UserModel.findAll(limit, offset);
+    const users = await UserRepository.findAll(limit, offset);
 
     // Remove passwords from response
     return users.map((user) => {
@@ -46,7 +47,7 @@ export class UserService {
     page = 1,
   ): Promise<UserResponse[]> {
     const offset = (page - 1) * limit;
-    const users = await UserModel.findByRole(role, limit, offset);
+    const users = await UserRepository.findByRole(role, limit, offset);
 
     return users.map((user) => {
       const { password, ...userWithoutPassword } = user;
@@ -55,7 +56,7 @@ export class UserService {
   }
 
   static async getUserById(id: number): Promise<UserResponse> {
-    const user = await UserModel.findById(id);
+    const user = await UserRepository.findById(id);
     if (!user) {
       throw new Error("User not found");
     }
@@ -80,7 +81,7 @@ export class UserService {
       throw new Error("Admins cannot change their own role");
     }
 
-    const updatedUser = await UserModel.update(userId, { role });
+    const updatedUser = await UserRepository.update(userId, { role });
     if (!updatedUser) {
       throw new Error("User not found");
     }
@@ -104,7 +105,7 @@ export class UserService {
       throw new Error("Admins cannot deactivate themselves");
     }
 
-    const updatedUser = await UserModel.update(userId, { isActive: false });
+    const updatedUser = await UserRepository.update(userId, { isActive: false });
     if (!updatedUser) {
       throw new Error("User not found");
     }
@@ -122,7 +123,7 @@ export class UserService {
       throw new Error("Only admins can activate users");
     }
 
-    const updatedUser = await UserModel.update(userId, { isActive: true });
+    const updatedUser = await UserRepository.update(userId, { isActive: true });
     if (!updatedUser) {
       throw new Error("User not found");
     }

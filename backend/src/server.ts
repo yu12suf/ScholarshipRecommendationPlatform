@@ -1,8 +1,8 @@
 
-
 // import { getConfigs } from "./config/configs";
 import app from "./app.js";
 import { connectDB } from "./config/database.js";
+import { createTables, seedAdminUser } from "./utils/databaseMigration.js";
 
 async function start() {
     console.log("🚀 Initializing server...");
@@ -20,8 +20,12 @@ async function start() {
     // Load configurations and connect to DB asynchronously
     try {
         await connectDB();
+
+        // Run database migrations and seeding
+        await createTables();
+        await seedAdminUser();
     } catch (err) {
-        console.error("Failed to connect to database:", err);
+        console.error("Failed to connect to database or run migrations:", err);
     }
 }
 start();

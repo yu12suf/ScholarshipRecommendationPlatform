@@ -6,7 +6,7 @@ const dbConfig = {
     port: parseInt(process.env.DB_PORT || "5432"),
     user: process.env.DB_USER || "postgres",
     password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "auth_system",
+    database: process.env.DB_NAME || "EAP",
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
