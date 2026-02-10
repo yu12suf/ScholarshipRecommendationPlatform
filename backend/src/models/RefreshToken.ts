@@ -14,8 +14,8 @@ import { User } from "./User.js";
 
 @Table({
     tableName: "refresh_tokens",
-    timestamps: true, 
-    updatedAt: false, 
+    timestamps: true,
+    updatedAt: false,
 })
 export class RefreshToken extends Model {
     @PrimaryKey
@@ -29,7 +29,7 @@ export class RefreshToken extends Model {
         allowNull: false,
         field: 'user_id'
     })
-    userId!: number;
+    declare userId: number;
 
     @BelongsTo(() => User)
     user!: User;
@@ -39,18 +39,19 @@ export class RefreshToken extends Model {
         type: DataType.TEXT,
         allowNull: false,
     })
-    token!: string;
+    declare token: string;
 
     @Column({
         type: DataType.DATE,
         allowNull: false,
         field: 'expires_at'
     })
-    expiresAt!: Date;
+    declare expiresAt: Date;
 
-        @CreatedAt
-        @Column({ 
-            type: DataType.DATE,
-            field: 'created_at' })
-        declare createdAt: Date;
+    @CreatedAt
+    @Column({
+        type: DataType.DATE,
+        field: 'created_at'
+    })
+    declare createdAt: Date;
 }

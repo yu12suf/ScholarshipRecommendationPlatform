@@ -23,26 +23,26 @@ export class User extends Model {
     @PrimaryKey
     @AutoIncrement
     @Column(DataType.INTEGER)
-    declare id : number;
+    declare id: number;
 
     @Column({
         type: DataType.STRING(100),
         allowNull: false,
     })
-    name!: string;
+    declare name: string;
 
     @Unique
     @Column({
         type: DataType.STRING(100),
         allowNull: false,
     })
-    email!: string;
+    declare email: string;
 
     @Column({
         type: DataType.STRING(255),
         allowNull: true,
     })
-    password?: string;
+    declare password?: string;
 
     @Unique
     @Column({
@@ -50,7 +50,7 @@ export class User extends Model {
         allowNull: true,
         field: 'google_id'
     })
-    googleId?: string;
+    declare googleId?: string;
 
     @Default(UserRole.STUDENT)
     @Column({
@@ -60,7 +60,7 @@ export class User extends Model {
             isIn: [[UserRole.STUDENT, UserRole.COUNSELOR, UserRole.ADMIN]],
         },
     })
-    role!: UserRole;
+    declare role: UserRole;
 
     @Default(true)
     @Column({
@@ -68,20 +68,22 @@ export class User extends Model {
         allowNull: false,
         field: 'is_active'
     })
-    isActive!: boolean;
+    declare isActive: boolean;
 
     @CreatedAt
-    @Column({ 
+    @Column({
         type: DataType.DATE,
-        field: 'created_at' })
+        field: 'created_at'
+    })
     declare createdAt: Date;
 
     @UpdatedAt
     @Column({
         type: DataType.DATE,
-        field: 'updated_at' })
+        field: 'updated_at'
+    })
     declare updatedAt: Date;
-    
+
 
 
     // Associations

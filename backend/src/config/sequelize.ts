@@ -29,21 +29,18 @@ const dbOptions: SequelizeOptions = {
 export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
+    timezone: "+00:00", // Force UTC to avoid timezone issues
     models: [User, RefreshToken, PasswordResetToken], // Add all models here
 } as SequelizeOptions);
 
 export const connectSequelize = async () => {
     try {
         await sequelize.authenticate();
-        console.log("✅ Sequelize connected successfully");
+        console.log("Sequelize connected successfully");
 
-        // Sync models with database (alter: true updates tables if they exist)
-        // Be careful with alter: true in production!
-        // await sequelize.sync({ alter: true }); 
-        // console.log("✅ Models synchronized");
 
     } catch (error) {
-        console.error("❌ Sequelize connection error:", error);
+        console.error("Sequelize connection error:", error);
         process.exit(1);
     }
 };

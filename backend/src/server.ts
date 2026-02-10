@@ -1,4 +1,6 @@
-// import { getConfigs } from "./config/configs";
+import dotenv from "dotenv";
+dotenv.config();
+
 import app from "./app.js";
 import { connectSequelize } from "./config/sequelize.js";
 // import { createTables, seedAdminUser } from "./utils/databaseMigration.js"; // Migration is now handled by Sequelize sync or manual scripts
@@ -21,8 +23,6 @@ async function start() {
   // Load configurations and connect to DB asynchronously
   try {
     await connectSequelize();
-    // await seedAdminUser(); // access seedAdminUser from proper service if needed
-    console.log("Database ready!");
   } catch (err) {
     console.error("Failed to connect to database:", err);
   }

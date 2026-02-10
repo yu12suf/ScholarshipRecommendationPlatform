@@ -57,4 +57,7 @@ export class AuthRepository {
     // It returns [affectedRows]
     return PasswordResetToken.update({ used: true }, { where: { token } });
   }
+  static async invalidateOldPasswordResetTokens(userId: number): Promise<[number]> {
+    return PasswordResetToken.update({ used: true }, { where: { userId, used: false } });
+  }
 }
