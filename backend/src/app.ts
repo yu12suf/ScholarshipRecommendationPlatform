@@ -3,7 +3,6 @@ import cookieParser from "cookie-parser";
 import expressupload from "express-fileupload";
 import cors from "cors";
 import helmet from "helmet";
-import bodyParser from "body-parser";
 
 import routes from "./routes/index.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -13,7 +12,7 @@ const app: Application = express();
 
 app.use(helmet());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(expressupload());
 
@@ -35,8 +34,6 @@ app.use(
         allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     }),
 );
-
-app.use(bodyParser.json({ limit: "1mb" })); //request size limit set to 1 MB
 
 // Routes
 app.use("/api/auth", routes.authRouter);

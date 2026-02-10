@@ -162,13 +162,13 @@ export class AuthService {
     const accessToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET!,
-      { expiresIn: "15m" }
+      { expiresIn: (process.env.JWT_ACCESS_EXPIRATION as any) || "15m" }
     );
 
     const refreshToken = jwt.sign(
       { id: user.id },
       process.env.REFRESH_TOKEN_SECRET!,
-      { expiresIn: "7d" }
+      { expiresIn: (process.env.JWT_REFRESH_EXPIRATION as any) || "7d" }
     );
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
