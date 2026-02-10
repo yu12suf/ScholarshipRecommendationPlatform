@@ -116,6 +116,9 @@ export class AuthService {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 3600000); // 1 hour
 
+    // Invalidate any existing unused reset tokens for this user
+    await AuthRepository.invalidateOldPasswordResetTokens(user.id);
+
     await AuthRepository.createPasswordResetToken(user.id, token, expiresAt);
 
     // In a real app, this would be an email template
@@ -129,10 +132,29 @@ export class AuthService {
 
   static async resetPassword(token: string, newPassword: string) {
     const resetToken = await AuthRepository.findPasswordResetToken(token);
-    if (!resetToken) throw new Error("Invalid or expired reset token");
 
-    if (resetToken.used || new Date() > resetToken.expiresAt) {
-      throw new Error("Invalid or expired reset token");
+    if (!resetToken) {
+      throw new Error("Invalid reset token");
+    }
+
+    const now = new Date();
+
+    console.log("Password Reset Debug Log:", {
+      token: token.substring(0, 8) + "...",
+      userId: resetToken.userId,
+      used: resetToken.used,
+      currentTime: now.toISOString(),
+      tokenExpiresAt: resetToken.expiresAt instanceof Date ? resetToken.expiresAt.toISOString() : resetToken.expiresAt,
+      isExpired: now > resetToken.expiresAt,
+      timeDifferenceMinutes: (resetToken.expiresAt.getTime() - now.getTime()) / (1000 * 60)
+    });
+
+    if (resetToken.used) {
+      throw new Error("This reset token has already been used");
+    }
+
+    if (now > resetToken.expiresAt) {
+      throw new Error("This reset token has expired");
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
