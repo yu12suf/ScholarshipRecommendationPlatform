@@ -11,7 +11,7 @@ const dbOptions: SequelizeOptions = {
     host: process.env.DB_HOST || "localhost",
     port: parseInt(process.env.DB_PORT || "5432"),
     username: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASSWORD || "",
+    password: String(process.env.DB_PASSWORD || ""),
     database: process.env.DB_NAME || "auth_system",
     logging: false, // Set to console.log to see SQL queries
 

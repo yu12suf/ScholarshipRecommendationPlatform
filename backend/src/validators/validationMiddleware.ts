@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
+import { UserRole } from '../types/userTypes.js';
+
+// Shared validation constants
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+const PASSWORD_MESSAGE = 'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character';
+const VALID_ROLES = Object.values(UserRole) as string[];
 
 export const validate = (validations: any[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -33,12 +39,12 @@ export const registerValidation = [
   body('password')
     .notEmpty().withMessage('Password is required')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character'),
+    .matches(PASSWORD_REGEX)
+    .withMessage(PASSWORD_MESSAGE),
 
   body('role')
     .optional()
-    .isIn(['student', 'counselor', 'admin']).withMessage('Invalid role')
+    .isIn(VALID_ROLES).withMessage(`Invalid role. Must be one of: ${VALID_ROLES.join(', ')}`)
 ];
 
 export const loginValidation = [
@@ -65,8 +71,8 @@ export const resetPasswordValidation = [
   body('newPassword')
     .notEmpty().withMessage('New password is required')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character'),
+    .matches(PASSWORD_REGEX)
+    .withMessage(PASSWORD_MESSAGE),
 
   body('confirmPassword')
     .notEmpty().withMessage('Confirm password is required')
@@ -85,8 +91,8 @@ export const changePasswordValidation = [
   body('newPassword')
     .notEmpty().withMessage('New password is required')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character')
+    .matches(PASSWORD_REGEX)
+    .withMessage(PASSWORD_MESSAGE)
     .custom((value, { req }) => {
       if (req.body && value === req.body.currentPassword) {
         throw new Error('New password must be different from current password');

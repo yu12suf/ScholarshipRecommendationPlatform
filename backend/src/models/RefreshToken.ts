@@ -14,8 +14,8 @@ import { User } from "./User.js";
 
 @Table({
     tableName: "refresh_tokens",
-    timestamps: true, // we only need created_at, but timestamps: true gives both. We can ignore updated_at or disable it if preferred.
-    updatedAt: false, // Disable updatedAt column
+    timestamps: true, 
+    updatedAt: false, 
 })
 export class RefreshToken extends Model {
     @PrimaryKey

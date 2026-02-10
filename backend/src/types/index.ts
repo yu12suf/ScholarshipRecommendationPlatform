@@ -1,3 +1,3 @@
-export * from "./authTypes";
-export * from "./userTypes";
-export * from "./expressTypes";
+export * from "./authTypes.js";
+export * from "./userTypes.js";
+export * from "./expressTypes.js";

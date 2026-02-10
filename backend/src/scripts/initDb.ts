@@ -49,10 +49,10 @@ const initDB = async () => {
         await createTables();
         await seedAdminUser();
         await seedSampleUsers();
-        console.log("✅ Database initialization complete!");
+        console.log("Database initialization complete!");
         process.exit(0);
     } catch (error) {
-        console.error("❌ Error initializing tables:", error);
+        console.error("Error initializing tables:", error);
         process.exit(1);
     }
 };

@@ -5,16 +5,7 @@ export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await AuthService.register(req.body);
-
-      // Cookie options
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // true in production
-        sameSite: process.env.NODE_ENV === "production" ? "none" : ("lax" as const),
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      };
-
-      res.cookie("refreshToken", result.refreshToken, cookieOptions as any);
+      res.cookie("refreshToken", result.refreshToken, AuthController.getCookieOptions());
       res.status(201).json({
         user: result.user,
         accessToken: result.accessToken
@@ -27,15 +18,7 @@ export class AuthController {
   static async login(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await AuthService.login(req.body);
-
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : ("lax" as const),
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      };
-
-      res.cookie("refreshToken", result.refreshToken, cookieOptions as any);
+      res.cookie("refreshToken", result.refreshToken, AuthController.getCookieOptions());
       res.json({
         user: result.user,
         accessToken: result.accessToken
@@ -49,15 +32,7 @@ export class AuthController {
     try {
       const { credential } = req.body;
       const result = await AuthService.googleLogin(credential);
-
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : ("lax" as const),
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      };
-
-      res.cookie("refreshToken", result.refreshToken, cookieOptions as any);
+      res.cookie("refreshToken", result.refreshToken, AuthController.getCookieOptions());
       res.json({
         user: result.user,
         accessToken: result.accessToken,
@@ -76,15 +51,7 @@ export class AuthController {
       }
 
       const result = await AuthService.refreshToken(refreshToken);
-
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : ("lax" as const),
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      };
-
-      res.cookie("refreshToken", result.refreshToken, cookieOptions as any);
+      res.cookie("refreshToken", result.refreshToken, AuthController.getCookieOptions());
       res.json({
         user: result.user,
         accessToken: result.accessToken
@@ -166,5 +133,14 @@ export class AuthController {
     } catch (error) {
       next(error);
     }
+  }
+
+  private static getCookieOptions() {
+    return {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax") as "none" | "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    };
   }
 }

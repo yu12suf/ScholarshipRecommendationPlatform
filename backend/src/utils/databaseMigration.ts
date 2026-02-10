@@ -1,5 +1,4 @@
-
-import { pool } from "../config/database.js";
+import { sequelize } from "../config/sequelize.js";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
@@ -11,11 +10,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const createTables = async () => {
-  const client = await pool.connect();
-
   try {
     // Read schema.sql file
-    // Adjusted path: src/utils/ -> ../../database/schema.sql
     const schemaPath = path.join(__dirname, "../../database/schema.sql");
 
     if (!fs.existsSync(schemaPath)) {
@@ -24,15 +20,11 @@ export const createTables = async () => {
 
     const schemaSql = fs.readFileSync(schemaPath, "utf-8");
 
-    await client.query("BEGIN");
-    await client.query(schemaSql);
-    await client.query("COMMIT");
+    // Execute raw SQL through Sequelize
+    await sequelize.query(schemaSql);
   } catch (error) {
-    await client.query("ROLLBACK");
     console.error("Error creating tables:", error);
     throw error;
-  } finally {
-    client.release();
   }
 };
 
@@ -50,5 +42,32 @@ export const seedAdminUser = async () => {
     });
   } catch (error) {
     console.error("Error seeding admin user:", error);
+  }
+};
+
+export const seedSampleUsers = async () => {
+  try {
+    const studentPassword = await bcrypt.hash("Student@123", 10);
+    const counselorPassword = await bcrypt.hash("Counselor@123", 10);
+
+    await UserRepository.createIfNotExists({
+      name: "Sample Student",
+      email: "student@example.com",
+      password: studentPassword,
+      role: UserRole.STUDENT,
+      is_active: true
+    });
+
+    await UserRepository.createIfNotExists({
+      name: "Sample Counselor",
+      email: "counselor@example.com",
+      password: counselorPassword,
+      role: UserRole.COUNSELOR,
+      is_active: true
+    });
+
+    console.log(" Sample users seeded successfully");
+  } catch (error) {
+    console.error("Error seeding sample users:", error);
   }
 };
