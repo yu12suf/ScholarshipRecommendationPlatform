@@ -14,6 +14,7 @@ export interface JwtPayload {
   userId: number;
   email: string;
   role: UserRole;
+  id :  number
 }
 
 export interface ForgotPasswordDto {

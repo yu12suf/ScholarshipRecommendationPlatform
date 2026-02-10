@@ -1,131 +1,44 @@
-
 import { UserRepository } from "../repositories/UserRepository.js";
-import { UpdateUserDto, UserRole, UserResponse } from "../types/userTypes.js";
+import { CreateUserDto, UpdateUserDto, UserRole } from "../types/userTypes.js";
+import { User } from "../models/User.js";
 
 export class UserService {
-  static async getProfile(userId: number): Promise<UserResponse> {
-    const user = await UserRepository.findById(userId);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    // Remove password from response
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword as UserResponse;
+  static async createUser(userData: CreateUserDto): Promise<User> {
+    // You could add complex validation or business logic here
+    // For example, checking if the email is from a specific domain
+    return UserRepository.create(userData);
   }
 
-  static async updateProfile(
-    userId: number,
-    updates: UpdateUserDto,
-  ): Promise<UserResponse> {
-    // Don't allow role changes through profile update
-    const { role, ...safeUpdates } = updates;
-
-    const updatedUser = await UserRepository.update(userId, safeUpdates);
-    if (!updatedUser) {
-      throw new Error("User not found");
-    }
-
-    const { password, ...userWithoutPassword } = updatedUser;
-    return userWithoutPassword as UserResponse;
+  static async getProfile(userId: number): Promise<User | null> {
+    return UserRepository.findById(userId);
   }
 
-  static async getAllUsers(limit = 10, page = 1): Promise<UserResponse[]> {
-    const offset = (page - 1) * limit;
-    const users = await UserRepository.findAll(limit, offset);
-
-    // Remove passwords from response
-    return users.map((user) => {
-      const { password, ...userWithoutPassword } = user;
-      return userWithoutPassword as UserResponse;
-    });
+  static async updateProfile(userId: number, updates: UpdateUserDto): Promise<User | null> {
+    // Business logic: Ensure admins cannot demote themselves accidentally, etc.
+    return UserRepository.update(userId, updates);
   }
 
-  static async getUsersByRole(
-    role: UserRole,
-    limit = 10,
-    page = 1,
-  ): Promise<UserResponse[]> {
-    const offset = (page - 1) * limit;
-    const users = await UserRepository.findByRole(role, limit, offset);
-
-    return users.map((user) => {
-      const { password, ...userWithoutPassword } = user;
-      return userWithoutPassword as UserResponse;
-    });
+  static async getAllUsers(limit: number, offset: number): Promise<User[]> {
+    return UserRepository.findAll(limit, offset);
   }
 
-  static async getUserById(id: number): Promise<UserResponse> {
-    const user = await UserRepository.findById(id);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword as UserResponse;
+  static async getUserById(id: number): Promise<User | null> {
+    return UserRepository.findById(id);
   }
 
-  static async updateUserRole(
-    userId: number,
-    role: UserRole,
-    currentUserRole: UserRole,
-    currentUserId: number,
-  ): Promise<UserResponse> {
-    // Only admins can change roles
-    if (currentUserRole !== UserRole.ADMIN) {
-      throw new Error("Only admins can change user roles");
-    }
-
-    // Admins cannot change their own role
-    if (userId === currentUserId) {
-      throw new Error("Admins cannot change their own role");
-    }
-
-    const updatedUser = await UserRepository.update(userId, { role });
-    if (!updatedUser) {
-      throw new Error("User not found");
-    }
-
-    const { password, ...userWithoutPassword } = updatedUser;
-    return userWithoutPassword as UserResponse;
+  static async getUsersByRole(role: UserRole): Promise<User[]> {
+    return UserRepository.findByRole(role);
   }
 
-  static async deactivateUser(
-    userId: number,
-    currentUserRole: UserRole,
-    currentUserId: number,
-  ): Promise<void> {
-    // Only admins can deactivate users
-    if (currentUserRole !== UserRole.ADMIN) {
-      throw new Error("Only admins can deactivate users");
-    }
-
-    // Admins cannot deactivate themselves
-    if (userId === currentUserId) {
-      throw new Error("Admins cannot deactivate themselves");
-    }
-
-    const updatedUser = await UserRepository.update(userId, { isActive: false });
-    if (!updatedUser) {
-      throw new Error("User not found");
-    }
-
-    // Send deactivation email
-    // Note: You'll need to implement EmailService.sendAccountDeactivatedEmail
+  static async updateUserRole(id: number, role: UserRole): Promise<User | null> {
+    return UserRepository.update(id, { role });
   }
 
-  static async activateUser(
-    userId: number,
-    currentUserRole: UserRole,
-  ): Promise<void> {
-    // Only admins can activate users
-    if (currentUserRole !== UserRole.ADMIN) {
-      throw new Error("Only admins can activate users");
-    }
+  static async deactivateUser(id: number): Promise<User | null> {
+    return UserRepository.update(id, { isActive: false });
+  }
 
-    const updatedUser = await UserRepository.update(userId, { isActive: true });
-    if (!updatedUser) {
-      throw new Error("User not found");
-    }
+  static async activateUser(id: number): Promise<User | null> {
+    return UserRepository.update(id, { isActive: true });
   }
 }

@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { JwtPayload } from "./authTypes";
+import { JwtPayload } from "./authTypes.js";
 
 declare global {
   namespace Express {
