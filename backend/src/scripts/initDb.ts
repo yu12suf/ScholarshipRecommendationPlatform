@@ -1,21 +1,18 @@
-
 import { Client } from "pg";
-import dotenv from "dotenv";
 import { createTables, seedAdminUser, seedSampleUsers } from "../utils/databaseMigration.js";
-
-dotenv.config();
+import configs from "../config/configs.js";
 
 const initDB = async () => {
-    const dbName = process.env.DB_NAME || "auth_system";
+    const dbName = configs.DB_NAME;
 
     console.log(`Checking if database '${dbName}' exists...`);
 
     // Connect to default 'postgres' database to create the new DB
     const client = new Client({
-        host: process.env.DB_HOST || "localhost",
-        port: parseInt(process.env.DB_PORT || "5432"),
-        user: process.env.DB_USER || "postgres",
-        password: process.env.DB_PASSWORD,
+        host: configs.DB_HOST,
+        port: configs.DB_PORT,
+        user: configs.DB_USER,
+        password: configs.DB_PASSWORD,
         database: "postgres",
     });
 

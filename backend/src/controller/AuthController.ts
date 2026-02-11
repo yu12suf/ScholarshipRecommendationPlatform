@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/AuthService.js";
+import configs from "../config/configs.js";
 
 export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
@@ -138,8 +139,8 @@ export class AuthController {
   private static getCookieOptions() {
     return {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax") as "none" | "lax",
+      secure: configs.NODE_ENV === "production",
+      sameSite: (configs.NODE_ENV === "production" ? "none" : "lax") as "none" | "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
   }

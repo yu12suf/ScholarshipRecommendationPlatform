@@ -1,22 +1,20 @@
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
-import dotenv from "dotenv";
 import { User } from "../models/User.js";
 import { RefreshToken } from "../models/RefreshToken.js";
 import { PasswordResetToken } from "../models/PasswordResetToken.js";
-
-dotenv.config();
+import configs from "./configs.js";
 
 // Determine connection options based on environment
 const dbOptions: SequelizeOptions = {
-    host: process.env.DB_HOST || "localhost",
-    port: parseInt(process.env.DB_PORT || "5432"),
-    username: process.env.DB_USER || "postgres",
-    password: String(process.env.DB_PASSWORD || ""),
-    database: process.env.DB_NAME || "auth_system",
+    host: configs.DB_HOST,
+    port: configs.DB_PORT,
+    username: configs.DB_USER,
+    password: configs.DB_PASSWORD,
+    database: configs.DB_NAME,
     logging: false, // Set to console.log to see SQL queries
 
     // Handle SSL for production
-    dialectOptions: process.env.NODE_ENV === "production"
+    dialectOptions: configs.NODE_ENV === "production"
         ? {
             ssl: {
                 require: true,

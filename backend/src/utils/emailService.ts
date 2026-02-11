@@ -1,20 +1,21 @@
 import nodemailer from "nodemailer";
+import configs from "../config/configs.js";
 
 export const sendEmail = async (options: { to: string; subject: string; text: string }) => {
     // Create transporter
     const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+        host: configs.SMTP_HOST,
+        port: configs.SMTP_PORT,
+        secure: configs.SMTP_SECURE, // true for 465, false for other ports
         auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
+            user: configs.SMTP_USER,
+            pass: configs.SMTP_PASS,
         },
     });
 
     // Define email options
     const mailOptions = {
-        from: process.env.SMTP_FROM || `"Educational Pathway" <noreply@edu-pathway.com>`,
+        from: configs.SMTP_FROM,
         to: options.to,
         subject: options.subject,
         text: options.text,

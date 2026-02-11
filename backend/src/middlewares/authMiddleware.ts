@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { JwtPayload } from "../types/authTypes.js";
 import { UserRole } from "../types/userTypes.js";
+import configs from "../config/configs.js";
 
 export const authenticate = (
   req: Request,
@@ -20,14 +21,14 @@ export const authenticate = (
 
     const token = authHeader.split(" ")[1];
 
-    const decoded = jwt.verify(token as string, process.env.JWT_SECRET!) as JwtPayload;
+    const decoded = jwt.verify(token as string, configs.JWT_SECRET!) as JwtPayload;
     req.user = decoded;
 
     next();
   } catch (error) {
     return res.status(401).json({
 
-  
+
       success: false,
       error: "Invalid or expired token",
     });
@@ -64,7 +65,7 @@ export const optionalAuthenticate = (
 
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
-      const decoded = jwt.verify(token as string, process.env.JWT_SECRET!) as unknown as JwtPayload;
+      const decoded = jwt.verify(token as string, configs.JWT_SECRET!) as unknown as JwtPayload;
       req.user = decoded;
     }
 

@@ -1,13 +1,14 @@
 import nodemailer from "nodemailer";
+import configs from "../config/configs.js";
 
 export class EmailService {
   private static transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true",
+    host: configs.SMTP_HOST,
+    port: configs.SMTP_PORT,
+    secure: configs.SMTP_SECURE,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: configs.SMTP_USER,
+      pass: configs.SMTP_PASS,
     },
   });
 
@@ -15,10 +16,10 @@ export class EmailService {
     to: string,
     token: string,
   ): Promise<void> {
-    const resetLink = `${process.env.BACKEND_URL}/reset-password?token=${token}`;
+    const resetLink = `${configs.BACKEND_URL}/reset-password?token=${token}`;
 
     const mailOptions = {
-      from: process.env.SMTP_FROM || "noreply@example.com",
+      from: configs.SMTP_FROM,
       to,
       subject: "Reset Your Password",
       html: `
@@ -47,7 +48,7 @@ export class EmailService {
 
   static async sendPasswordChangedNotification(to: string): Promise<void> {
     const mailOptions = {
-      from: process.env.SMTP_FROM || "noreply@example.com",
+      from: configs.SMTP_FROM,
       to,
       subject: "Password Changed Successfully",
       html: `
@@ -66,7 +67,7 @@ export class EmailService {
     name: string,
   ): Promise<void> {
     const mailOptions = {
-      from: process.env.SMTP_FROM || "noreply@example.com",
+      from: configs.SMTP_FROM,
       to,
       subject: "Account Deactivated",
       html: `

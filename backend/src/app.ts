@@ -7,6 +7,7 @@ import helmet from "helmet";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { apiLimiter } from "./middlewares/rateLimiter.js";
+import configs from "./config/configs.js";
 
 const app: Application = express();
 
@@ -22,8 +23,8 @@ app.use(apiLimiter);
 const allowedOrigins = ["http://localhost:3000", "http://localhost:4000", "http://127.0.0.1:4000"];
 
 // Add production URL if available
-if (process.env.PRODUCTION_URL) {
-    allowedOrigins.push(process.env.PRODUCTION_URL);
+if (configs.PRODUCTION_URL) {
+    allowedOrigins.push(configs.PRODUCTION_URL);
 }
 
 app.use(

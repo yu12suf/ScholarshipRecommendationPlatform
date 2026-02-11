@@ -8,6 +8,7 @@ import { UserRole } from "../types/userTypes.js";
 import crypto from "crypto";
 import { sendEmail } from "../utils/emailService.js";
 import { User } from "../models/User.js";
+import configs from "../config/configs.js";
 
 interface GoogleTokenPayload {
   email: string;
@@ -15,7 +16,7 @@ interface GoogleTokenPayload {
   sub: string;
 }
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(configs.GOOGLE_CLIENT_ID);
 
 export class AuthService {
   static async register(userData: any) {
@@ -54,7 +55,7 @@ export class AuthService {
   static async googleLogin(idToken: string) {
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID || "",
+      audience: configs.GOOGLE_CLIENT_ID || "",
     });
 
     const payload = ticket.getPayload() as GoogleTokenPayload | undefined;
@@ -100,7 +101,7 @@ export class AuthService {
       throw new Error("Refresh token expired");
     }
 
-    const payload = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!) as any;
+    const payload = jwt.verify(token, configs.REFRESH_TOKEN_SECRET!) as any;
     const user = await UserRepository.findById(payload.id);
     if (!user) throw new Error("User not found");
 
@@ -122,7 +123,7 @@ export class AuthService {
     await AuthRepository.createPasswordResetToken(user.id, token, expiresAt);
 
     // In a real app, this would be an email template
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    const resetUrl = `${configs.FRONTEND_URL}/reset-password?token=${token}`;
     await sendEmail({
       to: email,
       subject: "Password Reset Request",
@@ -183,14 +184,14 @@ export class AuthService {
   private static async generateAuthResponse(user: User) {
     const accessToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: (process.env.JWT_ACCESS_EXPIRATION as any) || "15m" }
+      configs.JWT_SECRET!,
+      { expiresIn: (configs.JWT_ACCESS_EXPIRATION as any) || "15m" }
     );
 
     const refreshToken = jwt.sign(
       { id: user.id },
-      process.env.REFRESH_TOKEN_SECRET!,
-      { expiresIn: (process.env.JWT_REFRESH_EXPIRATION as any) || "7d" }
+      configs.REFRESH_TOKEN_SECRET!,
+      { expiresIn: (configs.JWT_REFRESH_EXPIRATION as any) || "7d" }
     );
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
