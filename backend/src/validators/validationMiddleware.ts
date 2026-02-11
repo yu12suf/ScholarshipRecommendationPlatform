@@ -116,3 +116,13 @@ export const updateProfileValidation = [
     .trim()
     .isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters')
 ];
+
+export const googleLoginValidation = [
+  body().custom((value, { req }) => {
+    if (!req.body.credential && !req.body.idToken && !req.body.id_token) {
+      throw new Error('Google ID Token is required (credential, idToken, or id_token)');
+    }
+    return true;
+  })
+];
+

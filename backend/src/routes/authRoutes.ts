@@ -8,6 +8,7 @@ import {
   forgotPasswordValidation,
   resetPasswordValidation,
   changePasswordValidation,
+  googleLoginValidation,
 } from "../validators/validationMiddleware.js";
 import {
   authLimiter,
@@ -30,7 +31,7 @@ router.post(
   validate(loginValidation),
   AuthController.login,
 );
-router.post("/google-login", authLimiter, AuthController.googleLogin);
+router.post("/google-login", authLimiter, validate(googleLoginValidation), AuthController.googleLogin);
 router.post("/refresh-token", authLimiter, AuthController.refreshToken);
 router.post(
   "/forgot-password",

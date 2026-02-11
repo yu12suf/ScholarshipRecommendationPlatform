@@ -53,6 +53,10 @@ export class AuthService {
   }
 
   static async googleLogin(idToken: string) {
+    if (!idToken) {
+      throw new Error("Google ID Token is required");
+    }
+
     const ticket = await client.verifyIdToken({
       idToken,
       audience: configs.GOOGLE_CLIENT_ID || "",

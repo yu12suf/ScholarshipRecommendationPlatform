@@ -31,8 +31,15 @@ export class AuthController {
 
   static async googleLogin(req: Request, res: Response, next: NextFunction) {
     try {
-      const { credential } = req.body;
-      const result = await AuthService.googleLogin(credential);
+      const { credential, idToken, id_token } = req.body;
+      const token = credential || idToken || id_token;
+
+      if (!token) {
+        res.status(400).json({ error: "Google ID Token is required (credential, idToken, or id_token)" });
+        return;
+      }
+
+      const result = await AuthService.googleLogin(token);
       res.cookie("refreshToken", result.refreshToken, AuthController.getCookieOptions());
       res.json({
         user: result.user,
