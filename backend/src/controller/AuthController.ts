@@ -122,8 +122,23 @@ export class AuthController {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
-      const { oldPassword, newPassword } = req.body;
-      await AuthService.changePassword(req.user.id, oldPassword, newPassword);
+
+      const { currentPassword, oldPassword, newPassword, confirmPassword } = req.body;
+
+      // Use currentPassword if provided, otherwise fallback to oldPassword
+      const passwordToCompare = currentPassword || oldPassword;
+
+      if (!passwordToCompare || !newPassword) {
+        res.status(400).json({ error: "Current password and new password are required" });
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        res.status(400).json({ error: "New password and confirmation do not match" });
+        return;
+      }
+
+      await AuthService.changePassword(req.user.id, passwordToCompare, newPassword);
       res.json({ message: "Password changed successfully" });
     } catch (error) {
       next(error);
