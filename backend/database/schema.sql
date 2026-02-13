@@ -8,6 +8,42 @@ CREATE TABLE IF NOT EXISTS users (
     google_id VARCHAR(100) UNIQUE,
     role VARCHAR(20) NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'counselor', 'admin')),
     is_active BOOLEAN NOT NULL DEFAULT true,
+    is_onboarded BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Students table
+CREATE TABLE IF NOT EXISTS students (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    calculated_gpa DECIMAL(3, 2),
+    academic_history TEXT,
+    study_preferences TEXT,
+    funding_need TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Counselors table
+CREATE TABLE IF NOT EXISTS counselors (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    bio TEXT,
+    areas_of_expertise TEXT,
+    years_of_experience INTEGER,
+    verification_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Pending Onboardings table
+CREATE TABLE IF NOT EXISTS pending_onboardings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    extracted_data TEXT,
+    id_match_confidence DECIMAL(3, 2),
+    identity_verified BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
