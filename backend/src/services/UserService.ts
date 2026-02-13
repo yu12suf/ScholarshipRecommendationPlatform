@@ -1,12 +1,20 @@
 import { UserRepository } from "../repositories/UserRepository.js";
+import { StudentRepository } from "../repositories/StudentRepository.js";
+import { CounselorRepository } from "../repositories/CounselorRepository.js";
 import { CreateUserDto, UpdateUserDto, UserRole } from "../types/userTypes.js";
 import { User } from "../models/User.js";
 
 export class UserService {
   static async createUser(userData: CreateUserDto): Promise<User> {
-    // You could add complex validation or business logic here
-    // For example, checking if the email is from a specific domain
-    return UserRepository.create(userData);
+    const user = await UserRepository.create(userData);
+
+    if (user.role === UserRole.STUDENT) {
+      await StudentRepository.create({ userId: user.id });
+    } else if (user.role === UserRole.COUNSELOR) {
+      await CounselorRepository.create({ userId: user.id });
+    }
+
+    return user;
   }
 
   static async getProfile(userId: number): Promise<User | null> {
