@@ -39,6 +39,7 @@ app.use(
 // Routes
 app.use("/api/auth", routes.authRouter);
 app.use("/api/user", routes.userRouter);
+app.use("/api/onboarding", routes.onboardingRouter);
 
 // Health Check
 app.get("/health", (req, res) => {
