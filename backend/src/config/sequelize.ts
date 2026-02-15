@@ -2,6 +2,8 @@ import { Sequelize, SequelizeOptions } from "sequelize-typescript";
 import { User } from "../models/User.js";
 import { RefreshToken } from "../models/RefreshToken.js";
 import { PasswordResetToken } from "../models/PasswordResetToken.js";
+import { Student } from "../models/Student.js";
+import { Counselor } from "../models/Counselor.js";
 import configs from "./configs.js";
 
 // Determine connection options based on environment
@@ -28,7 +30,7 @@ export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
     timezone: "+00:00", // Force UTC to avoid timezone issues
-    models: [User, RefreshToken, PasswordResetToken], // Add all models here
+    models: [User, RefreshToken, PasswordResetToken, Student, Counselor], // Add all models here
 } as SequelizeOptions);
 
 export const connectSequelize = async () => {
