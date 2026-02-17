@@ -4,6 +4,11 @@ import { RefreshToken } from "../models/RefreshToken.js";
 import { PasswordResetToken } from "../models/PasswordResetToken.js";
 import { Student } from "../models/Student.js";
 import { Counselor } from "../models/Counselor.js";
+import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
+import { Booking } from "../models/Booking.js";
+import { Payment } from "../models/Payment.js";
+import { Document } from "../models/Document.js";
+import { CounselorReview } from "../models/CounselorReview.js";
 import configs from "./configs.js";
 
 // Determine connection options based on environment
@@ -16,21 +21,20 @@ const dbOptions: SequelizeOptions = {
     logging: false, // Set to console.log to see SQL queries
 
     // Handle SSL for production
-    dialectOptions: configs.NODE_ENV === "production"
-        ? {
-            ssl: {
-                require: true,
-                rejectUnauthorized: false
-            }
-        }
-        : undefined as any,
+    dialectOptions: {
+        // Disable SSL for local development
+        ssl: configs.NODE_ENV === "production" ? {
+            require: true,
+            rejectUnauthorized: false
+        } : false
+    } as any,
 };
 
 export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
     timezone: "+00:00", // Force UTC to avoid timezone issues
-    models: [User, RefreshToken, PasswordResetToken, Student, Counselor], // Add all models here
+    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, AvailabilitySlot, Booking, Payment, Document, CounselorReview], // Add all models here
 } as SequelizeOptions);
 
 export const connectSequelize = async () => {
