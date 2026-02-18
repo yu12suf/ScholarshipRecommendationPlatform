@@ -6,7 +6,6 @@ import {
     CreateSlotDto,
     UpdateSlotDto,
     BookingStatusDto,
-    DocumentFeedbackDto,
 } from '../types/counselorTypes.js';
 
 export class CounselorController {
@@ -55,6 +54,28 @@ export class CounselorController {
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             return res.status(404).json({
+                success: false,
+                error: message,
+            });
+        }
+    }
+
+    /**
+     * GET /api/counselors/me/reviews
+     * Get current counselor's reviews
+     */
+    static async getReviews(req: Request, res: Response, next: NextFunction) {
+        try {
+            const counselorId = (req as any).counselor?.id;
+            const reviews = await CounselorService.getReviews(counselorId);
+
+            return res.status(200).json({
+                success: true,
+                data: reviews,
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return res.status(400).json({
                 success: false,
                 error: message,
             });
@@ -151,12 +172,13 @@ export class CounselorController {
     static async getSlots(req: Request, res: Response, next: NextFunction) {
         try {
             const counselorId = (req as any).counselor?.id;
-            const { fromDate, toDate } = req.query;
+            const { fromDate, toDate, status } = req.query;
 
             const slots = await CounselorService.getSlots(
                 counselorId,
                 fromDate as string | undefined,
-                toDate as string | undefined
+                toDate as string | undefined,
+                status as string | undefined
             );
 
             return res.status(200).json({
@@ -225,10 +247,7 @@ export class CounselorController {
 
             await CounselorService.deleteSlot(counselorId, slotId);
 
-            return res.status(200).json({
-                success: true,
-                message: 'Slot deleted successfully',
-            });
+            return res.status(204).send();
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             return res.status(400).json({
@@ -290,44 +309,6 @@ export class CounselorController {
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             return res.status(403).json({
-                success: false,
-                error: message,
-            });
-        }
-    }
-
-    /**
-     * POST /api/counselors/students/:id/feedback
-     * Give feedback on student's document
-     */
-    static async giveDocumentFeedback(req: Request, res: Response, next: NextFunction) {
-        try {
-            const counselorId = (req as any).counselor?.id;
-            const studentIdParam = req.params.id;
-            const studentId = typeof studentIdParam === 'string' ? parseInt(studentIdParam) : NaN;
-            const dto: DocumentFeedbackDto = req.body;
-
-            if (isNaN(studentId)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid student ID',
-                });
-            }
-
-            const document = await CounselorService.giveDocumentFeedback(
-                counselorId,
-                studentId,
-                dto
-            );
-
-            return res.status(200).json({
-                success: true,
-                message: 'Feedback submitted successfully',
-                data: document,
-            });
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            return res.status(400).json({
                 success: false,
                 error: message,
             });

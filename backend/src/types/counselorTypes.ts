@@ -33,15 +33,6 @@ export interface BookingStatusDto {
     status: 'confirmed' | 'started' | 'completed' | 'cancelled' | 'disputed';
 }
 
-export interface DocumentFeedbackDto {
-    documentId: number;
-    comments: string;
-    reviewedFile?: {
-        s3Key?: string;
-        fileUrl?: string;
-    };
-}
-
 export interface CounselorResponse {
     id: number;
     userId: number;
@@ -101,4 +92,28 @@ export interface StudentProgressResponse {
         title: string;
         matchScore: number;
     }>;
+}
+
+export interface ReviewResponse {
+    id: number;
+    bookingId: number;
+    studentId: number;
+    counselorId: number;
+    rating: number;
+    comment: string | null;
+    createdAt: Date;
+    studentName?: string;
+}
+
+export interface ReviewsSummaryResponse {
+    totalReviews: number;
+    averageRating: number;
+    ratingDistribution: {
+        1: number;
+        2: number;
+        3: number;
+        4: number;
+        5: number;
+    };
+    reviews: ReviewResponse[];
 }

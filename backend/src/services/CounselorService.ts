@@ -5,8 +5,6 @@ import { UserRole } from '../types/userTypes.js';
 import { AvailabilitySlot } from '../models/AvailabilitySlot.js';
 import { Booking } from '../models/Booking.js';
 import { Student } from '../models/Student.js';
-import { Payment } from '../models/Payment.js';
-import { Document } from '../models/Document.js';
 import { CounselorReview } from '../models/CounselorReview.js';
 import configs from '../config/configs.js';
 import {
@@ -15,11 +13,12 @@ import {
     CreateSlotDto,
     UpdateSlotDto,
     BookingStatusDto,
-    DocumentFeedbackDto,
     CounselorResponse,
     SlotResponse,
     BookingResponse,
     StudentProgressResponse,
+    ReviewResponse,
+    ReviewsSummaryResponse,
 } from '../types/counselorTypes.js';
 
 export class CounselorService {
@@ -87,6 +86,64 @@ export class CounselorService {
     }
 
     /**
+     * Get counselor's reviews
+     * GET /api/counselors/me/reviews
+     */
+    static async getReviews(counselorId: number): Promise<ReviewsSummaryResponse> {
+        // Get all reviews for this counselor
+        const reviews = await CounselorReview.findAll({
+            where: { counselorId },
+            include: [
+                {
+                    model: Student,
+                    as: 'student',
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['name']
+                        }
+                    ]
+                }
+            ],
+            order: [['createdAt', 'DESC']] as Order
+        });
+
+        // Calculate statistics
+        const totalReviews = reviews.length;
+        const averageRating = totalReviews > 0
+            ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+            : 0;
+
+        // Calculate rating distribution
+        const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        reviews.forEach(review => {
+            if (review.rating >= 1 && review.rating <= 5) {
+                ratingDistribution[review.rating as keyof typeof ratingDistribution]++;
+            }
+        });
+
+        // Format reviews
+        const formattedReviews: ReviewResponse[] = reviews.map(review => ({
+            id: review.id,
+            bookingId: review.bookingId,
+            studentId: review.studentId,
+            counselorId: review.counselorId,
+            rating: review.rating,
+            comment: review.comment,
+            createdAt: review.createdAt,
+            studentName: (review.student as any)?.user?.name || 'Anonymous'
+        }));
+
+        return {
+            totalReviews,
+            averageRating: Number(averageRating.toFixed(2)),
+            ratingDistribution,
+            reviews: formattedReviews
+        };
+    }
+
+    /**
      * Update counselor profile
      * PUT /api/counselors/profile
      */
@@ -137,6 +194,19 @@ export class CounselorService {
         const createdSlots: AvailabilitySlot[] = [];
 
         for (const slot of slots) {
+            // Validate time range
+            const startTime = new Date(slot.startTime);
+            const endTime = new Date(slot.endTime);
+            
+            if (endTime <= startTime) {
+                throw new Error('End time must be after start time');
+            }
+
+            // Validate slot is in the future
+            if (startTime < new Date()) {
+                throw new Error('Cannot create slots in the past');
+            }
+
             // Check for overlapping slots
             const overlap = await AvailabilitySlot.findOne({
                 where: {
@@ -189,13 +259,21 @@ export class CounselorService {
     static async getSlots(
         counselorId: number,
         fromDate?: string,
-        toDate?: string
+        toDate?: string,
+        status?: string
     ): Promise<SlotResponse[]> {
         const whereClause: any = { counselorId };
 
-        if (fromDate && toDate) {
+        if (fromDate) {
             whereClause.startTime = { [Op.gte]: new Date(fromDate) };
+        }
+        
+        if (toDate) {
             whereClause.endTime = { [Op.lte]: new Date(toDate) };
+        }
+
+        if (status && ['available', 'booked', 'cancelled'].includes(status)) {
+            whereClause.status = status;
         }
 
         const slots = await AvailabilitySlot.findAll({
@@ -231,11 +309,16 @@ export class CounselorService {
             throw new Error('Cannot modify a booked slot');
         }
 
-        // Check for overlapping slots if times are being changed
+        // Validate new time range if times are being changed
         if (dto.startTime || dto.endTime) {
-            const newStartTime = dto.startTime || slot.startTime;
-            const newEndTime = dto.endTime || slot.endTime;
+            const newStartTime = new Date(dto.startTime || slot.startTime);
+            const newEndTime = new Date(dto.endTime || slot.endTime);
+            
+            if (newEndTime <= newStartTime) {
+                throw new Error('End time must be after start time');
+            }
 
+            // Check for overlapping slots if times are being changed
             const overlap = await AvailabilitySlot.findOne({
                 where: {
                     counselorId,
@@ -393,57 +476,6 @@ export class CounselorService {
     }
 
     /**
-     * Give feedback on student's document
-     * POST /api/counselors/students/:id/feedback
-     */
-    static async giveDocumentFeedback(
-        counselorId: number,
-        studentId: number,
-        dto: DocumentFeedbackDto
-    ): Promise<any> {
-        // Security check
-        const booking = await Booking.findOne({
-            where: {
-                counselorId,
-                studentId
-            }
-        });
-
-        if (!booking) {
-            throw new Error('You are not authorized to give feedback to this student');
-        }
-
-        // Verify document belongs to this student
-        const document = await Document.findOne({
-            where: {
-                id: dto.documentId,
-                studentId
-            }
-        });
-
-        if (!document) {
-            throw new Error('Document not found');
-        }
-
-        // Update document with counselor feedback
-        const updates: any = {
-            counselorFeedback: dto.comments,
-            counselorId,
-            status: 'reviewed'
-        };
-
-        if (dto.reviewedFile) {
-            if (dto.reviewedFile.s3Key) {
-                updates.reviewedFileUrl = dto.reviewedFile.fileUrl || null;
-            }
-        }
-
-        await document.update(updates);
-
-        return document;
-    }
-
-    /**
      * SECTION 4: Booking & Session Workflow
      */
 
@@ -533,35 +565,19 @@ export class CounselorService {
                 throw new Error('Can only complete a started booking');
             }
 
-            // Critical: Release escrow funds
-            if (booking.paymentId) {
-                const payment = await Payment.findByPk(booking.paymentId);
-                if (payment && payment.escrowStatus === 'held') {
-                    // Calculate commission and counselor payout
-                    const commissionRate = 0.15; // 15% commission
-                    const commission = Number(payment.amount) * commissionRate;
-                    const counselorPayout = Number(payment.amount) - commission;
-
-                    await payment.update({
-                        escrowStatus: 'released',
-                        adminCommission: commission,
-                        counselorPayout: counselorPayout,
-                    });
-
-                    // Update counselor's total sessions
-                    const counselor = await Counselor.findByPk(counselorId);
-                    if (counselor) {
-                        await counselor.update({
-                            totalSessions: counselor.totalSessions + 1
-                        });
-                    }
-                }
-            }
-
+            // Update booking status and mark completion time
             await booking.update({
                 status: 'completed',
                 completedAt: new Date()
             });
+
+            // Update counselor's total sessions count
+            const counselor = await Counselor.findByPk(counselorId);
+            if (counselor) {
+                await counselor.update({
+                    totalSessions: (counselor.totalSessions || 0) + 1
+                });
+            }
 
             // Update slot status back to available
             if (booking.slotId) {
@@ -606,22 +622,39 @@ export class CounselorService {
             throw new Error('Unauthorized to join this session');
         }
 
+        // Ensure booking is in a valid state
+        if (booking.status !== 'confirmed' && booking.status !== 'started') {
+            throw new Error('Cannot join a session that is not confirmed or started');
+        }
+
         // Time validation - meeting link available 10 minutes before
         const now = new Date();
         const slot = (booking as any).slot;
         
         if (slot) {
             const meetingStart = new Date(slot.startTime);
+            const meetingEnd = new Date(slot.endTime);
             const timeDiffMinutes = (meetingStart.getTime() - now.getTime()) / (1000 * 60);
 
+            // Check if too early
             if (timeDiffMinutes > 10) {
                 throw new Error('Meeting link is only available 10 minutes before the start time');
+            }
+
+            // Check if session has ended
+            if (now > meetingEnd) {
+                throw new Error('This session has already ended');
             }
         }
 
         // Generate or return meeting link
         // In production, this would integrate with a video service like Zoom, Jitsi, etc.
         const meetingLink = booking.meetingLink || `https://meet.edu-pathway.com/session-${booking.id}`;
+
+        // Auto-start the session if it's within the time window and not started yet
+        if (booking.status === 'confirmed') {
+            await booking.update({ status: 'started', startedAt: now });
+        }
 
         return { meetingLink };
     }

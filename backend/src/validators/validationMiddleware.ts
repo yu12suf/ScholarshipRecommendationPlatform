@@ -126,3 +126,89 @@ export const googleLoginValidation = [
   })
 ];
 
+// ============================
+// Counselor Validation Schemas
+// ============================
+
+export const createSlotsValidation = [
+  body('slots')
+    .isArray({ min: 1 }).withMessage('Slots array is required'),
+  body('slots.*.startTime')
+    .notEmpty().withMessage('Start time is required for each slot')
+    .isISO8601().withMessage('Invalid start time format'),
+  body('slots.*.endTime')
+    .notEmpty().withMessage('End time is required for each slot')
+    .isISO8601().withMessage('Invalid end time format')
+    .custom((value, { req }) => {
+      const slots = req.body.slots;
+      const index = slots.findIndex((s: any) => s.endTime === value);
+      if (index !== -1 && new Date(value) <= new Date(slots[index].startTime)) {
+        throw new Error('End time must be after start time');
+      }
+      return true;
+    })
+];
+
+export const updateSlotValidation = [
+  body('startTime')
+    .optional()
+    .isISO8601().withMessage('Invalid start time format'),
+  body('endTime')
+    .optional()
+    .isISO8601().withMessage('Invalid end time format')
+    .custom((value, { req }) => {
+      if (value && req.body.startTime && new Date(value) <= new Date(req.body.startTime)) {
+        throw new Error('End time must be after start time');
+      }
+      return true;
+    })
+];
+
+export const updateBookingStatusValidation = [
+  body('status')
+    .notEmpty().withMessage('Status is required')
+    .isIn(['started', 'completed', 'cancelled']).withMessage('Invalid status value')
+];
+
+export const applyAsCounselorValidation = [
+  body('bio')
+    .optional()
+    .isLength({ max: 2000 }).withMessage('Bio must not exceed 2000 characters'),
+  body('areasOfExpertise')
+    .optional()
+    .isLength({ max: 500 }).withMessage('Areas of expertise must not exceed 500 characters'),
+  body('hourlyRate')
+    .optional()
+    .isNumeric().withMessage('Hourly rate must be a number')
+    .custom(value => {
+      if (value <= 0) {
+        throw new Error('Hourly rate must be greater than 0');
+      }
+      return true;
+    }),
+  body('yearsOfExperience')
+    .optional()
+    .isInt({ min: 0 }).withMessage('Years of experience must be a non-negative integer')
+];
+
+export const updateCounselorProfileValidation = [
+  body('bio')
+    .optional()
+    .isLength({ max: 2000 }).withMessage('Bio must not exceed 2000 characters'),
+  body('areasOfExpertise')
+    .optional()
+    .isLength({ max: 500 }).withMessage('Areas of expertise must not exceed 500 characters'),
+  body('hourlyRate')
+    .optional()
+    .isNumeric().withMessage('Hourly rate must be a number')
+    .custom(value => {
+      if (value <= 0) {
+        throw new Error('Hourly rate must be greater than 0');
+      }
+      return true;
+    }),
+  body('yearsOfExperience')
+    .optional()
+    .isInt({ min: 0 }).withMessage('Years of experience must be a non-negative integer')
+];
+
