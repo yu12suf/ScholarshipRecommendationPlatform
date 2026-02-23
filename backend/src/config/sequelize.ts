@@ -9,38 +9,42 @@ import { Booking } from "../models/Booking.js";
 import { CounselorReview } from "../models/CounselorReview.js";
 import configs from "./configs.js";
 
-// Determine connection options based on environment
+console.log('DB_PASSWORD from env:', process.env.DB_PASSWORD ? '****' : 'NOT SET');
+
 const dbOptions: SequelizeOptions = {
     host: configs.DB_HOST,
     port: configs.DB_PORT,
     username: configs.DB_USER,
     password: configs.DB_PASSWORD,
     database: configs.DB_NAME,
-    logging: false, // Set to console.log to see SQL queries
+    //logging: false, // Set to console.log to see SQL queries
+    logging: console.log,
 
-    // Handle SSL for production
     dialectOptions: {
-        // Disable SSL for local development
-        ssl: configs.NODE_ENV === "production" ? {
-            require: true,
-            rejectUnauthorized: false
-        } : false
-    } as any,
+        // Force the connection to use UTC for all date/time operations
+        timezone: 'UTC',
+
+        // Handle SSL only in production
+        ...(configs.NODE_ENV === "production" ? {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            }
+        } : {})
+    } as any, // Cast to any to satisfy TypeScript, as dialectOptions can be driver-specific
 };
 
 export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
-    timezone: "+00:00", // Force UTC to avoid timezone issues
-    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, AvailabilitySlot, Booking, CounselorReview], // Add all models here
+    timezone: "+00:00", // Additional safety: ensure Sequelize sessions use UTC
+    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, AvailabilitySlot, Booking, CounselorReview],
 } as SequelizeOptions);
 
 export const connectSequelize = async () => {
     try {
         await sequelize.authenticate();
         console.log("Sequelize connected successfully");
-
-
     } catch (error) {
         console.error("Sequelize connection error:", error);
         process.exit(1);

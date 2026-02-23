@@ -17,26 +17,29 @@ export class CounselorController {
      * POST /api/counselors/apply
      * Apply to become a counselor
      */
-    static async apply(req: Request, res: Response, next: NextFunction) {
-        try {
-            const userId = req.user!.id;
-            const dto: CreateCounselorDto = req.body;
+   static async apply(req: Request, res: Response, next: NextFunction) {
+    console.log('🔥🔥🔥 CounselorController.apply REACHED!', req.method, req.url);
+    console.log(`[apply] Received request body:`, req.body);
+    try {
+        const userId = req.user!.id;
+        console.log(`[apply] User ID from token: ${userId}`);
+        const dto: CreateCounselorDto = req.body;
 
-            const counselor = await CounselorService.applyAsCounselor(userId, dto);
+        console.log(`[apply] Calling service...`);
+        const counselor = await CounselorService.applyAsCounselor(userId, dto);
+        console.log(`[apply] Service returned, sending response...`);
 
-            return res.status(201).json({
-                success: true,
-                message: 'Counselor application submitted successfully. Pending verification.',
-                data: counselor,
-            });
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            return res.status(400).json({
-                success: false,
-                error: message,
-            });
-        }
+        return res.status(201).json({
+            success: true,
+            message: 'Counselor application submitted successfully. Pending verification.',
+            data: counselor,
+        });
+    } catch (error) {
+        console.error(`[apply] ERROR:`, error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return res.status(400).json({ success: false, error: message });
     }
+}
 
     /**
      * GET /api/counselors/me
@@ -134,36 +137,37 @@ export class CounselorController {
      */
 
     /**
-     * POST /api/counselors/slots
-     * Create availability slots
-     */
-    static async createSlots(req: Request, res: Response, next: NextFunction) {
-        try {
-            const counselorId = (req as any).counselor?.id;
-            const { slots }: { slots: CreateSlotDto[] } = req.body;
+/**
+ * POST /api/counselors/slots
+ * Create availability slots
+ */
+static async createSlots(req: Request, res: Response, next: NextFunction) {
+    console.log('🔥🔥🔥 CounselorController.createSlots REACHED!');
+    try {
+        const counselorId = (req as any).counselor?.id;
+        const { slots }: { slots: CreateSlotDto[] } = req.body;
+        console.log(`[createSlots] counselorId: ${counselorId}, slots:`, slots);
 
-            if (!slots || !Array.isArray(slots) || slots.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Slots array is required',
-                });
-            }
-
-            const createdSlots = await CounselorService.createSlots(counselorId, slots);
-
-            return res.status(201).json({
-                success: true,
-                message: `${createdSlots.length} slots created successfully`,
-                data: createdSlots,
-            });
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            return res.status(400).json({
-                success: false,
-                error: message,
-            });
+        if (!slots || !Array.isArray(slots) || slots.length === 0) {
+            console.log('[createSlots] invalid slots array');
+            return res.status(400).json({ success: false, error: 'Slots array is required' });
         }
+
+        console.log('[createSlots] calling service...');
+        const createdSlots = await CounselorService.createSlots(counselorId, slots);
+        console.log('[createSlots] service returned, sending response');
+
+        return res.status(201).json({
+            success: true,
+            message: `${createdSlots.length} slots created successfully`,
+            data: createdSlots,
+        });
+    } catch (error) {
+        console.error('[createSlots] ERROR:', error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return res.status(400).json({ success: false, error: message });
     }
+}
 
     /**
      * GET /api/counselors/slots

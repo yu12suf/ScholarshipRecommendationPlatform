@@ -13,7 +13,13 @@ import {
 
 const router = Router();
 
-// Apply middleware to all routes
+// ✅ Public ping route to test router mounting (no authentication required)
+router.get('/ping', (req, res) => {
+  console.log('✅ Ping route hit!');
+  res.status(200).send('pong');
+});
+
+// Apply authentication middleware to all subsequent routes
 router.use(authenticate);
 
 /**
@@ -23,20 +29,21 @@ router.use(authenticate);
 
 // POST /api/counselors/apply - Apply to become a counselor
 // This route allows any authenticated user to apply (doesn't require counselor role yet)
-router.post('/apply', applyAsCounselorValidation, validate, async (req: Request, res: Response, next: NextFunction) => {
-    // Check if user already has counselor profile
-    const { Counselor } = await import('../models/Counselor.js');
-    const existingCounselor = await Counselor.findOne({ where: { userId: req.user!.id } });
-    
-    if (existingCounselor) {
-        return res.status(400).json({
-            success: false,
-            error: 'You already have a counselor profile'
-        });
-    }
-    
-    return CounselorController.apply(req, res, next);
-});
+router.post('/apply',
+  // Raw handler to confirm route is hit
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('🔥 /apply route raw handler hit!');
+    next();
+  },
+  // ✅ Use validate as a function call – this runs the validations and checks errors
+  validate(applyAsCounselorValidation),
+  // After validation passes
+  (req: Request, res: Response, next: NextFunction) => {
+    console.log('⏩ After validate (validation passed)');
+    next();
+  },
+  CounselorController.apply
+);
 
 // All routes below require counselor role
 router.use(checkCounselorRole);
@@ -49,7 +56,11 @@ router.get('/me', (req: Request, res: Response, next: NextFunction) => Counselor
 router.get('/me/reviews', (req: Request, res: Response, next: NextFunction) => CounselorController.getReviews(req, res, next));
 
 // PUT /api/counselors/profile - Update counselor profile
-router.put('/profile', updateCounselorProfileValidation, validate, (req: Request, res: Response, next: NextFunction) => CounselorController.updateProfile(req, res, next));
+router.put('/profile', 
+    updateCounselorProfileValidation, 
+    validate(updateCounselorProfileValidation), 
+    (req: Request, res: Response, next: NextFunction) => CounselorController.updateProfile(req, res, next)
+);
 
 // DELETE /api/counselors/me - Soft delete counselor profile
 router.delete('/me', (req: Request, res: Response, next: NextFunction) => CounselorController.deleteProfile(req, res, next));
@@ -59,13 +70,21 @@ router.delete('/me', (req: Request, res: Response, next: NextFunction) => Counse
  */
 
 // POST /api/counselors/slots - Create availability slots
-router.post('/slots', createSlotsValidation, validate, (req: Request, res: Response, next: NextFunction) => CounselorController.createSlots(req, res, next));
+router.post('/slots', 
+    createSlotsValidation, 
+    validate(createSlotsValidation), 
+    (req: Request, res: Response, next: NextFunction) => CounselorController.createSlots(req, res, next)
+);
 
 // GET /api/counselors/slots - Get counselor's slots
 router.get('/slots', (req: Request, res: Response, next: NextFunction) => CounselorController.getSlots(req, res, next));
 
 // PUT /api/counselors/slots/:id - Update a specific slot
-router.put('/slots/:id', updateSlotValidation, validate, (req: Request, res: Response, next: NextFunction) => CounselorController.updateSlot(req, res, next));
+router.put('/slots/:id', 
+    updateSlotValidation, 
+    validate(updateSlotValidation), 
+    (req: Request, res: Response, next: NextFunction) => CounselorController.updateSlot(req, res, next)
+);
 
 // DELETE /api/counselors/slots/:id - Delete a slot
 router.delete('/slots/:id', (req: Request, res: Response, next: NextFunction) => CounselorController.deleteSlot(req, res, next));
@@ -88,7 +107,11 @@ router.get('/students/:id/progress', (req: Request, res: Response, next: NextFun
 router.get('/bookings/upcoming', (req: Request, res: Response, next: NextFunction) => CounselorController.getUpcomingBookings(req, res, next));
 
 // PATCH /api/counselors/bookings/:id/status - Update booking status
-router.patch('/bookings/:id/status', updateBookingStatusValidation, validate, (req: Request, res: Response, next: NextFunction) => CounselorController.updateBookingStatus(req, res, next));
+router.patch('/bookings/:id/status', 
+    updateBookingStatusValidation, 
+    validate(updateBookingStatusValidation), 
+    (req: Request, res: Response, next: NextFunction) => CounselorController.updateBookingStatus(req, res, next)
+);
 
 // POST /api/counselors/bookings/:id/join - Get meeting link for a session
 router.post('/bookings/:id/join', (req: Request, res: Response, next: NextFunction) => CounselorController.joinSession(req, res, next));

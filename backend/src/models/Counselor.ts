@@ -11,6 +11,9 @@ import {
     HasMany,
 } from "sequelize-typescript";
 import { User } from "./User.js";
+import { AvailabilitySlot } from './AvailabilitySlot.js';
+import { Booking } from './Booking.js';
+import { CounselorReview } from './CounselorReview.js';
 
 @Table({
     tableName: "counselors",
@@ -158,4 +161,13 @@ export class Counselor extends Model {
 
     @BelongsTo(() => User)
     user!: User;
+
+    @HasMany(() => AvailabilitySlot, { foreignKey: 'counselorId' })
+    availabilitySlots!: AvailabilitySlot[];
+
+    @HasMany(() => Booking, { foreignKey: 'counselorId' })
+    bookings!: Booking[];
+
+    @HasMany(() => CounselorReview, { foreignKey: 'counselorId' })
+    reviews!: CounselorReview[];
 }

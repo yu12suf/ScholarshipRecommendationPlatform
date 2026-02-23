@@ -3,6 +3,11 @@ import { connectSequelize } from "./config/sequelize.js";
 import configs from "./config/configs.js";
 // import { createTables, seedAdminUser } from "./utils/databaseMigration.js"; // Migration is now handled by Sequelize sync or manual scripts
 
+//Temporary
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+//up to here temporary
 async function start() {
   console.log("Initializing server...");
 

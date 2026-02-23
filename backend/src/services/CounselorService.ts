@@ -31,13 +31,17 @@ export class CounselorService {
      * POST /api/counselors/apply
      */
     static async applyAsCounselor(userId: number, dto: CreateCounselorDto): Promise<CounselorResponse> {
-        // Check if user already has a counselor profile
+        console.log(`[applyAsCounselor] Starting for userId: ${userId}`);
+
+        console.log(`[applyAsCounselor] Checking existing counselor...`);
         const existingCounselor = await Counselor.findOne({ where: { userId } });
         if (existingCounselor) {
+            console.log(`[applyAsCounselor] Existing counselor found, throwing error`);
             throw new Error('User already has a counselor profile');
         }
+        console.log(`[applyAsCounselor] No existing counselor, proceeding to create...`);
 
-        // Create counselor profile
+        console.log(`[applyAsCounselor] Creating counselor with data:`, dto);
         const counselor = await Counselor.create({
             userId,
             bio: dto.bio || '',
@@ -46,44 +50,47 @@ export class CounselorService {
             yearsOfExperience: dto.yearsOfExperience,
             verificationStatus: 'pending',
             isActive: true,
-            isOnboarded: true,
         });
+        console.log(`[applyAsCounselor] Counselor created with id: ${counselor.id}`);
 
-        // Get user details
+        console.log(`[applyAsCounselor] Fetching user details...`);
         const user = await User.findByPk(userId);
+        console.log(`[applyAsCounselor] User fetched:`, user ? `id: ${user.id}` : 'null');
 
-        return this.formatCounselorResponse(counselor, user!);
+        console.log(`[applyAsCounselor] Formatting response...`);
+        return this.formatCounselorResponse(counselor, user);
     }
 
-    /**
-     * Get current counselor's profile
-     * GET /api/counselors/me
-     */
-    static async getMyProfile(userId: number): Promise<CounselorResponse> {
-        const counselor = await Counselor.findOne({ 
-            where: { userId },
-            include: [{ model: User, as: 'user' }]
-        });
-
-        if (!counselor) {
-            throw new Error('Counselor profile not found');
-        }
-
-        // Calculate average rating
-        const reviews = await CounselorReview.findAll({
-            where: { counselorId: counselor.id }
-        });
-
-        const totalRatings = reviews.length;
-        const averageRating = totalRatings > 0
-            ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalRatings
-            : 0;
-
-        const response = this.formatCounselorResponse(counselor, counselor.user);
-        response.rating = Number(averageRating.toFixed(2));
-
-        return response;
+/**
+ * Get current counselor's profile
+ * GET /api/counselors/me
+ */
+static async getMyProfile(userId: number): Promise<CounselorResponse> {
+    const counselor = await Counselor.findOne({ where: { userId } });
+    if (!counselor) {
+        throw new Error('Counselor profile not found');
     }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+        throw new Error('User not found for counselor');
+    }
+
+    // Calculate average rating
+    const reviews = await CounselorReview.findAll({
+        where: { counselorId: counselor.id }
+    });
+
+    const totalRatings = reviews.length;
+    const averageRating = totalRatings > 0
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalRatings
+        : 0;
+
+    const response = this.formatCounselorResponse(counselor, user);
+    response.rating = Number(averageRating.toFixed(2));
+
+    return response;
+}
 
     /**
      * Get counselor's reviews
@@ -164,7 +171,7 @@ export class CounselorService {
         await counselor.update(allowedUpdates);
 
         const user = await User.findByPk(userId);
-        return this.formatCounselorResponse(counselor, user!);
+        return this.formatCounselorResponse(counselor, user);
     }
 
     /**
@@ -187,70 +194,104 @@ export class CounselorService {
      */
 
     /**
-     * Create multiple availability slots
-     * POST /api/counselors/slots
+     * Helper: Check if two time intervals overlap
      */
-    static async createSlots(counselorId: number, slots: CreateSlotDto[]): Promise<SlotResponse[]> {
-        const createdSlots: AvailabilitySlot[] = [];
-
-        for (const slot of slots) {
-            // Validate time range
-            const startTime = new Date(slot.startTime);
-            const endTime = new Date(slot.endTime);
-            
-            if (endTime <= startTime) {
-                throw new Error('End time must be after start time');
-            }
-
-            // Validate slot is in the future
-            if (startTime < new Date()) {
-                throw new Error('Cannot create slots in the past');
-            }
-
-            // Check for overlapping slots
-            const overlap = await AvailabilitySlot.findOne({
-                where: {
-                    counselorId,
-                    status: { [Op.ne]: 'cancelled' },
-                    [Op.or]: [
-                        {
-                            [Op.and]: [
-                                { startTime: { [Op.lte]: slot.startTime } },
-                                { endTime: { [Op.gt]: slot.startTime } }
-                            ]
-                        },
-                        {
-                            [Op.and]: [
-                                { startTime: { [Op.lt]: slot.endTime } },
-                                { endTime: { [Op.gte]: slot.endTime } }
-                            ]
-                        },
-                        {
-                            [Op.and]: [
-                                { startTime: { [Op.gte]: slot.startTime } },
-                                { endTime: { [Op.lte]: slot.endTime } }
-                            ]
-                        }
-                    ]
-                }
-            });
-
-            if (overlap) {
-                throw new Error(`Slot overlaps with existing slot ID: ${overlap.id}`);
-            }
-
-            const newSlot = await AvailabilitySlot.create({
-                counselorId,
-                startTime: slot.startTime,
-                endTime: slot.endTime,
-                status: 'available',
-            });
-
-            createdSlots.push(newSlot);
-        }
-
-        return createdSlots.map(slot => this.formatSlotResponse(slot));
+    private static slotsOverlap(
+        a: { startTime: Date; endTime: Date },
+        b: { startTime: Date; endTime: Date }
+    ): boolean {
+        return a.startTime < b.endTime && a.endTime > b.startTime;
     }
+
+    /**
+ * Create multiple availability slots
+ * POST /api/counselors/slots
+ */
+static async createSlots(counselorId: number, slots: CreateSlotDto[]): Promise<SlotResponse[]> {
+    console.log(`[createSlotsService] Starting with counselorId: ${counselorId}, ${slots.length} slots`);
+
+    // First, validate each slot individually and convert to Date objects
+    const slotObjects = slots.map((slot, index) => {
+        console.log(`[createSlotsService] Processing slot ${index + 1}:`, slot);
+        const startTime = new Date(slot.startTime);
+        const endTime = new Date(slot.endTime);
+
+        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+            throw new Error(`Invalid date format in slot ${index + 1}`);
+        }
+        if (endTime <= startTime) {
+            throw new Error(`Slot ${index + 1}: End time must be after start time`);
+        }
+        if (startTime < new Date()) {
+            throw new Error(`Slot ${index + 1}: Cannot create slots in the past`);
+        }
+        return { startTime, endTime };
+    });
+    console.log('[createSlotsService] All slots individually valid');
+
+    // Check for overlaps among the slots in the current batch
+    for (let i = 0; i < slotObjects.length; i++) {
+        for (let j = i + 1; j < slotObjects.length; j++) {
+            if (this.slotsOverlap(slotObjects[i]!, slotObjects[j]!)) {
+                throw new Error(`Slots ${i + 1} and ${j + 1} overlap with each other`);
+            }
+        }
+    }
+    console.log('[createSlotsService] No overlaps within batch');
+
+    const createdSlots: AvailabilitySlot[] = [];
+
+    for (const slot of slots) {
+        const startTime = new Date(slot.startTime);
+        const endTime = new Date(slot.endTime);
+
+        console.log(`[createSlotsService] Checking overlaps for slot: ${startTime.toISOString()} - ${endTime.toISOString()}`);
+        const overlap = await AvailabilitySlot.findOne({
+            where: {
+                counselorId,
+                status: { [Op.ne]: 'cancelled' },
+                [Op.or]: [
+                    {
+                        [Op.and]: [
+                            { startTime: { [Op.lte]: startTime } },
+                            { endTime: { [Op.gt]: startTime } }
+                        ]
+                    },
+                    {
+                        [Op.and]: [
+                            { startTime: { [Op.lt]: endTime } },
+                            { endTime: { [Op.gte]: endTime } }
+                        ]
+                    },
+                    {
+                        [Op.and]: [
+                            { startTime: { [Op.gte]: startTime } },
+                            { endTime: { [Op.lte]: endTime } }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        if (overlap) {
+            throw new Error(`Slot overlaps with existing slot ID: ${overlap.id}`);
+        }
+        console.log('[createSlotsService] No overlap with existing slots, creating...');
+
+        const newSlot = await AvailabilitySlot.create({
+            counselorId,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            status: 'available',
+        });
+        console.log(`[createSlotsService] Created slot ID: ${newSlot.id}`);
+
+        createdSlots.push(newSlot);
+    }
+
+    console.log(`[createSlotsService] All ${createdSlots.length} slots created successfully`);
+    return createdSlots.map(slot => this.formatSlotResponse(slot));
+}
 
     /**
      * Get counselor's slots
@@ -480,54 +521,56 @@ export class CounselorService {
      */
 
     /**
-     * Get upcoming bookings
-     * GET /api/counselors/bookings/upcoming
-     */
-    static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]> {
-        const now = new Date();
+ * Get upcoming bookings
+ * GET /api/counselors/bookings/upcoming
+ */
+static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]> {
+    const now = new Date();
 
-        const bookings = await Booking.findAll({
-            where: {
-                counselorId,
-                status: { [Op.in]: ['confirmed', 'started'] },
-                // Get bookings where slot start time is in the future
-            },
-            include: [
-                {
-                    model: Student,
-                    as: 'student',
-                    include: [
-                        {
-                            model: User,
-                            as: 'user',
-                            attributes: ['id', 'name', 'email']
-                        }
-                    ]
-                },
-                {
-                    model: AvailabilitySlot,
-                    as: 'slot'
-                }
-            ],
-            order: [['createdAt', 'ASC']] as Order
-        });
-
-        // Filter to only include future bookings and add countdown
-        const upcomingBookings = bookings.filter(booking => {
-            const slot = (booking as any).slot;
-            return slot && new Date(slot.startTime) > now;
-        });
-
-        return upcomingBookings.map(booking => {
-            const response = this.formatBookingResponse(booking);
-            const slot = (booking as any).slot;
-            if (slot) {
-                const timeUntilStart = new Date(slot.startTime).getTime() - now.getTime();
-                (response as any).timeUntilStart = Math.floor(timeUntilStart / (1000 * 60)); // in minutes
+    // Fetch bookings without including slot
+    const bookings = await Booking.findAll({
+        where: {
+            counselorId,
+            status: { [Op.in]: ['confirmed', 'started'] },
+        },
+        include: [
+            {
+                model: Student,
+                as: 'student',
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'email']
+                    }
+                ]
             }
-            return response;
-        });
+        ],
+        order: [['createdAt', 'ASC']] as Order
+    });
+
+    const upcomingBookings: Booking[] = [];
+
+    for (const booking of bookings) {
+        // Manually fetch the associated slot
+        const slot = await AvailabilitySlot.findByPk(booking.slotId);
+        if (slot && new Date(slot.startTime) > now) {
+            // Attach the slot to the booking object (for later use)
+            (booking as any).slot = slot;
+            upcomingBookings.push(booking);
+        }
     }
+
+    return upcomingBookings.map(booking => {
+        const response = this.formatBookingResponse(booking);
+        const slot = (booking as any).slot;
+        if (slot) {
+            const timeUntilStart = new Date(slot.startTime).getTime() - now.getTime();
+            (response as any).timeUntilStart = Math.floor(timeUntilStart / (1000 * 60)); // in minutes
+        }
+        return response;
+    });
+}
 
     /**
      * Update booking status
@@ -661,7 +704,10 @@ export class CounselorService {
 
     // Helper methods
 
-    private static formatCounselorResponse(counselor: Counselor, user: User): CounselorResponse {
+    private static formatCounselorResponse(counselor: Counselor, user: User | null): CounselorResponse {
+        if (!user) {
+            throw new Error('User not found for counselor');
+        }
         return {
             id: counselor.id,
             userId: counselor.userId,
