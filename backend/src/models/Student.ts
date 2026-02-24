@@ -92,6 +92,81 @@ export class Student extends Model {
     @Column({
         type: DataType.STRING,
         allowNull: true,
+        field: 'intake_season'
+    })
+    declare intakeSeason: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'funding_requirement'
+    })
+    declare fundingRequirement: string;
+
+    @Column({
+        type: DataType.DECIMAL(3, 1),
+        allowNull: true,
+        field: 'ielts_score'
+    })
+    declare ieltsScore: number;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        field: 'toefl_score'
+    })
+    declare toeflScore: number;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        field: 'duolingo_score'
+    })
+    declare duolingoScore: number;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    declare gender: string;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+    })
+    declare age: number;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'work_experience'
+    })
+    declare workExperience: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'country_interest'
+    })
+    declare countryInterest: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'high_school'
+    })
+    declare highSchool: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'academic_status'
+    })
+    declare academicStatus: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
         field: 'id_card_url'
     })
     declare idCardUrl: string;

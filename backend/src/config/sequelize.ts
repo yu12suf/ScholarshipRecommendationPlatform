@@ -4,6 +4,8 @@ import { RefreshToken } from "../models/RefreshToken.js";
 import { PasswordResetToken } from "../models/PasswordResetToken.js";
 import { Student } from "../models/Student.js";
 import { Counselor } from "../models/Counselor.js";
+import { ScholarshipSource } from "../models/ScholarshipSource.js";
+import { Scholarship } from "../models/Scholarship.js";
 import configs from "./configs.js";
 
 // Determine connection options based on environment
@@ -30,7 +32,7 @@ export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
     timezone: "+00:00", // Force UTC to avoid timezone issues
-    models: [User, RefreshToken, PasswordResetToken, Student, Counselor], // Add all models here
+    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, ScholarshipSource, Scholarship], // Add all models here
 } as SequelizeOptions);
 
 export const connectSequelize = async () => {
@@ -38,6 +40,10 @@ export const connectSequelize = async () => {
         await sequelize.authenticate();
         console.log("Sequelize connected successfully");
 
+        // Sync models with database (creates tables if missing)
+        // Note: In production, migrations are preferred.
+        await sequelize.sync({ alter: true });
+        console.log("Database models synchronized");
 
     } catch (error) {
         console.error("Sequelize connection error:", error);

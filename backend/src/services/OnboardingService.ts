@@ -72,6 +72,17 @@ export class OnboardingService {
                 calculatedGpa: updateData.calculatedGpa ?? null,
                 academicHistory: updateData.academicHistory ? JSON.stringify(updateData.academicHistory) : "[]",
                 studyPreferences: updateData.studyPreferences || "",
+                intakeSeason: updateData.intakeSeason || null,
+                fundingRequirement: updateData.fundingRequirement || null,
+                ieltsScore: updateData.ieltsScore || null,
+                toeflScore: updateData.toeflScore || null,
+                duolingoScore: updateData.duolingoScore || null,
+                gender: updateData.gender || null,
+                age: updateData.age || null,
+                workExperience: updateData.workExperience || null,
+                countryInterest: updateData.countryInterest || null,
+                highSchool: updateData.highSchool || null,
+                academicStatus: updateData.academicStatus || null,
                 isOnboarded: true
             });
         } else if (user.role === UserRole.COUNSELOR) {
