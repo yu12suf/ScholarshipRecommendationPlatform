@@ -100,10 +100,10 @@ export class Scholarship extends Model {
     // Note: We use DataType.ARRAY(DataType.FLOAT) for Sequelize to handle the array format.
     // The actual column type in Postgres is vector(768).
     @Column({
-        type: DataType.ARRAY(DataType.FLOAT),
+        type: 'Vector(3072)',
         allowNull: true,
     })
-    declare embedding: number[] | null;
+    declare embedding: any;
 
     @CreatedAt
     @Column({
@@ -111,8 +111,8 @@ export class Scholarship extends Model {
         field: 'created_at'
     })
     declare createdAt: Date;
-    @Column(DataType.JSON) // Store as JSON array: ["Bachelor", "Master"]
-    declare degreeLevels: string[];
+    @Column(DataType.JSONB) // Store as JSON array: ["Bachelor", "Master"]
+    declare degree_levels: string[];
 
     @UpdatedAt
     @Column({
