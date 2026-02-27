@@ -192,6 +192,19 @@ export class Student extends Model {
     })
     declare updatedAt: Date;
 
+    @Column({
+        type: 'vector(3072)',
+        allowNull: true,
+    })
+    declare embedding: any;
+
+    @Column({
+        type: DataType.STRING(32),
+        allowNull: true,
+        field: 'profile_hash'
+    })
+    declare profileHash: string | null;
+
     @BelongsTo(() => User)
     user!: User;
 }

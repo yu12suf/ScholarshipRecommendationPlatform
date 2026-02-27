@@ -16,3 +16,16 @@ export interface ScrapedPageContent {
     text: string;
     links: string[];
 }
+
+export interface MatchedScholarship {
+    id: number;
+    title: string;
+    description: string | null;
+    amount: string | null;
+    deadline: Date | null;
+    fundType: string | null;
+    degreeLevels: string[];
+    country: string | null;
+    originalUrl: string;
+    match_score: number;
+}

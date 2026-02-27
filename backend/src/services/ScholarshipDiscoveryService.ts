@@ -10,6 +10,7 @@ import { ScholarshipSource } from "../models/ScholarshipSource.js";
 import { StrategyManager } from "./scraping/StrategyManager.js";
 import { AntiDetectionService } from "./common/AntiDetectionService.js";
 import { IngestionMetrics } from "./common/IngestionMetrics.js";
+import { VectorService } from "./VectorService.js";
 
 export class ScholarshipDiscoveryService {
     private static isRunning = false;
@@ -106,7 +107,7 @@ export class ScholarshipDiscoveryService {
             const normalizedDeadline = this.normalizeDate(foundDeadline);
             const deadlineValue = normalizedDeadline ? new Date(normalizedDeadline) : null;
 
-            
+
             // if (!deadlineValue) {
             //     IngestionMetrics.logIngestion(url, result.strategy, 'SKIP', 'No deadline found');
             //     return;
@@ -131,9 +132,6 @@ export class ScholarshipDiscoveryService {
                 return;
             }
 
-            // Embedding
-            const vector = await GeminiIngestionService.generateEmbedding(`${title} ${description}`);
-
             // Upsert / Update
             const scholarshipData: any = {
                 sourceId,
@@ -142,15 +140,18 @@ export class ScholarshipDiscoveryService {
                 amount: metadata.amount || regexData.amount || "Unknown",
                 fundType: metadata.fundType || regexData.fundType || "Other",
                 deadline: deadlineValue,
-                degreeLevels: regexData.degreeLevels.length ? regexData.degreeLevels : ["Other"],
+                degree_levels: regexData.degreeLevels.length ? regexData.degreeLevels : ["Other"],
                 requirements: metadata.requirements || manualRequirements || null,
                 intakeSeason: metadata.intakeSeason || manualIntakeSeason || null,
                 country: metadata.country || manualCountry || null,
                 originalUrl: url,
                 contentHash,
-                embedding: vector
             };
 
+            // Embedding
+            const vector = await VectorService.generateScholarshipEmbedding(scholarshipData);
+            console.log("DEBUG: Vector Length is:", vector.length);
+            scholarshipData.embedding = `[${vector.join(',')}]`; 
             if (existingScholarship?.id) {
                 scholarshipData.id = existingScholarship.id;
             }
