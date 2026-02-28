@@ -193,7 +193,7 @@ export class Student extends Model {
     declare updatedAt: Date;
 
     @Column({
-        type: 'vector(3072)',
+        type: 'HALFVEC(3072)',
         allowNull: true,
     })
     declare embedding: any;

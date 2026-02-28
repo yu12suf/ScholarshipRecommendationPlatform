@@ -1,27 +1,35 @@
 import { Student } from "../models/Student.js";
 import { GeminiIngestionService } from "./GeminiIngestionService.js";
 import * as crypto from "crypto";
+import { TextCleaner } from "../utils/textcleaner.js";
+
 
 export class VectorService {
     /**
-     * Generates or refreshes the student's embedding if their profile has changed.
-     * Uses MD5 hashing to detect changes in the context text.
+     * Refined Student Context: Focus on dense keywords.
      */
     static async generateStudentEmbedding(student: Student): Promise<void> {
+        // We use a structured list. This makes the "meaning" denser.
         const studentContext = `
-          A ${student.academicStatus || "Unknown"} student interested in ${student.studyPreferences || "various fields"}. 
-          Academic background: ${student.academicHistory || "Not specified"}. 
-          Skills and expertise: ${student.extractedData || "Not specified"}. 
-          Professional experience: ${student.workExperience || "Not specified"}. 
-          Goal: Study in ${student.countryInterest || "any country"}.
+            Level: ${student.academicStatus || ""}
+            Interests: ${student.studyPreferences || ""}
+            History: ${student.academicHistory || ""}
+            Skills: ${student.extractedData || ""}
+            Experience: ${student.workExperience || ""}
+            Goal_Country: ${student.countryInterest || ""}
         `.replace(/\s+/g, ' ').trim();
 
         const currentHash = crypto.createHash("md5").update(studentContext).digest("hex");
 
-        // Refresh if no embedding exists or if profile text has changed
         if (!student.embedding || student.profileHash !== currentHash) {
-            console.log(`[VectorService] Refreshing embedding for student ${student.id}...`);
-            const vector = await GeminiIngestionService.generateEmbedding(studentContext);
+            console.log(`[VectorService] Refreshing dense embedding for student ${student.id}...`);
+            
+            // TASK_TYPE: RETRIEVAL_QUERY (Standard for Google Gemini Embeddings)
+            const vector = await GeminiIngestionService.generateEmbedding(
+                studentContext,
+            
+            );
+            
             const vectorString = `[${vector.join(',')}]`;
 
             await student.update({
@@ -32,17 +40,23 @@ export class VectorService {
     }
 
     /**
-     * Generates an embedding for a scholarship.
-     * Builds the context string internally for consistency.
+     * Refined Scholarship Context: Mirrors the student structure.
      */
     static async generateScholarshipEmbedding(scholarshipData: any): Promise<number[]> {
+           const description = TextCleaner.prepare(scholarshipData.description);
+    const requirements = TextCleaner.prepare(scholarshipData.requirements);
         const context = `
-          ${scholarshipData.title} for ${(scholarshipData.degreeLevels || []).join(", ")} students in ${scholarshipData.country || "Unknown"}. 
-          Type: ${scholarshipData.fundType || "Unknown"}. 
-          Opportunity details: ${scholarshipData.description}. 
-          Candidate requirements: ${scholarshipData.requirements || "Not specified"}.
+            Title: ${scholarshipData.title}
+            Level: ${(scholarshipData.degree_levels || scholarshipData.degreeLevels || []).join(", ")}
+            Location: ${scholarshipData.country || ""}
+            Type: ${scholarshipData.fundType || ""}
+            Description: ${description || ""}
+            Requirements: ${requirements || ""}
         `.replace(/\s+/g, ' ').trim();
 
-        return GeminiIngestionService.generateEmbedding(context);
+        // TASK_TYPE: RETRIEVAL_DOCUMENT
+        return GeminiIngestionService.generateEmbedding(
+            context
+        );
     }
 }

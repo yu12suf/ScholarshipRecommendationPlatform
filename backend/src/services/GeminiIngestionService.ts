@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI ,TaskType} from "@google/generative-ai";
 import configs from "../config/configs.js";
 import { ExtractedScholarshipData } from "../types/scholarshipTypes.js";
 
@@ -50,11 +50,17 @@ export class GeminiIngestionService {
      */
     static async generateEmbedding(text: string): Promise<number[]> {
         const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+        const result = await model.embedContent({
+            content: { 
+                role: "user", 
+                parts: [{ text: text }] 
+            },
+            taskType: TaskType.SEMANTIC_SIMILARITY,
+        }); 
 
-        return this.retryWithBackoff(async () => {
-            const result = await model.embedContent(text.substring(0, 2048)); // Embeddings often have finding limits
-            return result.embedding.values;
-        }, "Generate Embedding");
+        return  result.embedding.values;
+
+       
     }
 
     /**
