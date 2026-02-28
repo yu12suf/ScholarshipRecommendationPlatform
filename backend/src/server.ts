@@ -5,6 +5,7 @@ import configs from "./config/configs.js";
 
 import { startScholarshipCron } from "./automation/scholarshipCron.js";
 import { seedScholarshipSources } from "./scripts/seedScholarships.js";
+import { seedTestData} from "./scripts/seedsampleactuallscholarship.js";
 
 async function start() {
   console.log("Initializing server...");
@@ -27,6 +28,7 @@ async function start() {
     // Initialize Scholarship Ingestion System
     await seedScholarshipSources();
     startScholarshipCron();
+    // seedTestData();
 
   } catch (err) {
     console.error("Failed to connect to database:", err);

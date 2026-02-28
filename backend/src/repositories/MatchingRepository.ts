@@ -14,18 +14,18 @@ export class MatchingRepository {
         // 2. Student's academicStatus must be in scholarship.degree_levels JSON array
         const whereConditions: any[] = [];
 
-        if (student.countryInterest) {
-            whereConditions.push(
-                Sequelize.literal(`country = '${student.countryInterest.replace(/'/g, "''")}'`)
-            );
-        }
+        // if (student.countryInterest) {
+        //     whereConditions.push(
+        //         Sequelize.literal(`country = '${student.countryInterest.replace(/'/g, "''")}'`)
+        //     );
+        // }
 
-        if (student.academicStatus) {
-            // Match if degree_levels contains the status OR if degree_levels is NULL (not yet tagged)
-            whereConditions.push(
-                Sequelize.literal(`(degree_levels @> '["${student.academicStatus.replace(/"/g, '')}"]'::jsonb OR degree_levels IS NULL)`)
-            );
-        }
+        // if (student.academicStatus) {
+        //     // Match if degree_levels contains the status OR if degree_levels is NULL (not yet tagged)
+        //     whereConditions.push(
+        //         Sequelize.literal(`(degree_levels @> '["${student.academicStatus.replace(/"/g, '')}"]'::jsonb OR degree_levels IS NULL)`)
+        //     );
+        // }
 
         console.log(`[MatchingRepository] Debug - Student: countryInterest=${student.countryInterest}, academicStatus=${student.academicStatus}`);
         console.log(`[MatchingRepository] Debug - Where conditions count: ${whereConditions.length}`);
@@ -41,17 +41,16 @@ export class MatchingRepository {
                 ? { [Op.and]: whereConditions } as any
                 : {},
             attributes: [
-                'id', 'title', 'description', 'amount', 'deadline',
-                'fundType', 'degree_levels', 'country', 'originalUrl',
+                'fundType', 'degree_levels', 'country', 'requirements','description','title',
                 [
-                    Sequelize.literal(`(1 - (embedding <=> '${vectorStr}'::vector)) * 100`),
+                    Sequelize.literal(`(1 - (embedding <=> '${vectorStr}'::halfvec(3072))) * 100`),
                     'match_score'
                 ]
             ],
             order: [
-                Sequelize.literal(`embedding <=> '${vectorStr}'::vector ASC`)
+                Sequelize.literal(`embedding <=> '${vectorStr}'::halfvec(3072) ASC`)
             ],
-            limit: 5,
+            limit: 10,
             raw: true
         });
 

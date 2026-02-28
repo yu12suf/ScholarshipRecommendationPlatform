@@ -100,7 +100,7 @@ export class Scholarship extends Model {
     // Note: We use DataType.ARRAY(DataType.FLOAT) for Sequelize to handle the array format.
     // The actual column type in Postgres is vector(768).
     @Column({
-        type: 'Vector(3072)',
+        type: 'HALFVEC(3072)'   ,
         allowNull: true,
     })
     declare embedding: any;

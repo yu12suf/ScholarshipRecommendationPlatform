@@ -3,7 +3,7 @@ import { ScholarshipDiscoveryService } from "../services/ScholarshipDiscoverySer
 
 export const startScholarshipCron = () => {
     // Schedule task to run every 5 minutes for testing
-    // "*/5 * * * *" means every 5th minute
+    // " * * * *" means every 5th minute
     
     cron.schedule("0 */6 * * *", async () => {
         console.log("Running scheduled scholarship discovery...");
