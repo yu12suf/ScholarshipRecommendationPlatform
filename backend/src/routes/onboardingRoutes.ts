@@ -25,4 +25,5 @@ router.post("/verify-identity", authenticate, OnboardingController.verifyIdentit
  */
 router.put("/update-profile", authenticate, OnboardingController.updateProfile);
 
+
 export default router;

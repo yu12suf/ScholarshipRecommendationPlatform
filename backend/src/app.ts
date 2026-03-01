@@ -40,6 +40,7 @@ app.use(
 app.use("/api/auth", routes.authRouter);
 app.use("/api/user", routes.userRouter);
 app.use("/api/onboarding", routes.onboardingRouter);
+app.use("/api/scholarships", routes.scholarshipRouter);
 
 // Health Check
 app.get("/health", (req, res) => {

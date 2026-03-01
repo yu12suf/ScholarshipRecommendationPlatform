@@ -5,6 +5,7 @@ import { UserRole } from "../types/userTypes.js";
 import { AIService } from "./AIService.js";
 import { IdentityService } from "./IdentityService.js";
 import { FileService } from "./FileService.js";
+import { VectorService } from "./VectorService.js";
 
 export class OnboardingService {
     /**
@@ -68,12 +69,28 @@ export class OnboardingService {
         if (!instance) throw new Error(`${user.role} record not found for user`);
 
         if (user.role === UserRole.STUDENT) {
-            await repository.update(userId, {
+            const updatedStudent = await repository.update(userId, {
                 calculatedGpa: updateData.calculatedGpa ?? null,
                 academicHistory: updateData.academicHistory ? JSON.stringify(updateData.academicHistory) : "[]",
                 studyPreferences: updateData.studyPreferences || "",
+                intakeSeason: updateData.intakeSeason || null,
+                fundingRequirement: updateData.fundingRequirement || null,
+                ieltsScore: updateData.ieltsScore || null,
+                toeflScore: updateData.toeflScore || null,
+                duolingoScore: updateData.duolingoScore || null,
+                gender: updateData.gender || null,
+                age: updateData.age || null,
+                workExperience: updateData.workExperience || null,
+                countryInterest: updateData.countryInterest || null,
+                highSchool: updateData.highSchool || null,
+                academicStatus: updateData.academicStatus || null,
                 isOnboarded: true
             });
+
+            // Refresh embedding immediately after onboarding/update
+            if (updatedStudent) {
+                await VectorService.generateStudentEmbedding(updatedStudent);
+            }
         } else if (user.role === UserRole.COUNSELOR) {
             await repository.update(userId, {
                 bio: updateData.bio || "",
