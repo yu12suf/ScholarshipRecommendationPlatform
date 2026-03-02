@@ -3,11 +3,12 @@ import { connectSequelize } from "./config/sequelize.js";
 import configs from "./config/configs.js";
 // import { createTables, seedAdminUser } from "./utils/databaseMigration.js"; // Migration is now handled by Sequelize sync or manual scripts
 
+// Scholarship automation imports
 import { startScholarshipCron } from "./automation/scholarshipCron.js";
 import { seedScholarshipSources } from "./scripts/seedScholarships.js";
 import { seedTestData} from "./scripts/seedsampleactuallscholarship.js";
 
-// Temporary unhandled rejection handler for debugging
+// Temporary: Global unhandled rejection handler for debugging
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
