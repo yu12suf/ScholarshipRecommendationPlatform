@@ -13,6 +13,15 @@ export interface UpdateCounselorDto {
     yearsOfExperience?: number;
 }
 
+// DTO for creating a review
+export interface CreateReviewDto {
+    bookingId: number;
+    studentId: number;
+    counselorId: number;
+    rating: number;
+    comment?: string;
+}
+
 export interface CredentialDto {
     credentialType: string;
     fileUrl?: string;

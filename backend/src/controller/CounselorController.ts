@@ -6,6 +6,7 @@ import {
     CreateSlotDto,
     UpdateSlotDto,
     BookingStatusDto,
+    CreateReviewDto,  // <-- import added
 } from '../types/counselorTypes.js';
 
 export class CounselorController {
@@ -86,6 +87,26 @@ export class CounselorController {
     }
 
     /**
+     * POST /api/counselors/reviews
+     * Create a new review (student only)
+     */
+    static async createReview(req: Request, res: Response, next: NextFunction) {
+        try {
+            // Ensure only students can create reviews
+            if (req.user?.role !== 'student') {
+                return res.status(403).json({ success: false, error: 'Only students can create reviews' });
+            }
+
+            const dto: CreateReviewDto = req.body;
+            const review = await CounselorService.createReview(dto);
+            return res.status(201).json({ success: true, data: review });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return res.status(400).json({ success: false, error: message });
+        }
+    }
+
+    /**
      * PUT /api/counselors/profile
      * Update counselor profile
      */
@@ -137,37 +158,36 @@ export class CounselorController {
      */
 
     /**
-/**
- * POST /api/counselors/slots
- * Create availability slots
- */
-static async createSlots(req: Request, res: Response, next: NextFunction) {
-    console.log('🔥🔥🔥 CounselorController.createSlots REACHED!');
-    try {
-        const counselorId = (req as any).counselor?.id;
-        const { slots }: { slots: CreateSlotDto[] } = req.body;
-        console.log(`[createSlots] counselorId: ${counselorId}, slots:`, slots);
+     * POST /api/counselors/slots
+     * Create availability slots
+     */
+    static async createSlots(req: Request, res: Response, next: NextFunction) {
+        console.log('🔥🔥🔥 CounselorController.createSlots REACHED!');
+        try {
+            const counselorId = (req as any).counselor?.id;
+            const { slots }: { slots: CreateSlotDto[] } = req.body;
+            console.log(`[createSlots] counselorId: ${counselorId}, slots:`, slots);
 
-        if (!slots || !Array.isArray(slots) || slots.length === 0) {
-            console.log('[createSlots] invalid slots array');
-            return res.status(400).json({ success: false, error: 'Slots array is required' });
+            if (!slots || !Array.isArray(slots) || slots.length === 0) {
+                console.log('[createSlots] invalid slots array');
+                return res.status(400).json({ success: false, error: 'Slots array is required' });
+            }
+
+            console.log('[createSlots] calling service...');
+            const createdSlots = await CounselorService.createSlots(counselorId, slots);
+            console.log('[createSlots] service returned, sending response');
+
+            return res.status(201).json({
+                success: true,
+                message: `${createdSlots.length} slots created successfully`,
+                data: createdSlots,
+            });
+        } catch (error) {
+            console.error('[createSlots] ERROR:', error);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return res.status(400).json({ success: false, error: message });
         }
-
-        console.log('[createSlots] calling service...');
-        const createdSlots = await CounselorService.createSlots(counselorId, slots);
-        console.log('[createSlots] service returned, sending response');
-
-        return res.status(201).json({
-            success: true,
-            message: `${createdSlots.length} slots created successfully`,
-            data: createdSlots,
-        });
-    } catch (error) {
-        console.error('[createSlots] ERROR:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        return res.status(400).json({ success: false, error: message });
     }
-}
 
     /**
      * GET /api/counselors/slots
@@ -176,13 +196,14 @@ static async createSlots(req: Request, res: Response, next: NextFunction) {
     static async getSlots(req: Request, res: Response, next: NextFunction) {
         try {
             const counselorId = (req as any).counselor?.id;
-            const { fromDate, toDate, status } = req.query;
+            const { fromDate, toDate, status, includeStudent } = req.query;
 
             const slots = await CounselorService.getSlots(
                 counselorId,
                 fromDate as string | undefined,
                 toDate as string | undefined,
-                status as string | undefined
+                status as string | undefined,
+                includeStudent === 'true' // convert string to boolean
             );
 
             return res.status(200).json({

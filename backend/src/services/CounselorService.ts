@@ -19,6 +19,7 @@ import {
     StudentProgressResponse,
     ReviewResponse,
     ReviewsSummaryResponse,
+    CreateReviewDto,
 } from '../types/counselorTypes.js';
 
 export class CounselorService {
@@ -61,36 +62,36 @@ export class CounselorService {
         return this.formatCounselorResponse(counselor, user);
     }
 
-/**
- * Get current counselor's profile
- * GET /api/counselors/me
- */
-static async getMyProfile(userId: number): Promise<CounselorResponse> {
-    const counselor = await Counselor.findOne({ where: { userId } });
-    if (!counselor) {
-        throw new Error('Counselor profile not found');
+    /**
+     * Get current counselor's profile
+     * GET /api/counselors/me
+     */
+    static async getMyProfile(userId: number): Promise<CounselorResponse> {
+        const counselor = await Counselor.findOne({ where: { userId } });
+        if (!counselor) {
+            throw new Error('Counselor profile not found');
+        }
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            throw new Error('User not found for counselor');
+        }
+
+        // Calculate average rating
+        const reviews = await CounselorReview.findAll({
+            where: { counselorId: counselor.id }
+        });
+
+        const totalRatings = reviews.length;
+        const averageRating = totalRatings > 0
+            ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalRatings
+            : 0;
+
+        const response = this.formatCounselorResponse(counselor, user);
+        response.rating = Number(averageRating.toFixed(2));
+
+        return response;
     }
-
-    const user = await User.findByPk(userId);
-    if (!user) {
-        throw new Error('User not found for counselor');
-    }
-
-    // Calculate average rating
-    const reviews = await CounselorReview.findAll({
-        where: { counselorId: counselor.id }
-    });
-
-    const totalRatings = reviews.length;
-    const averageRating = totalRatings > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalRatings
-        : 0;
-
-    const response = this.formatCounselorResponse(counselor, user);
-    response.rating = Number(averageRating.toFixed(2));
-
-    return response;
-}
 
     /**
      * Get counselor's reviews
@@ -151,6 +152,36 @@ static async getMyProfile(userId: number): Promise<CounselorResponse> {
     }
 
     /**
+     * Create a new review (student endpoint)
+     * POST /api/counselors/reviews
+     */
+    static async createReview(data: CreateReviewDto): Promise<CounselorReview> {
+        const { bookingId, studentId, counselorId, rating, comment } = data;
+
+        // Optional: verify that the booking exists and belongs to the student/counselor
+        const booking = await Booking.findOne({
+            where: { id: bookingId, studentId, counselorId }
+        });
+        if (!booking) {
+            throw new Error('Booking not found or you are not authorized to review this session');
+        }
+
+        // Create the review
+        const review = await CounselorReview.create({
+            bookingId,
+            studentId,
+            counselorId,
+            rating,
+            comment: comment || null
+        });
+
+        // After creation, update the counselor's stored average rating
+        await this.updateCounselorRating(counselorId);
+
+        return review;
+    }
+
+    /**
      * Update counselor profile
      * PUT /api/counselors/profile
      */
@@ -204,126 +235,167 @@ static async getMyProfile(userId: number): Promise<CounselorResponse> {
     }
 
     /**
- * Create multiple availability slots
- * POST /api/counselors/slots
- */
-static async createSlots(counselorId: number, slots: CreateSlotDto[]): Promise<SlotResponse[]> {
-    console.log(`[createSlotsService] Starting with counselorId: ${counselorId}, ${slots.length} slots`);
-
-    // First, validate each slot individually and convert to Date objects
-    const slotObjects = slots.map((slot, index) => {
-        console.log(`[createSlotsService] Processing slot ${index + 1}:`, slot);
-        const startTime = new Date(slot.startTime);
-        const endTime = new Date(slot.endTime);
-
-        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-            throw new Error(`Invalid date format in slot ${index + 1}`);
-        }
-        if (endTime <= startTime) {
-            throw new Error(`Slot ${index + 1}: End time must be after start time`);
-        }
-        if (startTime < new Date()) {
-            throw new Error(`Slot ${index + 1}: Cannot create slots in the past`);
-        }
-        return { startTime, endTime };
-    });
-    console.log('[createSlotsService] All slots individually valid');
-
-    // Check for overlaps among the slots in the current batch
-    for (let i = 0; i < slotObjects.length; i++) {
-        for (let j = i + 1; j < slotObjects.length; j++) {
-            if (this.slotsOverlap(slotObjects[i]!, slotObjects[j]!)) {
-                throw new Error(`Slots ${i + 1} and ${j + 1} overlap with each other`);
-            }
-        }
-    }
-    console.log('[createSlotsService] No overlaps within batch');
-
-    const createdSlots: AvailabilitySlot[] = [];
-
-    for (const slot of slots) {
-        const startTime = new Date(slot.startTime);
-        const endTime = new Date(slot.endTime);
-
-        console.log(`[createSlotsService] Checking overlaps for slot: ${startTime.toISOString()} - ${endTime.toISOString()}`);
-        const overlap = await AvailabilitySlot.findOne({
-            where: {
-                counselorId,
-                status: { [Op.ne]: 'cancelled' },
-                [Op.or]: [
-                    {
-                        [Op.and]: [
-                            { startTime: { [Op.lte]: startTime } },
-                            { endTime: { [Op.gt]: startTime } }
-                        ]
-                    },
-                    {
-                        [Op.and]: [
-                            { startTime: { [Op.lt]: endTime } },
-                            { endTime: { [Op.gte]: endTime } }
-                        ]
-                    },
-                    {
-                        [Op.and]: [
-                            { startTime: { [Op.gte]: startTime } },
-                            { endTime: { [Op.lte]: endTime } }
-                        ]
-                    }
-                ]
-            }
-        });
-
-        if (overlap) {
-            throw new Error(`Slot overlaps with existing slot ID: ${overlap.id}`);
-        }
-        console.log('[createSlotsService] No overlap with existing slots, creating...');
-
-        const newSlot = await AvailabilitySlot.create({
-            counselorId,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            status: 'available',
-        });
-        console.log(`[createSlotsService] Created slot ID: ${newSlot.id}`);
-
-        createdSlots.push(newSlot);
-    }
-
-    console.log(`[createSlotsService] All ${createdSlots.length} slots created successfully`);
-    return createdSlots.map(slot => this.formatSlotResponse(slot));
-}
-
-    /**
-     * Get counselor's slots
-     * GET /api/counselors/slots
+     * Create multiple availability slots
+     * POST /api/counselors/slots
      */
-    static async getSlots(
-        counselorId: number,
-        fromDate?: string,
-        toDate?: string,
-        status?: string
-    ): Promise<SlotResponse[]> {
-        const whereClause: any = { counselorId };
+    static async createSlots(counselorId: number, slots: CreateSlotDto[]): Promise<SlotResponse[]> {
+        console.log(`[createSlotsService] Starting with counselorId: ${counselorId}, ${slots.length} slots`);
 
-        if (fromDate) {
-            whereClause.startTime = { [Op.gte]: new Date(fromDate) };
-        }
-        
-        if (toDate) {
-            whereClause.endTime = { [Op.lte]: new Date(toDate) };
-        }
+        // First, validate each slot individually and convert to Date objects
+        const slotObjects = slots.map((slot, index) => {
+            console.log(`[createSlotsService] Processing slot ${index + 1}:`, slot);
+            const startTime = new Date(slot.startTime);
+            const endTime = new Date(slot.endTime);
 
-        if (status && ['available', 'booked', 'cancelled'].includes(status)) {
-            whereClause.status = status;
-        }
-
-        const slots = await AvailabilitySlot.findAll({
-            where: whereClause,
-            order: [['startTime', 'ASC']] as Order
+            if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+                throw new Error(`Invalid date format in slot ${index + 1}`);
+            }
+            if (endTime <= startTime) {
+                throw new Error(`Slot ${index + 1}: End time must be after start time`);
+            }
+            if (startTime < new Date()) {
+                throw new Error(`Slot ${index + 1}: Cannot create slots in the past`);
+            }
+            return { startTime, endTime };
         });
+        console.log('[createSlotsService] All slots individually valid');
 
-        return slots.map(slot => this.formatSlotResponse(slot));
+        // Check for overlaps among the slots in the current batch
+        for (let i = 0; i < slotObjects.length; i++) {
+            for (let j = i + 1; j < slotObjects.length; j++) {
+                if (this.slotsOverlap(slotObjects[i]!, slotObjects[j]!)) {
+                    throw new Error(`Slots ${i + 1} and ${j + 1} overlap with each other`);
+                }
+            }
+        }
+        console.log('[createSlotsService] No overlaps within batch');
+
+        const createdSlots: AvailabilitySlot[] = [];
+
+        for (const slot of slots) {
+            const startTime = new Date(slot.startTime);
+            const endTime = new Date(slot.endTime);
+
+            console.log(`[createSlotsService] Checking overlaps for slot: ${startTime.toISOString()} - ${endTime.toISOString()}`);
+            const overlap = await AvailabilitySlot.findOne({
+                where: {
+                    counselorId,
+                    status: { [Op.ne]: 'cancelled' },
+                    [Op.or]: [
+                        {
+                            [Op.and]: [
+                                { startTime: { [Op.lte]: startTime } },
+                                { endTime: { [Op.gt]: startTime } }
+                            ]
+                        },
+                        {
+                            [Op.and]: [
+                                { startTime: { [Op.lt]: endTime } },
+                                { endTime: { [Op.gte]: endTime } }
+                            ]
+                        },
+                        {
+                            [Op.and]: [
+                                { startTime: { [Op.gte]: startTime } },
+                                { endTime: { [Op.lte]: endTime } }
+                            ]
+                        }
+                    ]
+                }
+            });
+
+            if (overlap) {
+                throw new Error(`Slot overlaps with existing slot ID: ${overlap.id}`);
+            }
+            console.log('[createSlotsService] No overlap with existing slots, creating...');
+
+            const newSlot = await AvailabilitySlot.create({
+                counselorId,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                status: 'available',
+            });
+            console.log(`[createSlotsService] Created slot ID: ${newSlot.id}`);
+
+            createdSlots.push(newSlot);
+        }
+
+        console.log(`[createSlotsService] All ${createdSlots.length} slots created successfully`);
+        return createdSlots.map(slot => this.formatSlotResponse(slot));
     }
+
+/**
+ * Get counselor's slots
+ * GET /api/counselors/slots
+ */
+static async getSlots(
+    counselorId: number,
+    fromDate?: string,
+    toDate?: string,
+    status?: string,
+    includeStudent?: boolean
+): Promise<any[]> {
+    console.log(`[getSlots] includeStudent: ${includeStudent}`);   // LOG 1
+    const whereClause: any = { counselorId };
+
+    if (fromDate) {
+        whereClause.startTime = { [Op.gte]: new Date(fromDate) };
+    }
+    
+    if (toDate) {
+        whereClause.endTime = { [Op.lte]: new Date(toDate) };
+    }
+
+    if (status && ['available', 'booked', 'cancelled'].includes(status)) {
+        whereClause.status = status;
+    }
+
+    const slots = await AvailabilitySlot.findAll({
+        where: whereClause,
+        order: [['startTime', 'ASC']] as Order
+    });
+
+    // If includeStudent is true, fetch student info for booked slots
+    if (includeStudent) {
+        console.log('[getSlots] includeStudent is true, fetching student info...'); // LOG 2
+        const slotsWithStudent = await Promise.all(slots.map(async (slot) => {
+            const slotJson = slot.toJSON();
+            if (slot.status === 'booked') {
+                console.log(`[getSlots] Slot ${slot.id} is booked, looking for booking...`); // LOG 3
+                const booking = await Booking.findOne({
+                    where: { slotId: slot.id }
+                });
+                if (booking) {
+                    console.log('[getSlots] Booking found:', booking.id); // LOG 4
+                    // Fetch the student using the studentId from the booking
+                    const student = await Student.findByPk(booking.studentId);
+                    if (student) {
+                        console.log('[getSlots] Student found, userId:', student.userId);
+                        // Fetch the user data separately
+                        const user = await User.findByPk(student.userId, {
+                            attributes: ['name', 'email']
+                        });
+                        if (user) {
+                            // Attach student info to the slot
+                            (slotJson as any).student = {
+                                name: user.name,
+                                email: user.email
+                            };
+                        }
+                    } else {
+                        console.log('[getSlots] No student found for booking');
+                    }
+                } else {
+                    console.log('[getSlots] No booking found for this slot'); // LOG 5
+                }
+            }
+            return slotJson;
+        }));
+        return slotsWithStudent;
+    }
+
+    return slots.map(slot => this.formatSlotResponse(slot));
+}
 
     /**
      * Update a specific slot
@@ -521,56 +593,56 @@ static async createSlots(counselorId: number, slots: CreateSlotDto[]): Promise<S
      */
 
     /**
- * Get upcoming bookings
- * GET /api/counselors/bookings/upcoming
- */
-static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]> {
-    const now = new Date();
+     * Get upcoming bookings
+     * GET /api/counselors/bookings/upcoming
+     */
+    static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]> {
+        const now = new Date();
 
-    // Fetch bookings without including slot
-    const bookings = await Booking.findAll({
-        where: {
-            counselorId,
-            status: { [Op.in]: ['confirmed', 'started'] },
-        },
-        include: [
-            {
-                model: Student,
-                as: 'student',
-                include: [
-                    {
-                        model: User,
-                        as: 'user',
-                        attributes: ['id', 'name', 'email']
-                    }
-                ]
+        // Fetch bookings without including slot
+        const bookings = await Booking.findAll({
+            where: {
+                counselorId,
+                status: { [Op.in]: ['confirmed', 'started'] },
+            },
+            include: [
+                {
+                    model: Student,
+                    as: 'student',
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email']
+                        }
+                    ]
+                }
+            ],
+            order: [['createdAt', 'ASC']] as Order
+        });
+
+        const upcomingBookings: Booking[] = [];
+
+        for (const booking of bookings) {
+            // Manually fetch the associated slot
+            const slot = await AvailabilitySlot.findByPk(booking.slotId);
+            if (slot && new Date(slot.startTime) > now) {
+                // Attach the slot to the booking object (for later use)
+                (booking as any).slot = slot;
+                upcomingBookings.push(booking);
             }
-        ],
-        order: [['createdAt', 'ASC']] as Order
-    });
-
-    const upcomingBookings: Booking[] = [];
-
-    for (const booking of bookings) {
-        // Manually fetch the associated slot
-        const slot = await AvailabilitySlot.findByPk(booking.slotId);
-        if (slot && new Date(slot.startTime) > now) {
-            // Attach the slot to the booking object (for later use)
-            (booking as any).slot = slot;
-            upcomingBookings.push(booking);
         }
+
+        return upcomingBookings.map(booking => {
+            const response = this.formatBookingResponse(booking);
+            const slot = (booking as any).slot;
+            if (slot) {
+                const timeUntilStart = new Date(slot.startTime).getTime() - now.getTime();
+                (response as any).timeUntilStart = Math.floor(timeUntilStart / (1000 * 60)); // in minutes
+            }
+            return response;
+        });
     }
-
-    return upcomingBookings.map(booking => {
-        const response = this.formatBookingResponse(booking);
-        const slot = (booking as any).slot;
-        if (slot) {
-            const timeUntilStart = new Date(slot.startTime).getTime() - now.getTime();
-            (response as any).timeUntilStart = Math.floor(timeUntilStart / (1000 * 60)); // in minutes
-        }
-        return response;
-    });
-}
 
     /**
      * Update booking status
@@ -702,7 +774,7 @@ static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]
         return { meetingLink };
     }
 
-    // Helper methods
+    // ==================== Helper Methods ====================
 
     private static formatCounselorResponse(counselor: Counselor, user: User | null): CounselorResponse {
         if (!user) {
@@ -750,5 +822,26 @@ static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]
             completedAt: booking.completedAt,
             createdAt: booking.createdAt,
         };
+    }
+
+    /**
+     * Update the stored average rating for a counselor based on all their reviews.
+     * Should be called whenever a review is created, updated, or deleted.
+     */
+    private static async updateCounselorRating(counselorId: number): Promise<void> {
+        const reviews = await CounselorReview.findAll({
+            where: { counselorId },
+            attributes: ['rating']
+        });
+
+        const totalRatings = reviews.length;
+        const averageRating = totalRatings > 0
+            ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalRatings
+            : 0;
+
+        await Counselor.update(
+            { rating: Number(averageRating.toFixed(2)) },
+            { where: { id: counselorId } }
+        );
     }
 }
