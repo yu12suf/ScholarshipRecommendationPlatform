@@ -7,6 +7,8 @@ import { Counselor } from "../models/Counselor.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
 import { Booking } from "../models/Booking.js";
 import { CounselorReview } from "../models/CounselorReview.js";
+import { ScholarshipSource } from "../models/ScholarshipSource.js";
+import { Scholarship } from "../models/Scholarship.js";
 import configs from "./configs.js";
 
 console.log('DB_PASSWORD from env:', process.env.DB_PASSWORD ? '****' : 'NOT SET');
@@ -37,14 +39,31 @@ const dbOptions: SequelizeOptions = {
 export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
-    timezone: "+00:00", // Additional safety: ensure Sequelize sessions use UTC
-    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, AvailabilitySlot, Booking, CounselorReview],
+    timezone: "+00:00", // Force UTC to avoid timezone issues
+    models: [
+        User,
+        RefreshToken,
+        PasswordResetToken,
+        Student,
+        Counselor,
+        AvailabilitySlot,
+        Booking,
+        CounselorReview,
+        ScholarshipSource,
+        Scholarship
+    ],
 } as SequelizeOptions);
 
 export const connectSequelize = async () => {
     try {
         await sequelize.authenticate();
         console.log("Sequelize connected successfully");
+
+        // Sync models with database (creates tables if missing)
+        // Note: In production, migrations are preferred.
+        await sequelize.sync({ alter: true });
+        console.log("Database models synchronized");
+
     } catch (error) {
         console.error("Sequelize connection error:", error);
         process.exit(1);
