@@ -117,6 +117,7 @@ export class Student extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => User)
+    // Association with explicit alias to match service queries
+    @BelongsTo(() => User, { as: 'user' })
     user!: User;
 }

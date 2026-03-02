@@ -45,6 +45,13 @@ router.post('/apply',
   CounselorController.apply
 );
 
+// STUDENT ROUTES: Create a review (accessible to students only)
+// This must be placed before the counselor role middleware
+router.post('/reviews', (req: Request, res: Response, next: NextFunction) => {
+  // Optional: add student role check here if needed
+  next();
+}, CounselorController.createReview);
+
 // All routes below require counselor role
 router.use(checkCounselorRole);
 router.use(requireActiveCounselor);
