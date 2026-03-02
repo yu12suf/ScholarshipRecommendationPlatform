@@ -19,8 +19,7 @@ const dbOptions: SequelizeOptions = {
     username: configs.DB_USER,
     password: configs.DB_PASSWORD,
     database: configs.DB_NAME,
-    //logging: false, // Set to console.log to see SQL queries
-    logging: console.log,
+    logging: console.log, // Set to console.log to see SQL queries
 
     dialectOptions: {
         // Force the connection to use UTC for all date/time operations
