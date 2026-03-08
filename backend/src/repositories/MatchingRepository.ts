@@ -1,4 +1,5 @@
 import { Sequelize } from "sequelize-typescript";
+import { hasVectorExtension } from "../config/sequelize.js";
 import { Scholarship } from "../models/Scholarship.js";
 import { Student } from "../models/Student.js";
 import { MatchedScholarship } from "../types/scholarshipTypes.js";
@@ -36,30 +37,44 @@ export class MatchingRepository {
         const withEmbedding = await Scholarship.count({ where: Sequelize.literal('embedding IS NOT NULL') as any });
         console.log(`[MatchingRepository] Debug - Total scholarships: ${totalCount}, with embeddings: ${withEmbedding}`);
 
-        const matches = await Scholarship.findAll({
-            where: whereConditions.length > 0
-                ? { [Op.and]: whereConditions } as any
-                : {},
-            attributes: [
-                'fundType', 'degree_levels', 'country', 'requirements','description','title',
-                [
-                    Sequelize.literal(`(1 - (embedding <=> '${vectorStr}'::halfvec(3072))) * 100`),
-                    'match_score'
-                ]
-            ],
-            order: [
-                Sequelize.literal(`embedding <=> '${vectorStr}'::halfvec(3072) ASC`)
-            ],
-            limit: 10,
-            raw: true
-        });
-
-        console.log(`[MatchingRepository] Debug - Matches found: ${matches.length}`);
-
-        // Cast to MatchedScholarship interface
-        return matches.map(m => ({
-            ...m,
-            match_score: parseFloat((m as any).match_score?.toString() || "0")
-        })) as unknown as MatchedScholarship[];
+        if (hasVectorExtension) {
+            const matches = await Scholarship.findAll({
+                where: whereConditions.length > 0
+                    ? { [Op.and]: whereConditions } as any
+                    : {},
+                attributes: [
+                    'fundType', 'degree_levels', 'country', 'requirements', 'description', 'title',
+                    [
+                        Sequelize.literal(`(1 - (embedding <=> '${vectorStr}'::halfvec(3072))) * 100`),
+                        'match_score'
+                    ]
+                ],
+                order: [
+                    Sequelize.literal(`embedding <=> '${vectorStr}'::halfvec(3072) ASC`)
+                ],
+                limit: 10,
+                raw: true
+            });
+            console.log(`[MatchingRepository] Debug - Vector matches found: ${matches.length}`);
+            return matches.map(m => ({
+                ...m,
+                match_score: parseFloat((m as any).match_score?.toString() || "0")
+            })) as unknown as MatchedScholarship[];
+        } else {
+            console.warn(`[MatchingRepository] Fallback - pgvector not found. Using simple keyword-free fetch.`);
+            const matches = await Scholarship.findAll({
+                where: whereConditions.length > 0
+                    ? { [Op.and]: whereConditions } as any
+                    : {},
+                attributes: [
+                    'fundType', 'degree_levels', 'country', 'requirements', 'description', 'title',
+                    [Sequelize.literal('0'), 'match_score']
+                ],
+                limit: 10,
+                raw: true
+            });
+            console.log(`[MatchingRepository] Debug - Fallback matches found: ${matches.length}`);
+            return matches as any;
+        }
     }
 }

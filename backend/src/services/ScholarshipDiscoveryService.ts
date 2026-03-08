@@ -151,7 +151,7 @@ export class ScholarshipDiscoveryService {
             // Embedding
             const vector = await VectorService.generateScholarshipEmbedding(scholarshipData);
             console.log("DEBUG: Vector Length is:", vector.length);
-            scholarshipData.embedding = `[${vector.join(',')}]`; 
+            scholarshipData.embedding = vector; 
             if (existingScholarship?.id) {
                 scholarshipData.id = existingScholarship.id;
             }
