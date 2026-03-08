@@ -41,6 +41,14 @@ export const connectSequelize = async () => {
         await sequelize.authenticate();
         console.log("Sequelize connected successfully");
 
+        // Enable pgvector extension
+        try {
+            await sequelize.query('CREATE EXTENSION IF NOT EXISTS vector;');
+            console.log("pgvector extension ensured");
+        } catch (extensionError) {
+            console.warn("⚠️ Warning: Failed to enable pgvector extension. Ensure it is installed on your PostgreSQL system.");
+        }
+
         // Sync models with database (creates tables if missing)
         // Note: In production, migrations are preferred.
         await sequelize.sync({});

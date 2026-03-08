@@ -96,11 +96,13 @@ export class Scholarship extends Model {
     })
     declare contentHash: string | null;
 
-    // pgvector column: vector(768)
+    // pgvector column: vector(3072)
     // Note: We use DataType.ARRAY(DataType.FLOAT) for Sequelize to handle the array format.
-    // The actual column type in Postgres is vector(768).
+    // The actual column type in Postgres is vector(3072).
+    // Note: We use DataType.JSONB for maximum compatibility without pgvector extension.
+    // If pgvector is installed, this can be changed to 'VECTOR(3072)' for optimized search.
     @Column({
-        type: 'HALFVEC(3072)'   ,
+        type: DataType.JSONB,
         allowNull: true,
     })
     declare embedding: any;
