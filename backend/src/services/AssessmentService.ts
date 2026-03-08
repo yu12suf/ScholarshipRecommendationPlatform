@@ -6,6 +6,7 @@ import configs from "../config/configs.js";
 import { redisConnection, assessmentQueue } from "../config/redis.js";
 import { AssessmentResult } from "../models/AssessmentResult.js"; // Keeping for type if needed, or remove if unused
 import { AssessmentRepository } from "../repositories/AssessmentRepository.js";
+import { LearningPathService } from "./LearningPathService.js";
 
 const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.5-flash",
@@ -114,13 +115,22 @@ export class AssessmentService {
                - Speaking: (If audio) Analyze Fluency, Pronunciation, and Content.
             2. ADAPTIVE MAPPING:
                - Identify "Weakness Tags" (e.g., "Present_Perfect", "Lexical_Diversity").
+            3. INSTRUCTIONAL NOTES:
+               - For EACH skill (Reading, Listening, Writing, Speaking), generate a concise "Actionable Study Note".
+               - The note should be encouraging and provide a specific strategy or resource type to help the student improve their understanding of that skill.based on the   weakness of the user.
             
             Return JSON in the following schema:
             {{
               "evaluation": {{
                 "overall_band": 0.0,
                 "subscores": {{ "reading": 0, "listening": 0, "writing": 0, "speaking": 0 }},
-                "feedback_report": "string",
+                "feedback_report": "Overall feedback summary",
+                "section_notes": {{ 
+                  "reading": "Actionable instructional note for reading", 
+                  "listening": "Actionable instructional note for listening", 
+                  "writing": "Actionable instructional note for writing", 
+                  "speaking": "Actionable instructional note for speaking" 
+                }},
                 "adaptive_learning_tags": []
               }}
             }}
@@ -160,8 +170,11 @@ export class AssessmentService {
                 evaluation,
                 overallBand
             });
+
+            // Trigger Learning Path Generation
+            await LearningPathService.generateForStudent(studentId, evaluation);
         } catch (dbError: any) {
-            console.error("❌ Failed to store assessment result in DB:", dbError.message);
+            console.error("❌ Failed to store assessment result or generate learning path:", dbError.message);
             console.error(dbError);
         }
 
