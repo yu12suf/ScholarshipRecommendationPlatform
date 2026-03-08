@@ -30,10 +30,8 @@ export class VectorService {
             
             );
             
-            const vectorString = `[${vector.join(',')}]`;
-
             await student.update({
-                embedding: vectorString,
+                embedding: vector,
                 profileHash: currentHash
             });
         }

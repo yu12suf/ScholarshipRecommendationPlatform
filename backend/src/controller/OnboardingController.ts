@@ -84,7 +84,16 @@ export class OnboardingController {
     static async updateProfile(req: Request, res: Response): Promise<void> {
         try {
             const userId = (req as any).user?.id;
-            const result = await OnboardingService.updateProfile(userId, req.body);
+            
+            // Extract files if available
+            const files: { [key: string]: UploadedFile } = {};
+            if (req.files) {
+                if (req.files.cv) files.cv = (Array.isArray(req.files.cv) ? req.files.cv[0] : req.files.cv) as UploadedFile;
+                if (req.files.transcript) files.transcript = (Array.isArray(req.files.transcript) ? req.files.transcript[0] : req.files.transcript) as UploadedFile;
+                if (req.files.certificate) files.certificate = (Array.isArray(req.files.certificate) ? req.files.certificate[0] : req.files.certificate) as UploadedFile;
+            }
+
+            const result = await OnboardingService.updateProfile(userId, req.body, files);
 
             res.status(200).json({
                 message: "Profile updated and onboarding complete",

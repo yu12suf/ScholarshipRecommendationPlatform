@@ -36,6 +36,8 @@ export const sequelize = new Sequelize({
     models: [User, RefreshToken, PasswordResetToken, Student, Counselor, ScholarshipSource, Scholarship, AssessmentResult], // Add all models here
 } as SequelizeOptions);
 
+export let hasVectorExtension = false;
+
 export const connectSequelize = async () => {
     try {
         await sequelize.authenticate();
@@ -45,13 +47,15 @@ export const connectSequelize = async () => {
         try {
             await sequelize.query('CREATE EXTENSION IF NOT EXISTS vector;');
             console.log("pgvector extension ensured");
+            hasVectorExtension = true;
         } catch (extensionError) {
             console.warn("⚠️ Warning: Failed to enable pgvector extension. Ensure it is installed on your PostgreSQL system.");
+            hasVectorExtension = false;
         }
 
         // Sync models with database (creates tables if missing)
         // Note: In production, migrations are preferred.
-        await sequelize.sync({});
+        await sequelize.sync({ alter: true });
         console.log("Database models synchronized");
 
     } catch (error) {
