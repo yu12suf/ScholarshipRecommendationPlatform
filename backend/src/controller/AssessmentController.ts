@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AssessmentService } from "../services/AssessmentService.js";
+import { StudentRepository } from "../repositories/StudentRepository.js";
 
 export class AssessmentController {
     static async generate(req: Request, res: Response, next: NextFunction) {
@@ -33,7 +34,13 @@ export class AssessmentController {
                 }
             }
 
-            const result = await AssessmentService.submitAssessment(test_id, responses, audioBuffer);
+            const student = await StudentRepository.findByUserId(req.user!.id);
+            if (!student) {
+                res.status(404).json({ error: "Student profile not found" });
+                return;
+            }
+
+            const result = await AssessmentService.submitAssessment(test_id, responses, student.id, audioBuffer);
             res.json(result);
         } catch (error) {
             next(error);
@@ -57,6 +64,26 @@ export class AssessmentController {
             }
 
             res.json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async getProgress(req: Request, res: Response, next: NextFunction) {
+        try {
+            const examType = req.query.examType as string | undefined;
+            const student = await StudentRepository.findByUserId(req.user!.id);
+            if (!student) {
+                res.status(404).json({ error: "Student profile not found" });
+                return;
+            }
+            console.log(student.id);
+            console.log(examType);
+            const progress = await AssessmentService.getStudentProgress(student.id as number, examType as string);
+            res.json({
+                status: "success",
+                data: progress
+            });
         } catch (error) {
             next(error);
         }

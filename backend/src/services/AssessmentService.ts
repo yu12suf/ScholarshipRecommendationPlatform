@@ -4,6 +4,8 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { v4 as uuidv4 } from "uuid";
 import configs from "../config/configs.js";
 import { redisConnection, assessmentQueue } from "../config/redis.js";
+import { AssessmentResult } from "../models/AssessmentResult.js"; // Keeping for type if needed, or remove if unused
+import { AssessmentRepository } from "../repositories/AssessmentRepository.js";
 
 const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.5-flash",
@@ -74,7 +76,7 @@ export class AssessmentService {
         return sanitized;
     }
 
-    static async submitAssessment(testId: string, responses: any, audioBuffer?: Buffer) {
+    static async submitAssessment(testId: string, responses: any, studentId: number, audioBuffer?: Buffer) {
         // Fetch blueprint from Redis
         const blueprintData = await redisConnection.get(`test_id:${testId}`);
         if (!blueprintData) {
@@ -85,6 +87,7 @@ export class AssessmentService {
             testId,
             blueprint: JSON.parse(blueprintData),
             responses,
+            studentId,
             audioBuffer: audioBuffer ? audioBuffer.toString("base64") : null
         }, {
             jobId: testId,
@@ -95,7 +98,7 @@ export class AssessmentService {
         return { status: "submitted", jobId: job.id, testId };
     }
 
-    static async evaluateAssessment(testId: string, blueprint: any, responses: any, audioBase64?: string) {
+    static async evaluateAssessment(testId: string, blueprint: any, responses: any, studentId: number, audioBase64?: string) {
         // ... (existing code omitted for brevity but actually kept in full
         const prompt = PromptTemplate.fromTemplate(`
             Role: English Proficiency Engine
@@ -143,10 +146,31 @@ export class AssessmentService {
         // Store result in Redis
         await redisConnection.set(`evaluation:${testId}`, JSON.stringify(evaluation), "EX", 7200);
 
+        // Persistent storage for student progress
+        try {
+            const overallBand = evaluation.evaluation?.overall_band || 0;
+            const examType = blueprint.data?.exam_summary?.type || "Unknown";
+            const difficulty = blueprint.data?.exam_summary?.difficulty || "Unknown";
+
+            await AssessmentRepository.create({
+                studentId,
+                testId,
+                examType,
+                difficulty,
+                evaluation,
+                overallBand
+            });
+        } catch (dbError: any) {
+            console.error("❌ Failed to store assessment result in DB:", dbError.message);
+            console.error(dbError);
+        }
+
         return evaluation;
     }
 
     static async getAssessmentResult(testId: string) {
+        // ... (existing code)
+        // Note: keeping existing logic for fetching from Redis/Queue for immediate result
         // Try explicit Redis key first
         const storedResult = await redisConnection.get(`evaluation:${testId}`);
         if (storedResult) {
@@ -175,5 +199,9 @@ export class AssessmentService {
 
         // Return the current state (waiting or active) instead of null
         return { status: state };
+    }
+
+    static async getStudentProgress(studentId: number, examType?: string) {
+        return await AssessmentRepository.getStudentProgress(studentId, examType);
     }
 }

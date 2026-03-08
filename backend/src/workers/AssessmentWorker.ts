@@ -4,13 +4,13 @@ import { AssessmentService } from "../services/AssessmentService.js";
 
 export const assessmentWorker = new Worker(
     "assessment-queue",
-    
+
     async (job) => {
-        const { testId, blueprint, responses, audioBuffer } = job.data;
+        const { testId, blueprint, responses, studentId, audioBuffer } = job.data;
         console.log(`Processing evaluation for test_id: ${testId}`);
 
         try {
-            const evaluation = await AssessmentService.evaluateAssessment(testId, blueprint, responses, audioBuffer);
+            const evaluation = await AssessmentService.evaluateAssessment(testId, blueprint, responses, studentId, audioBuffer);
 
             console.log(`✅ Evaluation complete for test_id: ${testId}`);
             return evaluation;

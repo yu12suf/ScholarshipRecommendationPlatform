@@ -11,5 +11,6 @@ assessmentRouter.use(authenticate, authorize(UserRole.STUDENT));
 assessmentRouter.post("/generate", AssessmentController.generate);
 assessmentRouter.post("/submit", AssessmentController.submit);
 assessmentRouter.get("/result/:test_id", AssessmentController.getResult);
+assessmentRouter.get("/progress", AssessmentController.getProgress);
 
 export default assessmentRouter;
