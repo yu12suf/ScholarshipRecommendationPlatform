@@ -4,10 +4,9 @@ import configs from "./configs.js";
 
 // Standard options for ioredis (used by the Express app)
 const standardRedisOptions: RedisOptions = {
-  host: "redis-13576.c99.us-east-1-4.ec2.cloud.redislabs.com",
-  port: 13576,
-  username: "default",
-  password: "XdorEUN6ODNJZafTq78ukwUpfd9Hag37",
+  host: configs.REDIS_HOST,
+  port: configs.REDIS_PORT,
+  password: configs.REDIS_PASSWORD || undefined,
   maxRetriesPerRequest: 5, // Fails gracefully instead of hanging forever
 };
 
