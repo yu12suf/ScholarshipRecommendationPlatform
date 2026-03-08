@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #1a365d;
+  --color-brand-secondary: #d4af37;
+  --color-brand-accent: #2c7a7b;
+  --color-brand-gold: #f6e05e;
+  
+  --font-serif: var(--font-serif), "Lora", Georgia, serif;
+}
+
+:root {
+  --background: #fdfdfd;
+  --foreground: #0f172a; /* Darker slate-900 */
+  
+  --card: #ffffff;
+  --card-foreground: #1a202c;
+  
+  --popover: #ffffff;
+  --popover-foreground: #1a202c;
+  
+  --primary: #1a365d;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #d4af37;
+  --secondary-foreground: #ffffff;
+  
+  --muted: #f7fafc;
+  --muted-foreground: #475569; /* Darker slate-600 */
+  
+  --accent: #2c7a7b;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #e53e3e;
+  --destructive-foreground: #ffffff;
+  
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #1a365d;
+  
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: #1a202c;
+  --foreground: #f7fafc;
+  
+  --card: #2d3748;
+  --card-foreground: #f7fafc;
+  
+  --popover: #2d3748;
+  --popover-foreground: #f7fafc;
+  
+  --primary: #2b6cb0;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #d4af37;
+  --secondary-foreground: #ffffff;
+  
+  --muted: #4a5568;
+  --muted-foreground: #a0aec0;
+  
+  --accent: #38b2ac;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #fc8181;
+  --destructive-foreground: #ffffff;
+  
+  --border: #4a5568;
+  --input: #4a5568;
+  --ring: #2b6cb0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-serif);
+}
+
+/* Premium scholarship gradients */
+.scholarship-gradient {
+  background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #d4af37 0%, #f6e05e 100%);
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
