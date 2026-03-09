@@ -6,8 +6,17 @@ import {
     CreateSlotDto,
     UpdateSlotDto,
     BookingStatusDto,
-    CreateReviewDto,  // <-- import added
+    CreateReviewDto,
 } from '../types/counselorTypes.js';
+import { validateRequest } from '../utils/validationHelper.js';
+import {
+    applyAsCounselorValidation,
+    createSlotsValidation,
+    updateSlotValidation,
+    updateBookingStatusValidation,
+    updateCounselorProfileValidation,
+    createReviewValidation,
+} from '../validators/validationSchemas.js';
 
 export class CounselorController {
     /**
@@ -22,6 +31,9 @@ export class CounselorController {
     console.log('🔥🔥🔥 CounselorController.apply REACHED!', req.method, req.url);
     console.log(`[apply] Received request body:`, req.body);
     try {
+        // Validate request body
+        await validateRequest(req, applyAsCounselorValidation);
+
         const userId = req.user!.id;
         console.log(`[apply] User ID from token: ${userId}`);
         const dto: CreateCounselorDto = req.body;
@@ -37,6 +49,9 @@ export class CounselorController {
         });
     } catch (error) {
         console.error(`[apply] ERROR:`, error);
+        if ((error as any).status === 400) {
+            return res.status(400).json({ success: false, errors: (error as any).errors });
+        }
         const message = error instanceof Error ? error.message : 'Unknown error';
         return res.status(400).json({ success: false, error: message });
     }
@@ -92,6 +107,9 @@ export class CounselorController {
      */
     static async createReview(req: Request, res: Response, next: NextFunction) {
         try {
+            // Validate request body
+            await validateRequest(req, createReviewValidation);
+
             // Ensure only students can create reviews
             if (req.user?.role !== 'student') {
                 return res.status(403).json({ success: false, error: 'Only students can create reviews' });
@@ -101,6 +119,9 @@ export class CounselorController {
             const review = await CounselorService.createReview(dto);
             return res.status(201).json({ success: true, data: review });
         } catch (error) {
+            if ((error as any).status === 400) {
+                return res.status(400).json({ success: false, errors: (error as any).errors });
+            }
             const message = error instanceof Error ? error.message : 'Unknown error';
             return res.status(400).json({ success: false, error: message });
         }
@@ -112,6 +133,9 @@ export class CounselorController {
      */
     static async updateProfile(req: Request, res: Response, next: NextFunction) {
         try {
+            // Validate request body
+            await validateRequest(req, updateCounselorProfileValidation);
+
             const userId = req.user!.id;
             const dto: UpdateCounselorDto = req.body;
 
@@ -123,6 +147,9 @@ export class CounselorController {
                 data: counselor,
             });
         } catch (error) {
+            if ((error as any).status === 400) {
+                return res.status(400).json({ success: false, errors: (error as any).errors });
+            }
             const message = error instanceof Error ? error.message : 'Unknown error';
             return res.status(400).json({
                 success: false,
@@ -164,14 +191,12 @@ export class CounselorController {
     static async createSlots(req: Request, res: Response, next: NextFunction) {
         console.log('🔥🔥🔥 CounselorController.createSlots REACHED!');
         try {
+            // Validate request body
+            await validateRequest(req, createSlotsValidation);
+
             const counselorId = (req as any).counselor?.id;
             const { slots }: { slots: CreateSlotDto[] } = req.body;
             console.log(`[createSlots] counselorId: ${counselorId}, slots:`, slots);
-
-            if (!slots || !Array.isArray(slots) || slots.length === 0) {
-                console.log('[createSlots] invalid slots array');
-                return res.status(400).json({ success: false, error: 'Slots array is required' });
-            }
 
             console.log('[createSlots] calling service...');
             const createdSlots = await CounselorService.createSlots(counselorId, slots);
@@ -184,6 +209,9 @@ export class CounselorController {
             });
         } catch (error) {
             console.error('[createSlots] ERROR:', error);
+            if ((error as any).status === 400) {
+                return res.status(400).json({ success: false, errors: (error as any).errors });
+            }
             const message = error instanceof Error ? error.message : 'Unknown error';
             return res.status(400).json({ success: false, error: message });
         }
@@ -225,6 +253,9 @@ export class CounselorController {
      */
     static async updateSlot(req: Request, res: Response, next: NextFunction) {
         try {
+            // Validate request body
+            await validateRequest(req, updateSlotValidation);
+
             const counselorId = (req as any).counselor?.id;
             const slotIdParam = req.params.id;
             const slotId = typeof slotIdParam === 'string' ? parseInt(slotIdParam) : NaN;
@@ -245,6 +276,9 @@ export class CounselorController {
                 data: slot,
             });
         } catch (error) {
+            if ((error as any).status === 400) {
+                return res.status(400).json({ success: false, errors: (error as any).errors });
+            }
             const message = error instanceof Error ? error.message : 'Unknown error';
             return res.status(400).json({
                 success: false,
@@ -372,6 +406,9 @@ export class CounselorController {
      */
     static async updateBookingStatus(req: Request, res: Response, next: NextFunction) {
         try {
+            // Validate request body
+            await validateRequest(req, updateBookingStatusValidation);
+
             const counselorId = (req as any).counselor?.id;
             const bookingIdParam = req.params.id;
             const bookingId = typeof bookingIdParam === 'string' ? parseInt(bookingIdParam) : NaN;
@@ -396,6 +433,9 @@ export class CounselorController {
                 data: booking,
             });
         } catch (error) {
+            if ((error as any).status === 400) {
+                return res.status(400).json({ success: false, errors: (error as any).errors });
+            }
             const message = error instanceof Error ? error.message : 'Unknown error';
             return res.status(400).json({
                 success: false,

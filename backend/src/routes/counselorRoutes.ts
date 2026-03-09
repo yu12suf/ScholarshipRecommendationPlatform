@@ -2,14 +2,6 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { CounselorController } from '../controller/CounselorController.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
 import { checkCounselorRole, requireActiveCounselor } from '../middlewares/counselorMiddleware.js';
-import { validate } from '../validators/validationMiddleware.js';
-import {
-    createSlotsValidation,
-    updateSlotValidation,
-    updateBookingStatusValidation,
-    applyAsCounselorValidation,
-    updateCounselorProfileValidation
-} from '../validators/validationMiddleware.js';
 
 const router = Router();
 
@@ -29,21 +21,7 @@ router.use(authenticate);
 
 // POST /api/counselors/apply - Apply to become a counselor
 // This route allows any authenticated user to apply (doesn't require counselor role yet)
-router.post('/apply',
-  // Raw handler to confirm route is hit
-  (req: Request, res: Response, next: NextFunction) => {
-    console.log('🔥 /apply route raw handler hit!');
-    next();
-  },
-  // ✅ Use validate as a function call – this runs the validations and checks errors
-  validate(applyAsCounselorValidation),
-  // After validation passes
-  (req: Request, res: Response, next: NextFunction) => {
-    console.log('⏩ After validate (validation passed)');
-    next();
-  },
-  CounselorController.apply
-);
+router.post('/apply', CounselorController.apply);
 
 // STUDENT ROUTES: Create a review (accessible to students only)
 // This must be placed before the counselor role middleware
@@ -63,11 +41,7 @@ router.get('/me', (req: Request, res: Response, next: NextFunction) => Counselor
 router.get('/me/reviews', (req: Request, res: Response, next: NextFunction) => CounselorController.getReviews(req, res, next));
 
 // PUT /api/counselors/profile - Update counselor profile
-router.put('/profile', 
-    updateCounselorProfileValidation, 
-    validate(updateCounselorProfileValidation), 
-    (req: Request, res: Response, next: NextFunction) => CounselorController.updateProfile(req, res, next)
-);
+router.put('/profile', CounselorController.updateProfile);
 
 // DELETE /api/counselors/me - Soft delete counselor profile
 router.delete('/me', (req: Request, res: Response, next: NextFunction) => CounselorController.deleteProfile(req, res, next));
@@ -77,21 +51,13 @@ router.delete('/me', (req: Request, res: Response, next: NextFunction) => Counse
  */
 
 // POST /api/counselors/slots - Create availability slots
-router.post('/slots', 
-    createSlotsValidation, 
-    validate(createSlotsValidation), 
-    (req: Request, res: Response, next: NextFunction) => CounselorController.createSlots(req, res, next)
-);
+router.post('/slots', CounselorController.createSlots);
 
 // GET /api/counselors/slots - Get counselor's slots
 router.get('/slots', (req: Request, res: Response, next: NextFunction) => CounselorController.getSlots(req, res, next));
 
 // PUT /api/counselors/slots/:id - Update a specific slot
-router.put('/slots/:id', 
-    updateSlotValidation, 
-    validate(updateSlotValidation), 
-    (req: Request, res: Response, next: NextFunction) => CounselorController.updateSlot(req, res, next)
-);
+router.put('/slots/:id', CounselorController.updateSlot);
 
 // DELETE /api/counselors/slots/:id - Delete a slot
 router.delete('/slots/:id', (req: Request, res: Response, next: NextFunction) => CounselorController.deleteSlot(req, res, next));
@@ -114,11 +80,7 @@ router.get('/students/:id/progress', (req: Request, res: Response, next: NextFun
 router.get('/bookings/upcoming', (req: Request, res: Response, next: NextFunction) => CounselorController.getUpcomingBookings(req, res, next));
 
 // PATCH /api/counselors/bookings/:id/status - Update booking status
-router.patch('/bookings/:id/status', 
-    updateBookingStatusValidation, 
-    validate(updateBookingStatusValidation), 
-    (req: Request, res: Response, next: NextFunction) => CounselorController.updateBookingStatus(req, res, next)
-);
+router.patch('/bookings/:id/status', CounselorController.updateBookingStatus);
 
 // POST /api/counselors/bookings/:id/join - Get meeting link for a session
 router.post('/bookings/:id/join', (req: Request, res: Response, next: NextFunction) => CounselorController.joinSession(req, res, next));
