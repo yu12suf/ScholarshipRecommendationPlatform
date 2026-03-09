@@ -189,7 +189,7 @@ export class AuthService {
     const accessToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       configs.JWT_SECRET!,
-      { expiresIn: (configs.JWT_ACCESS_EXPIRATION as any) || "15m" }
+      { expiresIn: (configs.JWT_ACCESS_EXPIRATION as any) || "2d" }
     );
 
     const refreshToken = jwt.sign(

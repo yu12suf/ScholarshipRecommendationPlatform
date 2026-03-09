@@ -5,8 +5,9 @@ import configs from "./config/configs.js";
 
 // Scholarship automation imports
 import { startScholarshipCron } from "./automation/scholarshipCron.js";
+ import { assessmentWorker } from "./workers/AssessmentWorker.js";
 import { seedScholarshipSources } from "./scripts/seedScholarships.js";
-import { seedTestData} from "./scripts/seedsampleactuallscholarship.js";
+import { seedTestData } from "./scripts/seedsampleactuallscholarship.js";
 
 // Temporary: Global unhandled rejection handler for debugging
 process.on('unhandledRejection', (reason, promise) => {
@@ -31,9 +32,12 @@ async function start() {
   try {
     await connectSequelize();
 
+    // Ensure the assessment worker is running (explicit reference prevents tree-shaking)
+    console.log(`🧠 Assessment worker started: ${assessmentWorker.name}`);
+
     // Initialize Scholarship Ingestion System
-    await seedScholarshipSources();
-    startScholarshipCron();
+    // await seedScholarshipSources();
+    // startScholarshipCron();
     // seedTestData();
 
   } catch (err) {

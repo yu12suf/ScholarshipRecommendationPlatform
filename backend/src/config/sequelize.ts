@@ -9,6 +9,7 @@ import { Booking } from "../models/Booking.js";
 import { CounselorReview } from "../models/CounselorReview.js";
 import { ScholarshipSource } from "../models/ScholarshipSource.js";
 import { Scholarship } from "../models/Scholarship.js";
+import { AssessmentResult } from "../models/AssessmentResult.js";
 import configs from "./configs.js";
 
 console.log('DB_PASSWORD from env:', process.env.DB_PASSWORD ? '****' : 'NOT SET');
@@ -49,7 +50,8 @@ export const sequelize = new Sequelize({
         Booking,
         CounselorReview,
         ScholarshipSource,
-        Scholarship
+        Scholarship,
+        AssessmentResult
     ],
 } as SequelizeOptions);
 
