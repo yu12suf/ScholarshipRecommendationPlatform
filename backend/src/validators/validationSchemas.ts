@@ -1,3 +1,4 @@
+// @ts-ignore - express-validator v7 types issue
 import { body } from 'express-validator';
 import { UserRole } from '../types/userTypes.js';
 
@@ -62,7 +63,7 @@ export const resetPasswordValidation = [
 
   body('confirmPassword')
     .notEmpty().withMessage('Confirm password is required')
-    .custom((value, { req }) => {
+    .custom((value: any, req: any) => {
       if (req.body && value !== req.body.newPassword) {
         throw new Error('Passwords do not match');
       }
@@ -79,7 +80,7 @@ export const changePasswordValidation = [
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
     .matches(PASSWORD_REGEX)
     .withMessage(PASSWORD_MESSAGE)
-    .custom((value, { req }) => {
+    .custom((value: any, req: any) => {
       if (req.body && value === req.body.currentPassword) {
         throw new Error('New password must be different from current password');
       }
@@ -88,7 +89,7 @@ export const changePasswordValidation = [
 
   body('confirmPassword')
     .notEmpty().withMessage('Confirm password is required')
-    .custom((value, { req }) => {
+    .custom((value: any, req: any) => {
       if (req.body && value !== req.body.newPassword) {
         throw new Error('Passwords do not match');
       }
@@ -104,7 +105,7 @@ export const updateProfileValidation = [
 ];
 
 export const googleLoginValidation = [
-  body().custom((value, { req }) => {
+  body().custom((value: any, req: any) => {
     if (!req.body.credential && !req.body.idToken && !req.body.id_token) {
       throw new Error('Google ID Token is required (credential, idToken, or id_token)');
     }
@@ -125,7 +126,7 @@ export const createSlotsValidation = [
   body('slots.*.endTime')
     .notEmpty().withMessage('End time is required for each slot')
     .isISO8601().withMessage('Invalid end time format')
-    .custom((value, { req }) => {
+    .custom((value: any, req: any) => {
       const slots = req.body.slots;
       const index = slots.findIndex((s: any) => s.endTime === value);
       if (index !== -1 && new Date(value) <= new Date(slots[index].startTime)) {
@@ -142,7 +143,7 @@ export const updateSlotValidation = [
   body('endTime')
     .optional()
     .isISO8601().withMessage('Invalid end time format')
-    .custom((value, { req }) => {
+    .custom((value: any, req: any) => {
       if (value && req.body.startTime && new Date(value) <= new Date(req.body.startTime)) {
         throw new Error('End time must be after start time');
       }

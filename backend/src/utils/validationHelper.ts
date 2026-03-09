@@ -1,4 +1,5 @@
 import { Request } from 'express';
+// @ts-ignore - express-validator v7 types issue
 import { validationResult } from 'express-validator';
 
 /**
