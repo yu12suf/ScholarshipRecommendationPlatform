@@ -62,7 +62,7 @@ export const connectSequelize = async () => {
 
         // Sync models with database (creates tables if missing)
         // Note: In production, migrations are preferred.
-        await sequelize.sync({ alter: true });
+        await sequelize.sync({});
         console.log("Database models synchronized");
 
     } catch (error) {
