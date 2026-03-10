@@ -16,3 +16,15 @@ export const getAllUsers = async (): Promise<User[]> => {
   const response = await api.get('/user');
   return response.data;
 };
+
+// Fetch profile completion status and percentage
+export interface ProfileCompletionData {
+  completionPercentage: number;
+  status: 'completed' | 'incomplete';
+  message: string;
+}
+
+export const getProfileCompletion = async (): Promise<ProfileCompletionData> => {
+  const response = await api.get('/user/profile/completion');
+  return response.data;
+};

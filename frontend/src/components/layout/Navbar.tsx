@@ -1,54 +1,75 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/providers/auth-context';
-import { 
-  Search, 
-  Bell, 
-  Menu, 
-  X, 
-  GraduationCap, 
-  LayoutDashboard, 
-  Users, 
-  Settings, 
-  LogOut 
-} from 'lucide-react';
-import { Input, Button } from '@/components/ui';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useAuth } from "@/providers/auth-context";
+import { useTheme } from "next-themes";
+import {
+  Search,
+  Bell,
+  Menu,
+  X,
+  GraduationCap,
+  LayoutDashboard,
+  Users,
+  Settings,
+  LogOut,
+  Moon,
+  Sun,
+} from "lucide-react";
+import { Input, Button } from "@/components/ui";
 
 export function Navbar() {
   const { user, logout } = useAuth();
+  // next-themes exposes both `theme` (what's stored/selected) and
+  // `resolvedTheme` (the actual value after applying system preference).
+  // Using `resolvedTheme` ensures the toggle icon reflects the real
+  // color scheme even when `theme` is set to "system".
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by waiting until the component has
+  // mounted before rendering anything that depends on the theme value.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getNavLinks = () => {
     const baseLinks = [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Settings", href: "/dashboard/settings", icon: Settings },
     ];
-    
-    if (user?.role === 'student') {
+
+    if (user?.role === "student") {
       return [
-        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'Scholarships', href: '/dashboard/scholarships', icon: GraduationCap },
-        { name: 'Counselors', href: '/dashboard/counselors', icon: Users },
-        { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-      ];
-    }
-    
-    if (user?.role === 'counselor') {
-      return [
-        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'My Students', href: '/dashboard', icon: Users },
-        { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+        {
+          name: "Scholarships",
+          href: "/dashboard/scholarships",
+          icon: GraduationCap,
+        },
+        { name: "Counselors", href: "/dashboard/counselors", icon: Users },
+        { name: "Settings", href: "/dashboard/settings", icon: Settings },
       ];
     }
 
-    if (user?.role === 'admin') {
+    if (user?.role === "counselor") {
       return [
-        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'User Management', href: '/dashboard', icon: Users },
-        { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+        { name: "My Students", href: "/dashboard", icon: Users },
+        { name: "Settings", href: "/dashboard/settings", icon: Settings },
+      ];
+    }
+
+    if (user?.role === "admin") {
+      return [
+        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+        { name: "User Management", href: "/dashboard", icon: Users },
+        { name: "Settings", href: "/dashboard/settings", icon: Settings },
       ];
     }
 
@@ -58,7 +79,7 @@ export function Navbar() {
   const navLinks = getNavLinks();
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -66,7 +87,9 @@ export function Navbar() {
             <div className="p-1.5 scholarship-gradient rounded-lg shadow-lg shadow-primary/10 transition-transform group-hover:scale-110">
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-black text-gray-900 tracking-tight hidden sm:block">EduPathway</span>
+            <span className="text-xl font-black text-foreground tracking-tight hidden sm:block">
+              EduPathway
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -75,7 +98,7 @@ export function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className="px-4 py-2 text-gray-500 hover:text-primary transition-colors flex items-center gap-2 hover:bg-gray-50 rounded-lg"
+                className="px-4 py-2 text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 hover:bg-muted rounded-lg"
               >
                 {link.name}
               </Link>
@@ -85,14 +108,20 @@ export function Navbar() {
           {/* Right Section */}
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden md:block relative w-64 group">
-              <Input 
-                placeholder="Search..." 
+              <Input
+                placeholder="Search..."
                 className="h-9 bg-gray-50 border-none text-xs pl-8 focus:ring-1 focus:ring-primary/20"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             </div>
 
-            <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0 rounded-full hover:bg-gray-100 hidden sm:flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="relative h-9 w-9 p-0 rounded-full hover:bg-gray-100 hidden sm:flex"
+            >
               <Bell className="h-4 w-4 text-gray-500" />
               <span className="absolute top-2 right-2 h-1.5 w-1.5 bg-red-500 rounded-full" />
             </Button>
@@ -101,7 +130,7 @@ export function Navbar() {
 
             {/* Profile Dropdown */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="p-1.5 rounded-full hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100 group"
               >
@@ -112,27 +141,31 @@ export function Navbar() {
 
               {isProfileOpen && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-10" 
+                  <div
+                    className="fixed inset-0 z-10"
                     onClick={() => setIsProfileOpen(false)}
                   />
                   <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/5 divide-y divide-gray-50 z-20 animate-in fade-in zoom-in-95 duration-200">
                     <div className="px-4 py-3">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Account Role</p>
-                      <p className="text-xs font-bold text-primary capitalize">{user?.role}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">
+                        Account Role
+                      </p>
+                      <p className="text-xs font-bold text-primary capitalize">
+                        {user?.role}
+                      </p>
                     </div>
                     <div className="py-2">
-                       <Link 
-                        href="/dashboard/settings" 
+                      <Link
+                        href="/dashboard/settings"
                         className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
                         onClick={() => setIsProfileOpen(false)}
-                       >
-                         <Settings className="h-4 w-4 text-gray-400" />
-                         Account Settings
-                       </Link>
+                      >
+                        <Settings className="h-4 w-4 text-gray-400" />
+                        Account Settings
+                      </Link>
                     </div>
                     <div className="pt-2">
-                      <button 
+                      <button
                         onClick={() => {
                           logout();
                           setIsProfileOpen(false);
@@ -149,13 +182,17 @@ export function Navbar() {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="lg:hidden p-0 h-9 w-9"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </div>
@@ -175,7 +212,7 @@ export function Navbar() {
               {link.name}
             </Link>
           ))}
-          <Button 
+          <Button
             className="w-full justify-start gap-3 p-4 h-auto text-red-500 hover:text-red-600 hover:bg-red-50"
             variant="ghost"
             onClick={() => {
