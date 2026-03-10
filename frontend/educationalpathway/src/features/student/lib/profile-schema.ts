@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 const GENDER_VALUES = ["Male", "Female", "Other", "Prefer not to say"] as const;
-const EDUCATION_LEVELS = ["High School Graduate", "Bachelor's Graduate", "Master's Graduate"] as const;
-const DEGREE_VALUES = ["BSc", "MSc", "PhD"] as const;
+const EDUCATION_LEVELS = ["High School", "Bachelor's", "Master's", "PhD"] as const;
+const DEGREE_VALUES = ["Bachelor's", "Master's", "PhD"] as const;
 const FUNDING_TYPES = ["Fully Funded", "Partially Funded", "Tuition Only"] as const;
 const STUDY_MODES = ["On-Campus", "Online", "Hybrid"] as const;
 const TEST_TYPES = ["IELTS", "TOEFL", "Duolingo", "None"] as const;

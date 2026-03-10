@@ -36,18 +36,17 @@ export const ScholarshipList = () => {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSearch} className="flex gap-4">
+      <form onSubmit={handleSearch} className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <Input
             name="query"
-            placeholder="Search scholarships by title or description..."
-            className="pl-10"
+            placeholder="Search by title, field of study, or keyword..."
+            className="pl-12 h-12 rounded-sm border-gray-200 font-open-sans"
           />
         </div>
-        <Button type="submit">Search</Button>
-        <Button variant="outline" type="button">
-          <Filter className="h-4 w-4 mr-2" /> Filter
+        <Button type="submit" className="h-12 px-8 bg-gray-900 hover:bg-black text-white rounded-sm">
+          Search
         </Button>
       </form>
 
@@ -62,9 +61,9 @@ export const ScholarshipList = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-          <p className="text-muted-foreground font-medium">
-            No scholarships found.
+        <div className="text-center py-20 bg-gray-50 rounded-sm border-2 border-dashed border-gray-200">
+          <p className="text-gray-500 font-medium font-open-sans">
+            No scholarships found. Try adjusting your search or filters.
           </p>
         </div>
       )}

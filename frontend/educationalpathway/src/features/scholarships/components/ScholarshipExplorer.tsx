@@ -4,58 +4,60 @@ import { useState } from 'react';
 import { Award, Filter } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { ScholarshipList } from './ScholarshipList';
+import { motion } from 'framer-motion';
 
 export const ScholarshipExplorer = () => {
   const [activeTab, setActiveTab] = useState('matched');
 
   return (
     <div className="space-y-12">
-      <div className="bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-8">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-             <div className="p-2 bg-secondary/10 rounded-2xl">
-                <Award className="h-10 w-10 text-secondary" />
-             </div>
-             Scholarship Explorer
+      <div className="bg-white rounded-sm p-10 border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="space-y-3">
+          <h1 className="text-3xl font-serif text-gray-900 tracking-tight">
+            Scholarship Explorer
           </h1>
-          <p className="text-gray-600 text-lg font-medium">Discover and track the best financial opportunities for your academic career.</p>
+          <p className="text-gray-500 text-lg font-open-sans max-w-2xl">
+            Discover and track the best financial opportunities tailored for your academic pathway.
+          </p>
         </div>
-        <div className="flex gap-4">
-          <Button variant="outline" size="xl" className="h-14 px-8 bg-white font-black rounded-2xl border-2 border-gray-100 flex items-center gap-2">
-            <Filter className="h-5 w-5" /> Filters
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="h-12 px-6 rounded-sm flex items-center gap-2 border-gray-200">
+            <Filter className="h-4 w-4" /> Filter Results
           </Button>
-          <Button size="xl" className="h-14 px-8 font-black rounded-2xl shadow-xl shadow-primary/20 scholarship-gradient border-none">
-            Update Discovery
+          <Button className="h-12 px-6 rounded-sm bg-blue-600 hover:bg-blue-700 text-white border-none transition-colors">
+            Refresh Matches
           </Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100">
+      <div className="flex border-b border-gray-200 gap-8 min-h-[48px]">
         <button 
           onClick={() => setActiveTab('matched')}
-          className={`px-6 py-4 text-sm font-bold transition-all relative ${activeTab === 'matched' ? 'text-primary' : 'text-slate-500 hover:text-gray-600'}`}
+          className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'matched' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600 cursor-pointer'}`}
         >
-          Matches
-          {activeTab === 'matched' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
+          Direct Matches
+          {activeTab === 'matched' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600" />}
         </button>
         <button 
           onClick={() => setActiveTab('saved')}
-          className={`px-6 py-4 text-sm font-bold transition-all relative ${activeTab === 'saved' ? 'text-primary' : 'text-slate-500 hover:text-gray-600'}`}
+          className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'saved' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600 cursor-pointer'}`}
         >
           Saved (0)
-          {activeTab === 'saved' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
+          {activeTab === 'saved' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600" />}
         </button>
         <button 
           onClick={() => setActiveTab('applied')}
-          className={`px-6 py-4 text-sm font-bold transition-all relative ${activeTab === 'applied' ? 'text-primary' : 'text-slate-500 hover:text-gray-600'}`}
+          className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'applied' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600 cursor-pointer'}`}
         >
-          My Apps
-          {activeTab === 'applied' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
+          Applied
+          {activeTab === 'applied' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600" />}
         </button>
       </div>
 
-      <ScholarshipList />
+      <div className="pt-8">
+        <ScholarshipList />
+      </div>
     </div>
   );
 };

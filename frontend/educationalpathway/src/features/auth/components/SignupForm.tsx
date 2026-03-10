@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  Mail,
-  Lock,
-  User,
-} from "lucide-react";
+import { GraduationCap, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/providers/auth-context";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +12,7 @@ import { getErrorMessage } from "@/lib/api";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { GoogleLogin } from "@react-oauth/google";
+
 
 export function SignupForm({
   initialRole,
@@ -31,8 +28,11 @@ export function SignupForm({
     password: "",
     role: initialRole || queryRole || "student",
   });
+
   const [isLoading, setIsLoading] = useState(false);
+
   const { register, googleLogin } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (queryRole && (queryRole === "student" || queryRole === "counselor")) {
@@ -55,125 +55,129 @@ export function SignupForm({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-md"
-    >
-      <Card className="w-full border-gray-200 relative overflow-hidden bg-white/80 backdrop-blur-xl rounded-2xl">
-        {/* Decorative elements */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-secondary/5 rounded-full blur-3xl opacity-50" />
+    <div className="min-h-screen flex items-center justify-center relative bg-white px-4 overflow-hidden">
 
-        <CardHeader className="text-center pt-10 pb-2 relative z-10">
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight">
-            Sign Up
-          </h1>
-          <p className="text-muted-foreground mt-3 font-medium">
-            Create your account to get started.
-          </p>
-        </CardHeader>
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 w-full h-full -z-10">
+        <div className="absolute -top-10 -left-10 w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-10 -right-10 w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[120px]" />
+      </div>
 
-        <CardBody className="space-y-6 pt-10 px-8 relative z-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label
-                htmlFor="name"
-                className="text-xs font-black uppercase tracking-widest text-gray-500 "
+      {/* Form */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="w-full max-w-md z-10"
+      >
+        <Card className="w-full border border-gray-200 rounded-lg bg-white shadow-sm">
+
+          <CardHeader className="text-center pt-10 pb-4">
+            <h1 className="text-3xl font-serif text-gray-900">
+              Create Account
+            </h1>
+
+            <p className="text-gray-500 text-sm mt-2">
+              Sign up to get started
+            </p>
+          </CardHeader>
+
+          <CardBody className="px-8 pb-8 space-y-6">
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+              {/* Name */}
+              <div className="space-y-2">
+                <Label className="text-xs font-serif text-gray-500">
+                  Full Name
+                </Label>
+
+                <Input
+                  type="text"
+                  required
+                  placeholder="Enter your name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="h-12 border-gray-300 rounded-sm bg-gray-50 focus:border-green-500"
+                />
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label className="text-xs font-serif text-gray-500">
+                  Email
+                </Label>
+
+                <Input
+                  type="email"
+                  required
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  className="h-12 border-gray-300 rounded-sm bg-gray-50 focus:border-green-500"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label className="text-xs font-serif text-gray-500">
+                  Password
+                </Label>
+
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="Create a password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="h-12 border-gray-300 rounded-sm bg-gray-50 focus:border-green-500 pr-10"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Button */}
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-sm"
+                isLoading={isLoading}
               >
-                Full Name
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                required
-                placeholder="Name"
-                icon={<User className="h-5 w-5" />}
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="h-14 bg-white/50 border-gray-300 rounded-xl"
-              />
+                Sign Up
+              </Button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative flex items-center">
+              <div className="flex-grow border-t border-gray-100"></div>
+              <span className="mx-3 text-xs text-gray-400">OR</span>
+              <div className="flex-grow border-t border-gray-100"></div>
             </div>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-xs font-black uppercase tracking-widest text-gray-500"
-              >
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                placeholder="Email"
-                icon={<Mail className="h-5 w-5" />}
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="h-14 bg-white/50 border-gray-300 rounded-xl"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-xs font-black uppercase tracking-widest text-gray-500"
-              >
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                placeholder="Password"
-                icon={<Lock className="h-5 w-5" />}
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="h-14 bg-white/50 border-gray-300 rounded-xl"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              variant="scholarship"
-              size="xl"
-              className="w-full h-14 text-lg shadow-2xl shadow-primary/20 rounded-xl cursor-pointer"
-              isLoading={isLoading}
-            >
-              Sign Up
-            </Button>
-          </form>
-
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase font-black tracking-widest text-gray-400">
-              <span className="bg-white/80 px-4 backdrop-blur-xl">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <div className="flex justify-center flex-col items-center">
+            {/* Google Signup */}
             {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
-              <div className="w-full flex justify-center scale-90 md:scale-100 hover:opacity-90 transition-opacity">
+              <div className="flex justify-center">
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {
                     if (credentialResponse.credential) {
                       googleLogin(credentialResponse.credential);
                     }
                   }}
-                  onError={() => {
-                    toast.error("Google Login Failed");
-                  }}
+                  onError={() => toast.error("Google Signup Failed")}
                   use_fedcm_for_prompt={false}
                   theme="outline"
                   shape="pill"
@@ -182,25 +186,27 @@ export function SignupForm({
                 />
               </div>
             ) : (
-              <p className="text-xs text-center text-gray-500">
-                Google signup is currently unavailable.
+              <p className="text-xs text-center text-gray-400">
+                Google signup unavailable
               </p>
             )}
-          </div>
 
-          <div className="pt-8 text-center">
-            <p className="text-sm text-gray-600 font-medium">
-              Have an account?{" "}
-              <Link
-                href="/login"
-                className="text-primary font-black hover:underline decoration-2 underline-offset-4"
-              >
-                Login
-              </Link>
-            </p>
-          </div>
-        </CardBody>
-      </Card>
-    </motion.div>
+            {/* Login link */}
+            <div className="text-center pt-4">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="text-green-600 font-medium hover:underline"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </div>
+
+          </CardBody>
+        </Card>
+      </motion.div>
+    </div>
   );
 }

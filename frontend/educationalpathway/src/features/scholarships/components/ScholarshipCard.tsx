@@ -10,48 +10,52 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
   const deadline = scholarship.deadline ? new Date(scholarship.deadline).toLocaleDateString() : 'No deadline';
 
   return (
-    <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-4xl border-gray-100/50 overflow-hidden">
-      <CardBody className="p-8">
-        <div className="flex justify-between items-start mb-4">
+    <Card className="hover:shadow-lg transition-all duration-200 rounded-sm border-gray-200 overflow-hidden bg-white">
+      <CardBody className="p-6">
+        <div className="flex justify-between items-start mb-6">
           <div className="space-y-1">
-            <h3 className="text-xl font-bold text-gray-900 line-clamp-2">{scholarship.title}</h3>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
+            <h3 className="text-xl font-serif text-gray-900 leading-tight line-clamp-2">
+              {scholarship.title}
+            </h3>
+            <div className="flex items-center gap-2 text-sm text-gray-500 font-open-sans">
+              <MapPin className="h-3.5 w-3.5" />
               <span>{scholarship.country || 'International'}</span>
             </div>
           </div>
-          <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+          <Badge variant="outline" className="text-[10px] uppercase tracking-wider font-bold border-gray-200 text-gray-500 rounded-sm">
             {scholarship.fundType || 'Scholarship'}
           </Badge>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="flex items-center gap-2 text-sm">
-            <DollarSign className="h-4 w-4 text-green-600" />
-            <span className="font-semibold text-gray-700">{scholarship.amount || 'Varies'}</span>
+        <div className="grid grid-cols-1 gap-4 mb-8">
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase text-gray-400 font-bold leading-none mb-1.5">Amount</span>
+            <span className="font-semibold text-gray-800 text-sm">{scholarship.amount || 'Varies'}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="h-4 w-4 text-orange-600" />
-            <span className="text-gray-700 font-medium">{deadline}</span>
+          
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase text-gray-400 font-bold leading-none mb-1.5">Deadline</span>
+            <span className="text-gray-800 font-medium text-sm">{deadline}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <GraduationCap className="h-4 w-4 text-blue-600" />
-            <span className="text-gray-700 font-medium truncate">{scholarship.degree_levels?.join(', ') || 'All levels'}</span>
+
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase text-gray-400 font-bold leading-none mb-1.5">Eligibility</span>
+            <span className="text-gray-800 font-medium text-sm truncate">{scholarship.degree_levels?.join(', ') || 'All levels'}</span>
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <a 
-            href={scholarship.originalUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex-1 inline-flex items-center justify-center px-4 py-2 text-xs font-bold border-2 border-primary/20 bg-transparent text-primary hover:bg-primary/5 rounded-sm transition-all"
-          >
-            View Original <ExternalLink className="h-3 w-3 ml-1" />
-          </a>
-          <Button className="flex-1 text-xs scholarship-gradient border-none">
+        <div className="flex flex-col gap-2">
+          <Button className="w-full bg-green-600 hover:bg-green-700 text-white rounded-sm h-11 transition-colors">
             Apply Now
           </Button>
+          <a
+            href={scholarship.originalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full inline-flex items-center justify-center px-4 py-2 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
+          >
+            Original source <ExternalLink className="h-3 w-3 ml-1" />
+          </a>
         </div>
       </CardBody>
     </Card>

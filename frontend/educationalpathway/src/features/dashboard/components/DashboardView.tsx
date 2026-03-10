@@ -20,7 +20,7 @@ export const DashboardView = () => {
         router.replace('/dashboard/admin');
       } else if (user.role === 'counselor') {
         router.replace('/dashboard/counselor');
-      } else if (user.isOnboarded) {
+      } else if (user.role === 'student') {
         router.replace('/dashboard/student');
       } else {
         router.replace('/dashboard/student/profile');
