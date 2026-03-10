@@ -53,15 +53,13 @@ export default function DashboardLayout({
   // Counselor Layout
   if (user.role === 'counselor') {
     return (
-      <div className="min-h-screen bg-slate-50/50 flex flex-col">
-        <div className="flex-1 flex flex-col">
-          <main className="flex-1 container mx-auto px-4 py-6 md:py-10">
-            <CounselorNavbar />
-            <div className="max-w-7xl mx-auto mt-4 px-2">
-              {children}
-            </div>
-          </main>
-        </div>
+      <div className="min-h-screen bg-white flex flex-col">
+        <CounselorNavbar />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
         <Footer />
       </div>
     );
@@ -69,15 +67,13 @@ export default function DashboardLayout({
 
   // Student & Default Layout
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
-      <div className="flex-1 flex flex-col">
-        <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
-          <StudentNavbar />
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      <StudentNavbar />
+      <main className="flex-1 container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
+      </main>
       <Footer />
     </div>
   );

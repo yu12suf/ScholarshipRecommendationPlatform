@@ -155,21 +155,21 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
   });
 
   const fetchCities = useCallback(
-    async (country: string, signal?: AbortSignal) => {
+    async (country: string) => {
       if (!country) return;
+      console.log("Fetching cities for:", country);
       setLoadingCities(true);
       try {
         const response = await fetch("/api/cities", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ country }),
-          signal,
         });
-        if (!response.ok) throw new Error("Failed to fetch cities");
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
         const data = await response.json();
+        console.log(`Fetched ${data.cities?.length || 0} cities`);
         setCities(data.cities || []);
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") return;
         console.error("Error fetching cities:", error);
         toast.error("Unable to load cities. Please try again.");
       } finally {
@@ -180,21 +180,24 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
   );
 
   const fetchUniversities = useCallback(
-    async (country: string, signal?: AbortSignal) => {
+    async (country: string) => {
       if (!country) return;
+      console.log("Fetching universities for:", country);
       setLoadingUniversities(true);
       try {
-        const response = await fetch(
-          `https://universities.hipolabs.com/search?country=${encodeURIComponent(country)}`,
-          { signal },
-        );
-        if (!response.ok) throw new Error("Failed to fetch universities");
+        const response = await fetch("/api/universities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country }),
+        });
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
         const data = await response.json();
-        setUniversities(data.slice(0, 50).map((u: { name: string }) => ({ name: u.name })));
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") return;
+        console.log(`Fetched ${data.universities?.length || 0} universities`);
+        setUniversities(data.universities || []);
+      } catch (error: any) {
         console.error("Error fetching universities:", error);
-        toast.error("Unable to load universities. Please try again.");
+        const msg = error.message || "Unable to load universities";
+        toast.error(`University Load error: ${msg}`);
       } finally {
         setLoadingUniversities(false);
       }
@@ -203,19 +206,19 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
   );
 
   useEffect(() => {
-    const controller = new AbortController();
     if (countryOfResidence) {
-      fetchCities(countryOfResidence, controller.signal);
+      fetchCities(countryOfResidence);
+      // Also fetch universities for Step 2 based on country of residence
+      if (currentStep === 2) {
+        fetchUniversities(countryOfResidence);
+      }
     }
-    return () => controller.abort();
-  }, [countryOfResidence, fetchCities]);
+  }, [countryOfResidence, currentStep, fetchCities, fetchUniversities]);
 
   useEffect(() => {
-    const controller = new AbortController();
     if (watchedCountries?.length > 0 && currentStep === 3) {
-      fetchUniversities(watchedCountries[0], controller.signal);
+      fetchUniversities(watchedCountries[0]);
     }
-    return () => controller.abort();
   }, [watchedCountries, currentStep, fetchUniversities]);
 
   const validateStep = async (step: number): Promise<boolean> => {
@@ -633,17 +636,26 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       <label className="text-sm font-medium text-gray-700">
                         Previous University
                       </label>
-                      <div className="relative">
-                        <School
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
-                        <Input
-                          {...methods.register("previousUniversity")}
-                          placeholder="University name"
-                          className="pl-10"
-                        />
-                      </div>
+                      <Select
+                        options={universities.map((u) => ({
+                          value: u.name,
+                          label: u.name,
+                        }))}
+                        isLoading={loadingUniversities}
+                        isDisabled={!countryOfResidence}
+                        onChange={(
+                          val: SingleValue<{ value: string; label: string }>,
+                        ) => setValue("previousUniversity", val?.value || "")}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                        placeholder={
+                          !countryOfResidence
+                            ? "Select country (Step 1) first"
+                            : "Select university"
+                        }
+                        isClearable
+                        isSearchable
+                      />
                     </div>
 
                     {/* Graduation Year */}

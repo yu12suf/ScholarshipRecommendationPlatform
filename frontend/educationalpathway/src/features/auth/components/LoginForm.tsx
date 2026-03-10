@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mail, Lock } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/providers/auth-context";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
@@ -15,13 +15,14 @@ import { GoogleLogin } from "@react-oauth/google";
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
   const { login, googleLogin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       await login({ email, password });
       toast.success("Welcome back!");
@@ -33,111 +34,109 @@ export function LoginForm() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-md"
-    >
-      <Card className="w-full border-gray-200 relative overflow-hidden bg-white/80 backdrop-blur-xl rounded-2xl">
-        {/* Decorative elements */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-secondary/5 rounded-full blur-3xl opacity-50" />
+    <div className="min-h-screen flex items-center justify-center relative bg-white px-4 overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute top-0 left-0 w-full h-full -z-10">
+        <div className="absolute -top-10 -left-10 w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-10 -right-10 w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[120px]" />
+      </div>
 
-        <CardHeader className="text-center pt-10 pb-2 relative z-10">
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight">
-            Login
-          </h1>
-          <p className="text-muted-foreground mt-3 font-medium">
-            Welcome back! Please enter your details.
-          </p>
-        </CardHeader>
+      {/* Centered Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="w-full max-w-md z-10"
+      >
+        <Card className="w-full border border-gray-200 rounded-lg bg-white shadow-sm">
+          <CardHeader className="text-center pt-10 pb-4">
+            <h1 className="text-3xl font-serif text-gray-900">
+              Welcome
+            </h1>
+            <p className="text-gray-500 text-sm mt-2">
+              Sign in to continue
+            </p>
+          </CardHeader>
 
-        <CardBody className="space-y-6 pt-10 px-8 relative z-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-xs font-black uppercase tracking-widest text-gray-500"
-              >
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Your email"
-                icon={<Mail className="h-5 w-5" />}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-white/50 border-gray-300 h-14 rounded-xl"
-              />
-            </div>
+          <CardBody className="px-8 pb-8 space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center px-1">
-                <Label
-                  htmlFor="password"
-                  className="text-xs font-black uppercase tracking-widest text-gray-500"
-                >
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs font-serif text-gray-500">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 border-gray-300 rounded-sm bg-gray-50 focus:border-green-500 shadow-none"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs font-serif text-gray-500">
                   Password
                 </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-12 border-gray-300 rounded-sm bg-gray-50 focus:border-green-500 shadow-none pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Your password"
-                icon={<Lock className="h-5 w-5" />}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-white/50 border-gray-300 h-14 rounded-xl"
-              />
-            </div>
 
-            <Button
-              type="submit"
-              variant="scholarship"
-              size="xl"
-              className="w-full h-14 text-lg shadow-2xl shadow-primary/20 rounded-xl cursor-pointer"
-              isLoading={isLoading}
-            >
-              Sign In
-            </Button>
-
-            <div className="text-center pt-2">
-              <Link
-                href="/forgot-password"
-                className="text-xs font-bold text-primary hover:text-primary/70 transition-colors"
+              {/* Sign In Button */}
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-sm cursor-pointer"
+                isLoading={isLoading}
               >
-                Forgot your password?
-              </Link>
-            </div>
-          </form>
+                Sign In
+              </Button>
 
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase font-black tracking-widest text-gray-400">
-              <span className="bg-white/80 px-4 backdrop-blur-xl">
-                Or continue with
-              </span>
-            </div>
-          </div>
+              {/* Forgot Password */}
+              <div className="text-center">
+                <Link href="/forgot-password" className="text-xs text-green-600 hover:underline">
+                  Forgot your password?
+                </Link>
+              </div>
+            </form>
 
-          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
-            <div className="flex justify-center flex-col items-center">
-              <div className="w-full flex justify-center scale-90 md:scale-100 hover:opacity-90 transition-opacity">
+            {/* Divider */}
+            <div className="relative flex items-center">
+              <div className="flex-grow border-t border-gray-100"></div>
+              <span className="mx-3 text-xs text-gray-400">OR</span>
+              <div className="flex-grow border-t border-gray-100"></div>
+            </div>
+
+            {/* Google Login */}
+            {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+              <div className="flex justify-center">
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {
                     if (credentialResponse.credential) {
                       googleLogin(credentialResponse.credential);
                     }
                   }}
-                  onError={() => {
-                    toast.error("Google Login Failed");
-                  }}
+                  onError={() => toast.error("Google Login Failed")}
                   use_fedcm_for_prompt={false}
                   theme="outline"
                   shape="pill"
@@ -145,26 +144,24 @@ export function LoginForm() {
                   text="signin_with"
                 />
               </div>
-            </div>
-          ) : (
-            <p className="text-xs text-center text-gray-500">
-              Google login is currently unavailable.
-            </p>
-          )}
+            ) : (
+              <p className="text-xs text-center text-gray-400">
+                Google login unavailable
+              </p>
+            )}
 
-          <div className="pt-8 text-center">
-            <p className="text-sm text-gray-600">
-              New here?{" "}
-              <Link
-                href="/role-selection"
-                className="text-primary font-black hover:underline decoration-2 underline-offset-4"
-              >
-                Create an account
-              </Link>
-            </p>
-          </div>
-        </CardBody>
-      </Card>
-    </motion.div>
+            {/* Register */}
+            <div className="text-center pt-4">
+              <p className="text-sm text-gray-600">
+                Don’t have an account?{" "}
+                <Link href="/role-selection" className="text-green-600 font-medium hover:underline">
+                  Create Account
+                </Link>
+              </p>
+            </div>
+          </CardBody>
+        </Card>
+      </motion.div>
+    </div>
   );
 }

@@ -8,111 +8,180 @@ import { Footer } from "@/components/layout/Footer";
 export const LandingPageContent = () => {
   return (
     <div className="flex flex-col min-h-screen">
+
       {/* Header */}
-      <header className="px-4 lg:px-6 h-16 flex items-center border-b border-border sticky top-0  z-50 bg-white/80 backdrop-blur-md">
-        <Link className="flex items-center justify-center gap-2" href="/">
+
+      <header className="px-6 lg:px-8 h-16 flex items-center border-b border-gray-100 sticky top-0 z-50 bg-white">
+        <Link className="flex items-center gap-2" href="/">
           <GraduationCap className="h-8 w-8 text-primary" />
-          <span className="text-xl font-black text-gray-900 tracking-tight">EduPathway</span>
+          {/* <span className="text-xl font-bold text-gray-900 tracking-tight">
+            EduPathway
+          </span> */}
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
+
+        <nav className="ml-auto flex items-center gap-6">
           <Link
-            className="text-sm font-medium hover:text-primary transition-colors"
+            className="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
             href="/#features"
           >
             Features
           </Link>
+
           <Link
-            className="text-sm font-medium hover:text-primary transition-colors"
+            className="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
             href="/#about"
           >
             About
           </Link>
-          <Link
-            className="text-sm font-medium hover:text-primary transition-colors"
-            href="/login"
-          >
-            Login
+
+          <Link href="/login">
+            <Button
+              size="sm"
+              className="rounded-xl bg-primary text-white hover:bg-primary/90"
+            >
+              Login
+            </Button>
           </Link>
         </nav>
       </header>
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="w-full py-12 md:py-24 lg:py-32 scholarship-gradient">
-          <div className="container px-4 md:px-6 mx-auto">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-extrabold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-white">
-                  Go on your study{" "}
-                  <span className="text-secondary italic">adventure</span>
-                </h1>
-                <p className="mx-auto max-w-175 text-gray-100 md:text-xl font-medium">
-                  Find help, get scholarships, and plan your future with AI.
-                </p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link href="/role-selection">
-                  <Button
-                    size="xl"
-                    className="bg-white text-primary hover:bg-white/90 font-bold px-8 shadow-xl shadow-primary/10 rounded-xl cursor-pointer"
-                  >
-                    Get Started
-                  </Button>
-                </Link>
-              </div>
-            </div>
+
+        {/* HERO SECTION */}
+
+        <section className="relative w-full py-20 md:py-28 lg:py-32 bg-yellow-100">
+
+          {/* Dark overlay */}
+          <div className="absolute inset-0 bg-black/40"></div>
+
+          <div className="relative container px-4 md:px-6 mx-auto text-center">
+
+            <h1 className="text-xl font-serif sm:text-3xl md:text-5xl text-white">
+              Your journey to{" "}
+              <span className="text-secondary italic">
+                scholarships
+              </span>
+              starts here
+            </h1>
+
+            <p className="mx-auto max-w-4xl text-lg md:text-xl text-gray-200 mt-4">
+              EduPathway helps students discover scholarships, connect with
+              expert guidance, and plan their academic journey using
+              intelligent tools.
+            </p>
+
           </div>
         </section>
 
-        {/* Features Section */}
+        {/* FEATURES */}
+
         <section
           id="features"
-          className="w-full py-12 md:py-24 lg:py-32 bg-muted/30"
+          className="w-full py-20 md:py-28 bg-orange-50"
         >
           <div className="container px-4 md:px-6 mx-auto">
+
+            <div className="text-center mb-14 space-y-3">
+
+              <h2 className="text-2xl md:text-3xl font-serif text-gray-900">
+                Everything you need for your education journey
+              </h2>
+
+              <p className="text-gray-800 max-w-2xl mx-auto">
+                Our platform brings together scholarships, mentorship,
+                planning tools, and AI-powered insights to help students
+                succeed academically and financially.
+              </p>
+
+            </div>
+
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              <div className="flex flex-col items-center space-y-2 p-6 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100">
-                <div className="p-3 bg-primary/10 rounded-full">
+
+              {/* Feature 1 */}
+
+              <div className="group flex flex-col items-center space-y-3 p-6 bg-orange-100 rounded-sm border border-gray-100 hover:border-primary/30 transition-all">
+
+                <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20 transition">
                   <Award className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold">Find Scholarships</h3>
-                <p className="text-sm text-muted-foreground text-center">
-                  We find the best money for your school.
+
+                <h3 className="text-lg font-semibold">
+                  Discover Scholarships
+                </h3>
+
+                <p className="text-sm text-gray-600 text-center">
+                  Search and discover scholarship opportunities that match
+                  your academic profile and ambitions.
                 </p>
+
               </div>
-              <div className="flex flex-col items-center space-y-2 p-6 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100">
-                <div className="p-3 bg-secondary/10 rounded-full">
+
+              {/* Feature 2 */}
+
+              <div className="group flex flex-col items-center space-y-3 p-6 bg-orange-100 rounded-sm border border-gray-100 hover:border-secondary/30 transition-all">
+
+                <div className="p-3 bg-secondary/10 rounded-full group-hover:bg-secondary/20 transition">
                   <Users className="h-6 w-6 text-secondary" />
                 </div>
-                <h3 className="text-xl font-bold">Get Expert Help</h3>
-                <p className="text-sm text-muted-foreground text-center">
-                  Talk to experts who can help you apply.
+
+                <h3 className="text-lg font-semibold">
+                  Connect With Experts
+                </h3>
+
+                <p className="text-sm text-gray-600 text-center">
+                  Get mentorship and guidance from experienced counselors
+                  who understand the scholarship application process.
                 </p>
+
               </div>
-              <div className="flex flex-col items-center space-y-2 p-6 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100">
-                <div className="p-3 bg-accent/10 rounded-full">
+
+              {/* Feature 3 */}
+
+              <div className="group flex flex-col items-center space-y-3 p-6 bg-orange-100 rounded-sm border border-gray-100 hover:border-accent/30 transition-all">
+
+                <div className="p-3 bg-accent/10 rounded-full group-hover:bg-accent/20 transition">
                   <BookOpen className="h-6 w-6 text-accent" />
                 </div>
-                <h3 className="text-xl font-bold">Plan Your Path</h3>
-                <p className="text-sm text-muted-foreground text-center">
-                  See your whole school journey on a map.
+
+                <h3 className="text-lg font-semibold">
+                  Plan Your Academic Path
+                </h3>
+
+                <p className="text-sm text-gray-600 text-center">
+                  Visualize your study journey and track the steps needed
+                  to reach your dream university.
                 </p>
+
               </div>
-              <div className="flex flex-col items-center space-y-2 p-6 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100">
-                <div className="p-3 bg-primary/10 rounded-full">
+
+              {/* Feature 4 */}
+
+              <div className="group flex flex-col items-center space-y-3 p-6 bg-orange-100 rounded-sm border border-gray-100 hover:border-primary/30 transition-all">
+
+                <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20 transition">
                   <GraduationCap className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold">AI Help</h3>
-                <p className="text-sm text-muted-foreground text-center">
-                  Get info from your CV and school papers with AI.
+
+                <h3 className="text-lg font-semibold">
+                  AI-Powered Assistance
+                </h3>
+
+                <p className="text-sm text-gray-600 text-center">
+                  Upload your CV or academic documents and receive
+                  personalized scholarship recommendations powered by AI.
                 </p>
+
               </div>
+
             </div>
+
           </div>
         </section>
+
       </main>
 
       <Footer />
+
     </div>
   );
 };

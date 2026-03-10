@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/providers/auth-context";
 import { ThemeProvider } from "@/providers/theme-context";
@@ -7,7 +7,7 @@ import { Toaster } from "react-hot-toast";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-open-sans" });
 
 export const metadata: Metadata = {
   title: "Educational Pathway | Scholarship Platform",
@@ -46,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} font-sans antialiased text-foreground bg-background`}
+        className={`${openSans.variable} font-sans antialiased text-foreground bg-background`}
       >
         {googleClientId ? (
           <GoogleOAuthProvider clientId={googleClientId}>

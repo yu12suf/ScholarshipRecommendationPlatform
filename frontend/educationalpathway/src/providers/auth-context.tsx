@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/dashboard/admin");
       } else if (user.role === 'counselor') {
         router.push("/dashboard/counselor");
-      } else if (user.isOnboarded) {
+      } else if (user.role === 'student') {
         router.push("/dashboard/student");
       } else {
         router.push("/dashboard/student/profile");
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/dashboard/admin");
       } else if (user.role === 'counselor') {
         router.push("/dashboard/counselor");
-      } else if (user.isOnboarded) {
+      } else if (user.role === 'student') {
         router.push("/dashboard/student");
       } else {
         router.push("/dashboard/student/profile");
@@ -97,8 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/dashboard/admin");
       } else if (user.role === 'counselor') {
         router.push("/dashboard/counselor");
+      } else if (user.role === 'student') {
+        router.push("/dashboard/student");
       } else {
-        // New students always go to profile
+        // Fallback
         router.push("/dashboard/student/profile");
       }
     } catch (error: unknown) {
