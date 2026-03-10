@@ -4,7 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/providers/auth-context";
 import { Toaster } from "react-hot-toast";
 
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const lora = Lora({ subsets: ["latin"], variable: "--font-serif" });
 
@@ -34,7 +34,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
   return (
     <html lang="en">
