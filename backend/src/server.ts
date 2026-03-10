@@ -31,8 +31,8 @@ async function start() {
 
     // Initialize Scholarship Ingestion System
     // await seedScholarshipSources();
-    // startScholarshipCron();
-    // seedTestData();
+    // await startScholarshipCron();
+    // await seedTestData();
 
   } catch (err) {
     console.error("Failed to connect to database:", err);

@@ -13,6 +13,7 @@ import {
 } from "sequelize-typescript";
 import { RefreshToken } from "./RefreshToken.js";
 import { PasswordResetToken } from "./PasswordResetToken.js";
+import { Consultation } from "./Consultation.js";
 import { UserRole } from "../types/userTypes.js";
 
 @Table({
@@ -92,4 +93,10 @@ export class User extends Model {
 
     @HasMany(() => PasswordResetToken)
     passwordResetTokens!: PasswordResetToken[];
+
+    @HasMany(() => Consultation, 'student_id')
+    consultationsAsStudent!: Consultation[];
+
+    @HasMany(() => Consultation, 'counselor_id')
+    consultationsAsCounselor!: Consultation[];
 }

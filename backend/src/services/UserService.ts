@@ -49,4 +49,18 @@ export class UserService {
   static async activateUser(id: number): Promise<User | null> {
     return UserRepository.update(id, { isActive: true });
   }
+
+  static async getAdminStats() {
+    const totalUsers = await UserRepository.countAll();
+    const students = await UserRepository.countByRole(UserRole.STUDENT);
+    const counselors = await UserRepository.countByRole(UserRole.COUNSELOR);
+    const admins = await UserRepository.countByRole(UserRole.ADMIN);
+
+    return {
+      totalUsers,
+      students,
+      counselors,
+      admins
+    };
+  }
 }
