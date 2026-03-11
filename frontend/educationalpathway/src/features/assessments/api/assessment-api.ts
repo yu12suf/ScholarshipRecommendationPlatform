@@ -11,15 +11,23 @@ export const generateAssessment = async (options: AssessmentOptions) => {
 };
 
 export const submitAssessment = async (testId: string, responses: unknown, audio?: Blob) => {
-  const formData = new FormData();
-  formData.append('test_id', testId);
-  formData.append('responses', JSON.stringify(responses));
   if (audio) {
+    // Multipart form with audio file
+    const formData = new FormData();
+    formData.append('test_id', testId);
+    formData.append('responses', JSON.stringify(responses));
     formData.append('audio', audio, 'recording.webm');
+
+    const response = await api.post('/assessment/submit', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
   }
 
-  const response = await api.post('/assessment/submit', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  // JSON body when no audio (avoids multipart parsing overhead)
+  const response = await api.post('/assessment/submit', {
+    test_id: testId,
+    responses,
   });
   return response.data;
 };

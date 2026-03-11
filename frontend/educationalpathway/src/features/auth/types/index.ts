@@ -35,6 +35,7 @@ export interface User {
     country: string;
     preferenceLevel: 'High' | 'Medium' | 'Low';
   }[];
+  [key: string]: any;
 }
 
 export interface AuthResponse {

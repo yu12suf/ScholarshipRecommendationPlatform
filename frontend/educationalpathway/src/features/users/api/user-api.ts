@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import  User  from '@/types/user';
+import { User } from '@/features/auth/types';
 
 export const getProfile = async (): Promise<User> => {
   const response = await api.get('/user/profile');

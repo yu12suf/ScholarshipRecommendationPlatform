@@ -22,6 +22,15 @@ export const StudentDashboard = () => {
   const calculateCompletion = () => {
     if (!user) return 0;
 
+    const safeParse = (str: any) => {
+      if (!str) return [];
+      try {
+        return typeof str === "string" ? JSON.parse(str) : str;
+      } catch {
+        return [];
+      }
+    };
+
     const fields = [
       user.name,
       user.email,
@@ -31,20 +40,20 @@ export const StudentDashboard = () => {
       user.countryOfResidence,
       user.city,
       user.phoneNumber,
-      user.currentEducationLevel,
+      user.academicStatus || user.currentEducationLevel,
       user.degreeSeeking,
-      user.previousUniversity,
+      user.currentUniversity || user.previousUniversity,
       user.graduationYear,
-      user.gpa,
-      user.preferredFundingType,
+      user.calculatedGpa || user.gpa,
+      user.fundingRequirement || user.preferredFundingType,
       user.studyMode,
     ];
 
     const arrayFields = [
-      user.fieldOfStudyInput,
-      user.preferredDegreeLevel,
-      user.preferredCountries,
-      user.preferredUniversities,
+      safeParse(user.fieldOfStudy || user.fieldOfStudyInput),
+      safeParse(user.preferredDegreeLevel),
+      safeParse(user.preferredCountries),
+      safeParse(user.preferredUniversities),
     ];
 
     const filledBasic = fields.filter(
