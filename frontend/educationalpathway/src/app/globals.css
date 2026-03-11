@@ -1,191 +1,196 @@
 @import "tailwindcss";
 
+/* ---------------- THEME TOKENS ---------------- */
+
 @theme {
-  /* Dynamic CSS Variable Mapping for Tailwind v4 */
+  /* Base Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  /* Primary Scale overrides for UI if needed */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  
-  /* Semantic Colors */
+
+  /* Semantic */
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --color-error: var(--destructive);
   --color-info: var(--info);
-  
-  /* UI Element Defaults */
+
+  /* UI */
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  
+
   /* Radius Scale */
-  --radius-sm: calc(var(--radius) - 4px); /* 8px */
-  --radius-md: calc(var(--radius) - 2px); /* 10px */
-  --radius-lg: var(--radius); /* 12px */
-  --radius-xl: calc(var(--radius) + 4px); /* 16px */
-  --radius-2xl: calc(var(--radius) + 8px); /* 20px */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 
   /* Typography */
-  --font-sans: var(--font-open-sans), "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-open-sans), "Open Sans", system-ui, sans-serif;
 }
+
+/* ---------------- LIGHT MODE ---------------- */
 
 :root {
-  /* 
-   * LIGHT MODE THEME 
-   * Professional Educational SaaS (LinkedIn, Notion, Stripe layout)
-   */
+
+  /* Base */
   --background: #ffffff;
-  --foreground: #0f172a; /* Slate 900 */
-  
+  --foreground: #0f172a;
+
+  /* Surfaces */
   --card: #ffffff;
   --card-foreground: #0f172a;
-  
+
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  
-  /* Primary: Professional Blue */
-  --primary: #2563eb; /* Blue 600 */
-  --primary-foreground: #ffffff;
-  
-  /* Secondary: Indigo Accent */
-  --secondary: #4f46e5; /* Indigo 600 */
-  --secondary-foreground: #ffffff;
-  
-  /* Muted: Slate 50 / Slate 500 */
-  --muted: #f8fafc; /* Slate 50 */
-  --muted-foreground: #64748b; /* Slate 500 */
-  
-  /* Accent: Subtle Blue */
-  --accent: #eff6ff; /* Blue 50 */
-  --accent-foreground: #2563eb;
-  
-  /* Semantics */
-  --destructive: #ef4444; /* Red 500 */
-  --destructive-foreground: #ffffff;
-  --success: #10b981; /* Emerald 500 */
-  --warning: #f59e0b; /* Amber 500 */
-  --info: #3b82f6; /* Blue 500 */
-  
-  /* Architecture */
-  --border: #e2e8f0; /* Slate 200 */
-  --input: #e2e8f0; /* Slate 200 */
-  --ring: #2563eb; /* Primary Blue */
-  
-  --radius: 0.75rem; /* 12px default corner */
-}
 
-.dark {
-  /* 
-   * DARK MODE THEME 
-   * Deep black with vibrant blue interactions 
-   */
-  --background: #09090b; /* Deep Zinc 950 */
-  --foreground: #f8fafc; /* Slate 50 */
-  
-  --card: #0f172a; /* Slate 900 */
-  --card-foreground: #f8fafc;
-  
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
-  
-  /* Primary: Professional Blue */
-  --primary: #3b82f6; /* Blue 500 */
+  /* Primary */
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  
-  /* Secondary: Indigo Accent */
-  --secondary: #6366f1; /* Indigo 500 */
-  --secondary-foreground: #ffffff;
-  
-  /* Muted: Slate 800 / Slate 400 */
-  --muted: #1e293b; /* Slate 800 */
-  --muted-foreground: #94a3b8; /* Slate 400 */
-  
-  /* Accent: Blue 900 for hovered dark blocks */
-  --accent: #1e3a8a; /* Blue 900 */
-  --accent-foreground: #bfdbfe; /* Blue 200 */
-  
+
+  /* Secondary UI */
+  --secondary: #f3f4f6;
+  --secondary-foreground: #111827;
+
+  /* Muted Surfaces */
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+
+  /* Hover / subtle surfaces */
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+
   /* Semantics */
-  --destructive: #ef4444; 
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
+
   --success: #10b981;
   --warning: #f59e0b;
   --info: #3b82f6;
-  
-  /* Architecture */
-  --border: #334155; /* Slate 700 */
-  --input: #334155; /* Slate 700 */
-  --ring: #3b82f6; /* Blue 500 */
+
+  /* Borders */
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #2563eb;
+
+  --radius: 0.75rem;
 }
+
+/* ---------------- DARK MODE ---------------- */
+
+.dark {
+
+  /* Base */
+  --background: #0d0d0d;
+  --foreground: #ececec;
+
+  /* Surfaces */
+  --card: #171717;
+  --card-foreground: #ececec;
+
+  --popover: #171717;
+  --popover-foreground: #ececec;
+
+  /* Primary */
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+
+  /* Sidebar / panels */
+  --secondary: #202123;
+  --secondary-foreground: #ececec;
+
+  /* Chat message surfaces */
+  --muted: #1f1f1f;
+  --muted-foreground: #a1a1aa;
+
+  /* Hover surfaces */
+  --accent: #2a2a2a;
+  --accent-foreground: #ececec;
+
+  /* Semantics */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+
+  /* Borders */
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #3b82f6;
+}
+
+/* ---------------- BASE STYLES ---------------- */
 
 body {
-  background-color: var(--background);
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Premium utility gradients */
+/* ---------------- GRADIENT UTILITIES ---------------- */
+
 .primary-gradient {
   background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
 }
+
 .secondary-gradient {
-  background: linear-gradient(135deg, var(--secondary) 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--secondary) 0%, #4f46e5 100%);
 }
+
+/* ---------------- GLASS MORPHISM ---------------- */
 
 .glass-morphism {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255,255,255,0.05);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-.dark .glass-morphism {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Standardized Typography Classes */
+.dark .glass-morphism {
+  background: rgba(20,20,20,0.5);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* ---------------- TYPOGRAPHY ---------------- */
+
 .h1 { @apply text-4xl font-extrabold tracking-tight md:text-5xl; }
 .h2 { @apply text-3xl font-bold tracking-tight md:text-4xl; }
 .h3 { @apply text-2xl font-semibold tracking-tight; }
 .h4 { @apply text-xl font-semibold tracking-tight; }
-.text-body { @apply text-base text-foreground leading-relaxed; }
-.text-small { @apply text-sm text-muted-foreground font-medium; }
-.text-label { @apply text-xs font-bold uppercase tracking-widest text-muted-foreground; }
 
-/* React Select Theme Overrides */
+.text-body { @apply text-base leading-relaxed text-foreground; }
+.text-small { @apply text-sm text-muted-foreground font-medium; }
+.text-label { @apply text-xs uppercase tracking-widest font-bold text-muted-foreground; }
+
+/* ---------------- REACT SELECT ---------------- */
+
 .react-select__control {
-  background-color: var(--muted) !important;
+  background: var(--muted) !important;
   border: 1px solid transparent !important;
-  min-height: 3rem !important;
   border-radius: var(--radius) !important;
+  min-height: 3rem !important;
   font-size: 0.875rem !important;
   box-shadow: none !important;
   transition: all 0.2s ease !important;
@@ -208,48 +213,42 @@ body {
 }
 
 .react-select__menu {
-  background-color: var(--card) !important;
+  background: var(--card) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius) !important;
   margin-top: 4px !important;
   z-index: 50 !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
 }
 
 .react-select__option {
   color: var(--foreground) !important;
-  background-color: transparent !important;
+  background: transparent !important;
   font-size: 0.875rem !important;
-  cursor: pointer !important;
   padding: 8px 12px !important;
+  cursor: pointer !important;
 }
 
 .react-select__option--is-focused {
-  background-color: var(--muted) !important;
+  background: var(--muted) !important;
 }
 
 .react-select__option--is-selected {
-  background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
   color: var(--primary) !important;
   font-weight: 600 !important;
 }
 
 .react-select__multi-value {
-  background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
   border-radius: 6px !important;
 }
 
 .react-select__multi-value__label {
   color: var(--primary) !important;
   font-weight: 600 !important;
-  padding: 2px 6px !important;
-}
-
-.react-select__multi-value__remove {
-  color: var(--primary) !important;
 }
 
 .react-select__multi-value__remove:hover {
-  background-color: var(--destructive) !important;
+  background: var(--destructive) !important;
   color: var(--destructive-foreground) !important;
 }

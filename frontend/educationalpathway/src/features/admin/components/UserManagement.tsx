@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { User } from '@/features/auth/types';
 import { getAllUsers } from '../api/admin-api';
+
 import { Button, Card, CardBody } from '@/components/ui';
+
 import { Loader2, UserMinus, Shield } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -29,8 +31,6 @@ export const UserManagement = () => {
 
   const handleToggleStatus = async () => {
     try {
-      // In a real app we'd check if active/deactive property exists on user model
-      // For now we assume the toggle logic
       toast.success('Action performed');
       fetchUsers();
     } catch {
@@ -38,63 +38,146 @@ export const UserManagement = () => {
     }
   };
 
-  if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-16">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardBody>
+    <Card className="border-border bg-background rounded-sm">
+
+      <CardBody className="p-0">
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="py-4 font-bold text-gray-900">User</th>
-                <th className="py-4 font-bold text-gray-900">Role</th>
-                <th className="py-4 font-bold text-gray-900">Status</th>
-                <th className="py-4 text-right font-bold text-gray-900">Actions</th>
+
+          <table className="w-full">
+
+            {/* Header */}
+
+            <thead className="bg-muted/40 border-b border-border">
+
+              <tr className="text-sm text-muted-foreground">
+
+                <th className="text-left px-6 py-4 font-semibold">User</th>
+                <th className="text-left px-6 py-4 font-semibold">Role</th>
+                <th className="text-left px-6 py-4 font-semibold">Status</th>
+                <th className="text-right px-6 py-4 font-semibold">Actions</th>
+
               </tr>
+
             </thead>
+
+            {/* Body */}
+
             <tbody>
+
               {users.map((user) => (
-                <tr key={user.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                  <td className="py-4">
+
+                <tr
+                  key={user.id}
+                  className="border-b border-border hover:bg-muted/30 transition-colors"
+                >
+
+                  {/* User */}
+
+                  <td className="px-6 py-4">
+
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+
                         {user.name.charAt(0)}
+
                       </div>
+
                       <div>
-                        <p className="font-bold text-gray-900">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
+
+                        <p className="font-semibold text-foreground">
+                          {user.name}
+                        </p>
+
+                        <p className="text-sm text-muted-foreground">
+                          {user.email}
+                        </p>
+
                       </div>
+
                     </div>
+
                   </td>
-                  <td className="py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                      user.role === 'admin' ? 'bg-red-100 text-red-700' :
-                      user.role === 'counselor' ? 'bg-blue-100 text-blue-700' :
-                      'bg-green-100 text-green-700'
-                    }`}>
+
+                  {/* Role */}
+
+                  <td className="px-6 py-4">
+
+                    <span
+                      className={`px-3 py-1 text-xs rounded-full font-semibold capitalize
+                      ${
+                        user.role === 'admin'
+                          ? 'bg-destructive/10 text-destructive'
+                          : user.role === 'counselor'
+                          ? 'bg-info/10 text-info'
+                          : 'bg-success/10 text-success'
+                      }`}
+                    >
                       {user.role}
                     </span>
+
                   </td>
-                  <td className="py-4">
-                    <span className="text-sm text-green-600 font-medium">Active</span>
+
+                  {/* Status */}
+
+                  <td className="px-6 py-4">
+
+                    <span className="text-sm font-medium text-success">
+                      Active
+                    </span>
+
                   </td>
-                  <td className="py-4 text-right">
+
+                  {/* Actions */}
+
+                  <td className="px-6 py-4">
+
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" title="Edit Role">
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="hover:bg-muted"
+                        title="Edit Role"
+                      >
                         <Shield className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleToggleStatus()}>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={() => handleToggleStatus()}
+                      >
                         <UserMinus className="h-4 w-4" />
                       </Button>
+
                     </div>
+
                   </td>
+
                 </tr>
+
               ))}
+
             </tbody>
+
           </table>
+
         </div>
+
       </CardBody>
+
     </Card>
   );
 };

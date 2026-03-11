@@ -1,27 +1,29 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/auth-context';
 import { Loader2 } from 'lucide-react';
+
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
-import { AdminFooter } from '@/components/layout/AdminFooter';
 import { CounselorNavbar } from '@/components/layout/CounselorNavbar';
-import { StudentNavbar } from '@/components/layout/StudentNavbar';
+import { StudentSidebar } from '@/components/layout/StudentSidebar';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login');
+      router.replace('/login');
     }
   }, [user, loading, router]);
 
@@ -33,48 +35,75 @@ export default function DashboardLayout({
     );
   }
 
-  // Admin Layout (Sidebar based)
+  const isStudentOnboarding = pathname.startsWith('/dashboard/student/profile');
+
+  /* ---------------- ADMIN LAYOUT ---------------- */
+
   if (user.role === 'admin') {
     return (
-      <div className="min-h-screen flex bg-slate-950">
+      <div className="h-screen flex flex-row bg-background overflow-hidden">
+
         <AdminSidebar />
-        <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          <main className="flex-1 overflow-y-auto px-6 py-8 lg:px-12 lg:py-16 custom-scrollbar">
+
+        <div className="flex-1 flex flex-col min-w-0">
+
+          <main className="flex-1 overflow-y-auto custom-scrollbar px-6 py-8 lg:px-10">
+
             <div className="max-w-7xl mx-auto">
               {children}
             </div>
-            <AdminFooter />
+
           </main>
+
         </div>
+
       </div>
     );
   }
 
-  // Counselor Layout
+  /* ---------------- COUNSELOR LAYOUT ---------------- */
+
   if (user.role === 'counselor') {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-screen flex flex-col bg-background overflow-hidden">
+
         <CounselorNavbar />
-        <main className="flex-1 container mx-auto px-4 py-8">
+
+        <main className="flex-1 overflow-y-auto custom-scrollbar container mx-auto px-6 py-8">
+
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
+
         </main>
-        <Footer />
+
       </div>
     );
   }
 
-  // Student & Default Layout
+  /* ---------------- STUDENT LAYOUT ---------------- */
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <StudentNavbar />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {children}
-        </div>
-      </main>
-      <Footer />
+    <div className="h-screen flex flex-row bg-background overflow-hidden">
+
+      {!isStudentOnboarding && <StudentSidebar />}
+
+      <div className="flex-1 flex flex-col min-w-0">
+
+        <main
+          className={`flex-1 overflow-y-auto custom-scrollbar ${
+            isStudentOnboarding ? '' : 'px-6 py-8'
+          }`}
+        >
+
+          <div className="max-w-7xl mx-auto h-full">
+            {children}
+          </div>
+
+        </main>
+
+      </div>
+
     </div>
   );
 }

@@ -1,38 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/providers/auth-context';
 import {
-  Shield,
-  Users,
-  Activity,
-  Settings,
-  Zap,
-  ShieldCheck,
+  LayoutDashboard,
   GraduationCap,
-  Home,
+  Users,
+  BookOpen,
+  LogOut,
+  Settings,
   PanelLeftClose,
-  PanelLeftOpen,
-  LogOut
+  PanelLeftOpen
 } from 'lucide-react';
-
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function AdminSidebar() {
+export function StudentSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const menuItems = [
-    { name: 'Home', href: '/dashboard/admin', icon: Home },
-    { name: 'Students', href: '/dashboard/admin/students', icon: GraduationCap },
-    { name: 'Counselors', href: '/dashboard/admin/counselors', icon: ShieldCheck },
-    { name: 'Platform Stats', href: '/dashboard/analytics', icon: Activity },
-    { name: 'System Logs', href: '/dashboard/logs', icon: Zap },
-    { name: 'Security Center', href: '/dashboard/security', icon: Shield },
+    { name: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
+    { name: 'Scholarships', href: '/dashboard/scholarships', icon: GraduationCap },
+    { name: 'Counselors', href: '/dashboard/counselors', icon: Users },
+    { name: 'Learn', href: '/dashboard/assessment', icon: BookOpen },
   ];
 
   return (
@@ -48,11 +42,9 @@ export function AdminSidebar() {
         {!collapsed && (
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full primary-gradient flex items-center justify-center shrink-0">
-              <Shield size={18} className="text-primary-foreground" />
+              <GraduationCap size={18} className="text-primary-foreground"/>
             </div>
-            <span className="text-lg font-bold text-foreground tracking-tight whitespace-nowrap">
-              Admin Portal
-            </span>
+
           </div>
         )}
 
@@ -118,7 +110,7 @@ export function AdminSidebar() {
               transition={{ duration: 0.2 }}
               className={`absolute bottom-full mb-2 bg-card border border-border rounded-lg shadow-lg py-1 flex flex-col overflow-hidden z-50 ${collapsed ? 'left-3 right-3 items-center' : 'left-3 right-3'}`}
             >
-              <Link 
+              <Link
                 href="/dashboard/settings"
                 className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${collapsed ? 'justify-center px-0 w-full' : ''}`}
                 onClick={() => setShowUserMenu(false)}
@@ -149,17 +141,17 @@ export function AdminSidebar() {
         >
           <div className="h-8 w-8 rounded-full primary-gradient flex items-center justify-center shrink-0">
             <span className="text-primary-foreground text-sm font-bold">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </span>
           </div>
 
           {!collapsed && (
             <div className="flex-1 flex flex-col items-start overflow-hidden">
               <span className="text-sm font-medium text-foreground truncate w-full text-left">
-                {user?.name || 'Administrator'}
+                {user?.name || 'User'}
               </span>
               <span className="text-xs text-muted-foreground truncate w-full text-left">
-                Admin
+                Student
               </span>
             </div>
           )}

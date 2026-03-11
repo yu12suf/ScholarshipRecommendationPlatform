@@ -7,7 +7,6 @@ import {
   Clock,
   TrendingUp,
   ChevronRight,
-  GraduationCap,
   ArrowRight,
   MessageSquare,
   FileText
@@ -92,186 +91,206 @@ export const StudentDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white space-y-10 pb-12">
+    <div className="min-h-screen bg-background text-foreground space-y-12 pb-20">
 
-      {/* Welcome Section */}
+      {/* Welcome */}
       <motion.section
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-sm border border-gray-200 p-10 bg-green-100 w-full"
+        className="rounded-lg border border-border bg-card p-10 shadow-sm relative overflow-hidden"
       >
-        <div className="max-w-3xl">
-          <p className="text-gray-500 text-lg mb-8">
+        <div className="relative z-10 max-w-3xl">
+          <h1 className="h1 mb-4">
+            Welcome back, {user?.name?.split(" ")[0] || "Student"}
+          </h1>
+
+          <p className="text-muted-foreground text-body mb-10 max-w-2xl">
             Discover scholarships tailored to your academic background.
-            Keep your profile updated to improve your matches.
+            Keep your profile updated to reach your maximum matching potential.
           </p>
 
           <div className="flex gap-4 flex-wrap">
 
             <Link href="/dashboard/scholarships">
-              <Button size="lg" className="h-12 px-6 cursor-pointer bg-orange-300 rounded-sm">
+              <Button className="h-12 px-8 primary-gradient text-white">
                 Explore Scholarships
-                <ArrowRight className="ml-2 h-4 w-4 " />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
 
             <Link href="/dashboard/student/profile">
-              <Button size="lg" variant="outline" className="h-12 px-6 cursor-pointer">
+              <Button variant="outline" className="h-12 px-8">
                 Update Profile
               </Button>
             </Link>
 
           </div>
         </div>
+
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-accent rounded-full blur-3xl opacity-50" />
       </motion.section>
+
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
         {stats.map((stat, idx) => (
-          <Card key={idx} className="border border-gray-200 rounded-sm">
-            <CardBody className="p-6">
+          <Card key={idx} className="border border-border bg-card hover:shadow-md transition">
 
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-300 rounded-lg">
-                  <stat.icon className="h-5 w-5 text-gray-700" />
-                </div>
+            <CardBody className="p-8">
+
+              <span className="text-label">{stat.label}</span>
+
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-3xl font-semibold">{stat.value}</p>
               </div>
 
-              <p className="text-sm text-gray-500 mb-1">
-                {stat.label}
-              </p>
-
-              <p className="text-3xl font-bold text-gray-900">
-                {stat.value}
-              </p>
-
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-small mt-2">
                 {stat.description}
               </p>
 
             </CardBody>
+
           </Card>
         ))}
 
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        {/* Recommended Scholarships */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-          <div className="flex justify-between items-center">
+        {/* Scholarships */}
+        <div className="lg:col-span-2 space-y-8">
+
+          <div className="flex justify-between items-end border-b border-border pb-4">
+
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Recommended Scholarships
-              </h2>
-              <p className="text-gray-500 text-sm">
-                Based on your profile
+              <h2 className="h3">Recommended Scholarships</h2>
+              <p className="text-small mt-1">
+                Personalized opportunities based on your academic profile.
               </p>
             </div>
 
             <Link
               href="/dashboard/scholarships"
-              className="flex items-center text-sm font-medium text-blue-600"
+              className="flex items-center text-primary font-semibold hover:opacity-80"
             >
               View all
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
+
           </div>
 
-          <Card className="border border-dashed border-gray-300 rounded-sm">
-            <CardBody className="py-16 text-center">
 
-              <div className="flex justify-center mb-4">
-                <GraduationCap className="h-10 w-10 text-gray-300" />
-              </div>
+          <Card className="border border-dashed border-border bg-muted">
 
-              <h3 className="text-lg font-semibold text-gray-900">
-                No scholarships matched yet
+            <CardBody className="py-24 text-center">
+
+              <h3 className="h4">
+                Scanning for matches...
               </h3>
 
-              <p className="text-sm text-gray-500 mt-2 max-w-sm mx-auto">
-                Complete your profile to improve scholarship matching.
+              <p className="text-small mt-2 max-w-sm mx-auto">
+                Complete your profile to unlock more scholarship opportunities.
               </p>
 
               <Link href="/dashboard/student/profile">
-                <Button className="mt-6">
-                  Improve Profile
+                <Button className="mt-8 primary-gradient text-white">
+                  Enhance Your Profile
                 </Button>
               </Link>
 
             </CardBody>
+
           </Card>
 
         </div>
 
-        {/* Activity Panel */}
-        <div className="space-y-6">
 
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
-              Activity
-            </h2>
-            <p className="text-sm text-gray-500">
-              Recent updates
+        {/* Activity */}
+        <div className="space-y-8">
+
+          <div className="border-b border-border pb-4">
+            <h2 className="h3">Recent Activity</h2>
+            <p className="text-small mt-1">
+              Stay updated on your status.
             </p>
           </div>
 
-          <Card className="border border-gray-200 rounded-sm">
-            <CardBody className="p-6 space-y-6">
 
-              <div className="flex gap-3">
-                <FileText className="h-5 w-5 text-gray-400" />
+          <Card className="border border-border bg-card">
+
+            <CardBody className="p-8 space-y-8">
+
+              <div className="flex gap-4">
+
+                <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-md">
+                  <FileText className="h-5 w-5 text-warning" />
+                </div>
+
                 <div>
-                  <p className="font-medium text-gray-900">
-                    Profile incomplete
+                  <p className="font-semibold text-sm">
+                    Profile Completion Required
                   </p>
-                  <p className="text-xs text-gray-500">
-                    Completing your profile improves scholarship matches.
+                  <p className="text-small mt-1">
+                    Your current visibility to scholarships is limited.
                   </p>
                 </div>
+
               </div>
 
-              <div className="flex gap-3">
-                <MessageSquare className="h-5 w-5 text-gray-400" />
+
+              <div className="flex gap-4">
+
+                <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-md">
+                  <MessageSquare className="h-5 w-5 text-info" />
+                </div>
+
                 <div>
-                  <p className="font-medium text-gray-900">
-                    Messages
+                  <p className="font-semibold text-sm">
+                    Inbox Clear
                   </p>
-                  <p className="text-xs text-gray-500">
-                    No new messages from counselors.
+                  <p className="text-small mt-1">
+                    No new messages from guidance counselors.
                   </p>
                 </div>
+
               </div>
+
 
               {/* Progress */}
-              <div className="pt-4 border-t border-gray-100">
+              <div className="pt-6 border-t border-border">
 
-                <p className="text-xs text-gray-500 mb-2">
-                  Profile completion
-                </p>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-label">Profile Strength</span>
+                  <span className="text-primary font-semibold">
+                    {completionRate}%
+                  </span>
+                </div>
 
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${completionRate}%` }}
+                <div className="w-full bg-muted h-1.5 rounded">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${completionRate}%` }}
+                    className="h-full bg-primary"
                   />
                 </div>
 
-                <p className="text-xs text-gray-500 mt-2">
-                  {completionRate}% complete
+                <p className="text-small mt-4">
+                  A stronger profile increases your chances of matching with scholarships.
                 </p>
 
               </div>
 
             </CardBody>
+
           </Card>
 
         </div>
 
       </div>
+
     </div>
   );
 };

@@ -32,7 +32,11 @@ interface NavLink {
   description?: string;
 }
 
-export function Navbar() {
+interface NavbarProps {
+  simplified?: boolean;
+}
+
+export function Navbar({ simplified = false }: NavbarProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -197,7 +201,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+    <nav className={`sticky top-0 z-40 w-full bg-white border-b border-gray-200 shadow-sm ${simplified ? 'h-16' : ''}`}>
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo Section */}
@@ -215,36 +219,38 @@ export function Navbar() {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center ml-8">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`relative px-4 py-2 text-sm font-medium transition-colors group`}
-                  >
-                    <span
-                      className={`${isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900"}`}
+            {!simplified && (
+              <div className="hidden lg:flex items-center ml-8">
+                {navLinks.map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      className={`relative px-4 py-2 text-sm font-medium transition-colors group`}
                     >
-                      {link.name}
-                    </span>
-                    {isActive && (
-                      <motion.div
-                        layoutId="navbar-active"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
-                        initial={false}
-                        transition={{
-                          type: "spring",
-                          stiffness: 380,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
+                      <span
+                        className={`${isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900"}`}
+                      >
+                        {link.name}
+                      </span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="navbar-active"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+                          initial={false}
+                          transition={{
+                            type: "spring",
+                            stiffness: 380,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Right Section */}
@@ -284,31 +290,35 @@ export function Navbar() {
             </div>
 
             {/* Notifications */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="relative h-9 w-9 p-0 rounded-full hover:bg-gray-100 hidden sm:inline-flex"
-            >
-              <Bell className="h-4 w-4 text-gray-600" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full ring-2 ring-white" />
-            </Button>
+            {!simplified && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative h-9 w-9 p-0 rounded-full hover:bg-gray-100 hidden sm:inline-flex"
+              >
+                <Bell className="h-4 w-4 text-gray-600" />
+                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full ring-2 ring-white" />
+              </Button>
+            )}
 
             {/* Theme Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="h-9 w-9 p-0 rounded-full hover:bg-gray-100 hidden sm:inline-flex"
-            >
-              {isDarkMode ? (
-                <Sun className="h-4 w-4 text-gray-600" />
-              ) : (
-                <Moon className="h-4 w-4 text-gray-600" />
-              )}
-            </Button>
+            {!simplified && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="h-9 w-9 p-0 rounded-full hover:bg-gray-100 hidden sm:inline-flex"
+              >
+                {isDarkMode ? (
+                  <Sun className="h-4 w-4 text-gray-600" />
+                ) : (
+                  <Moon className="h-4 w-4 text-gray-600" />
+                )}
+              </Button>
+            )}
 
             {/* Divider */}
-            <div className="h-8 w-px bg-gray-200 hidden sm:block" />
+            {!simplified && <div className="h-8 w-px bg-gray-200 hidden sm:block" />}
 
             {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
@@ -319,17 +329,21 @@ export function Navbar() {
                 <div className="h-9 w-9 rounded-lg bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm">
                   {getInitials(user?.name)}
                 </div>
-                <div className="hidden lg:block text-left">
-                  <p className="text-sm font-medium text-gray-700">
-                    {user?.name || "User"}
-                  </p>
-                  <p className="text-xs text-gray-500 capitalize">
-                    {user?.role}
-                  </p>
-                </div>
-                <ChevronDown
-                  className={`hidden lg:block h-4 w-4 text-gray-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}
-                />
+                {!simplified && (
+                  <div className="hidden lg:block text-left">
+                    <p className="text-sm font-medium text-gray-700">
+                      {user?.name || "User"}
+                    </p>
+                    <p className="text-xs text-gray-500 capitalize">
+                      {user?.role}
+                    </p>
+                  </div>
+                )}
+                {!simplified && (
+                  <ChevronDown
+                    className={`hidden lg:block h-4 w-4 text-gray-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}
+                  />
+                )}
               </button>
 
               <AnimatePresence>
@@ -432,102 +446,106 @@ export function Navbar() {
             </div>
 
             {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden h-9 w-9 p-0 rounded-lg hover:bg-gray-100"
-            >
-              {isMenuOpen ? (
-                <X className="h-5 w-5 text-gray-600" />
-              ) : (
-                <Menu className="h-5 w-5 text-gray-600" />
-              )}
-            </Button>
+            {!simplified && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="lg:hidden h-9 w-9 p-0 rounded-lg hover:bg-gray-100"
+              >
+                {isMenuOpen ? (
+                  <X className="h-5 w-5 text-gray-600" />
+                ) : (
+                  <Menu className="h-5 w-5 text-gray-600" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="lg:hidden border-t border-gray-200 bg-white overflow-hidden"
-          >
-            <div className="px-4 py-3 space-y-1">
-              {/* Mobile Search */}
-              <form onSubmit={handleSearch} className="mb-4">
-                <div className="relative">
-                  <Input
-                    type="search"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 bg-gray-50 border-gray-200"
-                  />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                </div>
-              </form>
-
-              {/* Mobile Navigation Links */}
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon
-                      className={`h-5 w-5 ${isActive ? "text-blue-600" : "text-gray-400"}`}
+      {!simplified && (
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden border-t border-gray-200 bg-white overflow-hidden"
+            >
+              <div className="px-4 py-3 space-y-1">
+                {/* Mobile Search */}
+                <form onSubmit={handleSearch} className="mb-4">
+                  <div className="relative">
+                    <Input
+                      type="search"
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-4 bg-gray-50 border-gray-200"
                     />
-                    <div>
-                      <p className="font-medium">{link.name}</p>
-                      {link.description && (
-                        <p className="text-xs text-gray-500">
-                          {link.description}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  </div>
+                </form>
 
-              {/* Mobile Divider */}
-              <div className="my-3 border-t border-gray-100" />
+                {/* Mobile Navigation Links */}
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        isActive
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Icon
+                        className={`h-5 w-5 ${isActive ? "text-blue-600" : "text-gray-400"}`}
+                      />
+                      <div>
+                        <p className="font-medium">{link.name}</p>
+                        {link.description && (
+                          <p className="text-xs text-gray-500">
+                            {link.description}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
 
-              {/* Mobile User Info */}
-              <div className="px-4 py-3">
-                <p className="text-sm font-medium text-gray-900">
-                  {user?.name || "User"}
-                </p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+                {/* Mobile Divider */}
+                <div className="my-3 border-t border-gray-100" />
+
+                {/* Mobile User Info */}
+                <div className="px-4 py-3">
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.name || "User"}
+                  </p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
+                </div>
+
+                {/* Mobile Logout */}
+                <button
+                  onClick={() => {
+                    logout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span className="font-medium">Sign Out</span>
+                </button>
               </div>
-
-              {/* Mobile Logout */}
-              <button
-                onClick={() => {
-                  logout();
-                  setIsMenuOpen(false);
-                }}
-                className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="font-medium">Sign Out</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </nav>
   );
 }

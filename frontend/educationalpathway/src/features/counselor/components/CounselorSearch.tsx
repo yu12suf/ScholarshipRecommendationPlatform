@@ -1,62 +1,90 @@
 'use client';
 
-import { Users } from 'lucide-react';
-import { Card, CardBody, Input, Button } from '@/components/ui';
+import { Users, Search } from 'lucide-react';
+import { Input, Button } from '@/components/ui';
 
 export const CounselorSearch = () => {
   return (
     <div className="space-y-12">
-      <div className="bg-white rounded-sm p-10 border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-8">
-        <div className="space-y-3">
-          <h1 className="text-3xl font-serif text-gray-900 tracking-tight">
+
+      {/* Header */}
+      <div className="bg-card border border-border rounded-sm p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="space-y-2">
+          <h1 className="h2">
             Experts & Counselors
           </h1>
-          <p className="text-gray-500 text-lg font-open-sans max-w-2xl">
-            Connect with professionals who can guide your academic journey with expert insights and personalized mentorship.
+
+          <p className="text-body text-muted-foreground max-w-2xl">
+            Connect with professionals who can guide your academic journey
+            with expert insights and personalized mentorship.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3">
+      {/* Search */}
+      <div className="flex items-center gap-2 max-w-md">
         <div className="relative flex-1">
-          <Input 
-            placeholder="Search by name, expertise, or university..." 
-            className="h-12 rounded-sm border-gray-200 font-open-sans"
+
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
+          <Input
+            placeholder="Search by name, expertise, or university..."
+            className="pl-9 h-10"
           />
+
         </div>
-        <Button className="h-12 px-8 bg-gray-900 hover:bg-black text-white rounded-sm">
-          Search Counselors
+
+        <Button
+          size="icon"
+          className="h-10 w-10 primary-gradient text-primary-foreground cursor-pointer"
+        >
+          <Search className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Counselor List */}
+      <div className="bg-card border border-border rounded-sm divide-y divide-border">
+
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="hover:shadow-lg transition-all duration-200 rounded-sm border-gray-200 bg-white">
-            <CardBody className="p-8">
-              <div className="flex flex-col items-center text-center">
-                <div className="h-24 w-24 bg-orange-100 rounded-full flex items-center justify-center mb-6">
-                  <span className="text-2xl font-bold text-orange-600">
-                    {i === 1 ? 'YD' : i === 2 ? 'JS' : 'MA'}
-                  </span>
-                </div>
-                
-                <h3 className="text-xl font-serif text-gray-900 mb-2">
+          <div
+            key={i}
+            className="flex items-center justify-between p-6 hover:bg-muted transition"
+          >
+
+            {/* Left */}
+            <div className="flex items-center gap-4">
+
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center font-semibold text-sm">
+                {i === 1 ? 'YD' : i === 2 ? 'JS' : 'MA'}
+              </div>
+
+              <div className="space-y-1">
+
+                <h3 className="font-semibold text-foreground">
                   Professional Counselor {i}
                 </h3>
-                
-                <div className="space-y-1 mb-8">
-                  <span className="text-[10px] uppercase text-gray-400 font-bold tracking-wider block">Specialization</span>
-                  <p className="text-sm text-gray-600 font-open-sans">Expert in International Scholarships</p>
-                </div>
 
-                <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-sm transition-colors">
-                  Book Session
-                </Button>
+                <p className="text-small">
+                  Expert in International Scholarships
+                </p>
+
               </div>
-            </CardBody>
-          </Card>
+
+            </div>
+
+            {/* Right */}
+            <Button
+              variant="outline"
+              className="h-9 cursor-pointer"
+            >
+              Book Session
+            </Button>
+
+          </div>
         ))}
+
       </div>
+
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import { AdminDashboard } from '@/features/admin/components/AdminDashboard';
+import { GeneralAnalysis } from '@/features/admin/components/GeneralAnalysis';
 
 export default function AdminDashboardPage() {
-  return <AdminDashboard />;
+  return <GeneralAnalysis />;
 }

@@ -23,6 +23,7 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
       await login({ email, password });
       toast.success("Welcome back!");
@@ -34,38 +35,47 @@ export function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative bg-white px-4 overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+
       {/* Background decorations */}
-      <div className="absolute top-0 left-0 w-full h-full -z-10">
+
+      <div className="absolute inset-0 -z-10">
         <div className="absolute -top-10 -left-10 w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
         <div className="absolute -bottom-10 -right-10 w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[120px]" />
       </div>
 
-      {/* Centered Card */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="w-full max-w-md z-10"
+        className="w-full max-w-md"
       >
-        <Card className="w-full border border-gray-200 rounded-lg bg-white shadow-sm">
+        <Card className="bg-card border border-border shadow-sm rounded-lg">
+
           <CardHeader className="text-center pt-10 pb-4">
-            <h1 className="text-3xl font-serif text-gray-900">
+
+            <h1 className="text-3xl font-semibold text-foreground">
               Welcome
             </h1>
-            <p className="text-gray-500 text-sm mt-2">
+
+            <p className="text-sm text-muted-foreground mt-2">
               Sign in to continue
             </p>
+
           </CardHeader>
 
           <CardBody className="px-8 pb-8 space-y-6">
+
             <form onSubmit={handleSubmit} className="space-y-5">
 
               {/* Email */}
+
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs font-serif text-gray-500">
+
+                <Label htmlFor="email" className="text-label">
                   Email
                 </Label>
+
                 <Input
                   id="email"
                   type="email"
@@ -73,16 +83,21 @@ export function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 border-gray-300 rounded-sm bg-gray-50 focus:border-green-500 shadow-none"
+                  className="h-12 bg-muted border-border"
                 />
+
               </div>
 
               {/* Password */}
+
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs font-serif text-gray-500">
+
+                <Label htmlFor="password" className="text-label">
                   Password
                 </Label>
+
                 <div className="relative">
+
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -90,46 +105,67 @@ export function LoginForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-12 border-gray-300 rounded-sm bg-gray-50 focus:border-green-500 shadow-none pr-12"
+                    className="h-12 bg-muted border-border pr-12"
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
+
                 </div>
+
               </div>
 
-              {/* Sign In Button */}
+              {/* Submit */}
+
               <Button
                 type="submit"
                 size="lg"
-                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-sm cursor-pointer"
+                className="w-full h-12"
                 isLoading={isLoading}
               >
                 Sign In
               </Button>
 
-              {/* Forgot Password */}
+              {/* Forgot password */}
+
               <div className="text-center">
-                <Link href="/forgot-password" className="text-xs text-green-600 hover:underline">
+
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-primary hover:underline"
+                >
                   Forgot your password?
                 </Link>
+
               </div>
+
             </form>
 
             {/* Divider */}
+
             <div className="relative flex items-center">
-              <div className="flex-grow border-t border-gray-100"></div>
-              <span className="mx-3 text-xs text-gray-400">OR</span>
-              <div className="flex-grow border-t border-gray-100"></div>
+
+              <div className="grow border-t border-border"></div>
+
+              <span className="mx-3 text-xs text-muted-foreground">
+                OR
+              </span>
+
+              <div className="grow border-t border-border"></div>
+
             </div>
 
             {/* Google Login */}
+
             {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+
               <div className="flex justify-center">
+
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {
                     if (credentialResponse.credential) {
@@ -143,25 +179,42 @@ export function LoginForm() {
                   width="100%"
                   text="signin_with"
                 />
+
               </div>
+
             ) : (
-              <p className="text-xs text-center text-gray-400">
+
+              <p className="text-xs text-center text-muted-foreground">
                 Google login unavailable
               </p>
+
             )}
 
             {/* Register */}
+
             <div className="text-center pt-4">
-              <p className="text-sm text-gray-600">
+
+              <p className="text-sm text-muted-foreground">
+
                 Don’t have an account?{" "}
-                <Link href="/role-selection" className="text-green-600 font-medium hover:underline">
+
+                <Link
+                  href="/role-selection"
+                  className="text-primary font-medium hover:underline"
+                >
                   Create Account
                 </Link>
+
               </p>
+
             </div>
+
           </CardBody>
+
         </Card>
+
       </motion.div>
+
     </div>
   );
 }

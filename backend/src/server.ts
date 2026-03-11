@@ -4,7 +4,7 @@ import configs from "./config/configs.js";
 // import { createTables, seedAdminUser } from "./utils/databaseMigration.js"; // Migration is now handled by Sequelize sync or manual scripts
 
 import { startScholarshipCron } from "./automation/scholarshipCron.js";
- import { assessmentWorker } from "./workers/AssessmentWorker.js";
+import { assessmentWorker } from "./workers/AssessmentWorker.js";
 import { seedScholarshipSources } from "./scripts/seedScholarships.js";
 import { seedTestData } from "./scripts/seedsampleactuallscholarship.js";
 
