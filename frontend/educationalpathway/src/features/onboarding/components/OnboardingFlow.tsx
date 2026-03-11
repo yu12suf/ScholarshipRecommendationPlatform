@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useOnboarding } from "@/features/onboarding/hooks/useOnboarding";
-import { StudentProfileForm } from "@/features/student/components/StudentProfileForm";
+import { StudentProfileForm } from "@/features/student/components/profile-form/StudentProfileForm";
 
 export function OnboardingFlow() {
   const {

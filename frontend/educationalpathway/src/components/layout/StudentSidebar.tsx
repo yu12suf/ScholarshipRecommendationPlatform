@@ -26,7 +26,7 @@ export function StudentSidebar() {
     { name: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
     { name: 'Scholarships', href: '/dashboard/scholarships', icon: GraduationCap },
     { name: 'Counselors', href: '/dashboard/counselors', icon: Users },
-    { name: 'Learn', href: '/dashboard/assessment', icon: BookOpen },
+    { name: 'Assessment', href: '/dashboard/assessment', icon: BookOpen },
   ];
 
   return (
@@ -72,7 +72,7 @@ export function StudentSidebar() {
               key={item.href}
               href={item.href}
               title={collapsed ? item.name : undefined}
-              className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${active
+              className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition focus:outline-none focus:bg-transparent ${active
                 ? 'text-primary font-bold bg-primary/10'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground font-medium rounded-sm'
                 } ${collapsed ? 'justify-center' : ''}`}
