@@ -4,6 +4,8 @@ import { OAuth2Client } from "google-auth-library";
 import { UserService } from "./UserService.js";
 import { AuthRepository } from "../repositories/AuthRepository.js";
 import { UserRepository } from "../repositories/UserRepository.js";
+import { StudentRepository } from "../repositories/StudentRepository.js";
+import { CounselorRepository } from "../repositories/CounselorRepository.js";
 import { UserRole } from "../types/userTypes.js";
 import crypto from "crypto";
 import { sendEmail } from "../utils/emailService.js";
@@ -182,7 +184,21 @@ export class AuthService {
   static async getMe(userId: number) {
     const user = await UserRepository.findById(userId);
     if (!user) throw new Error("User not found");
-    return user;
+    return this.getUserWithProfile(user);
+  }
+
+  private static async getUserWithProfile(user: User) {
+    let profileData: any = {};
+    if (user.role === UserRole.STUDENT) {
+      const student = await StudentRepository.findByUserId(user.id);
+      if (student) profileData = student.toJSON();
+    } else if (user.role === UserRole.COUNSELOR) {
+      const counselor = await CounselorRepository.findByUserId(user.id);
+      if (counselor) profileData = counselor.toJSON();
+    }
+    
+    const { id, password, ...restProfile } = profileData; // prevent overwriting user id and avoid returning password
+    return { ...user.toJSON(), ...restProfile, id: user.id, email: user.email, name: user.name, role: user.role };
   }
 
   private static async generateAuthResponse(user: User) {
@@ -201,6 +217,7 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await AuthRepository.createRefreshToken(user.id, refreshToken, expiresAt);
 
-    return { user, accessToken, refreshToken };
+    const userWithProfile = await this.getUserWithProfile(user);
+    return { user: userWithProfile, accessToken, refreshToken };
   }
 }

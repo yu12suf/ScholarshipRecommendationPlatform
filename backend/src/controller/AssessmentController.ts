@@ -19,9 +19,18 @@ export class AssessmentController {
 
     static async submit(req: Request, res: Response, next: NextFunction) {
         try {
-            const { test_id, responses } = req.body;
-            if (!test_id || !responses) {
+            const { test_id, responses: rawResponses } = req.body;
+            if (!test_id || !rawResponses) {
                 res.status(400).json({ error: "test_id and responses are required" });
+                return;
+            }
+
+            // Normalize responses: may arrive as a JSON string (multipart) or object (JSON body)
+            let responses: any;
+            try {
+                responses = typeof rawResponses === "string" ? JSON.parse(rawResponses) : rawResponses;
+            } catch {
+                res.status(400).json({ error: "Invalid responses format." });
                 return;
             }
 

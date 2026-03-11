@@ -80,12 +80,16 @@ export class OnboardingService {
                 if (files.certificate) certificateUrl = await FileService.uploadFile(files.certificate.data, "documents/certificates");
             }
 
+            if (updateData.fullName) {
+                await UserRepository.update(userId, { name: updateData.fullName } as any);
+            }
+
             const updatedStudent = await repository.update(userId, {
                 calculatedGpa: updateData.gpa ?? updateData.calculatedGpa ?? null,
                 academicHistory: updateData.academicHistory ? (typeof updateData.academicHistory === 'string' ? updateData.academicHistory : JSON.stringify(updateData.academicHistory)) : "[]",
                 studyPreferences: updateData.studyPreferences || "",
                 intakeSeason: updateData.intakeSeason || null,
-                fundingRequirement: updateData.fundingType || updateData.fundingRequirement || null,
+                fundingRequirement: updateData.preferredFundingType || updateData.fundingType || updateData.fundingRequirement || null,
                 ieltsScore: updateData.ieltsScore || null,
                 toeflScore: updateData.toeflScore || null,
                 duolingoScore: updateData.duolingoScore || null,
@@ -102,19 +106,19 @@ export class OnboardingService {
                 countryOfResidence: updateData.countryOfResidence || null,
                 city: updateData.city || null,
                 phoneNumber: updateData.phoneNumber || null,
-                fieldOfStudy: updateData.fieldOfStudy || null,
+                fieldOfStudy: updateData.fieldOfStudyInput ? JSON.stringify(updateData.fieldOfStudyInput) : (updateData.fieldOfStudy || null),
                 currentUniversity: updateData.currentUniversity || updateData.previousUniversity || null,
                 graduationYear: updateData.graduationYear ? parseInt(updateData.graduationYear as string) : null,
                 degreeSeeking: updateData.degreeSeeking || null,
                 preferredCountries: updateData.preferredCountries ? (typeof updateData.preferredCountries === 'string' ? updateData.preferredCountries : JSON.stringify(updateData.preferredCountries)) : null,
                 preferredUniversities: updateData.preferredUniversities ? (typeof updateData.preferredUniversities === 'string' ? updateData.preferredUniversities : JSON.stringify(updateData.preferredUniversities)) : null,
-                languageTestType: updateData.languageQualification?.testType || null,
-                languageScore: updateData.languageQualification?.score || null,
-                needsFinancialSupport: updateData.financialNeed?.needsSupport ?? null,
-                familyIncomeRange: updateData.financialNeed?.familyIncomeRange || null,
-                researchArea: updateData.researchInterest?.researchArea || null,
-                proposedResearchTopic: updateData.researchInterest?.proposedTopic || null,
-                notificationPreferences: updateData.notificationPreferences ? (typeof updateData.notificationPreferences === 'string' ? updateData.notificationPreferences : JSON.stringify(updateData.notificationPreferences)) : null,
+                languageTestType: updateData.languageTestType || updateData.languageQualification?.testType || null,
+                languageScore: updateData.testScore || updateData.languageQualification?.score || null,
+                needsFinancialSupport: updateData.needsFinancialSupport ?? updateData.financialNeed?.needsSupport ?? null,
+                familyIncomeRange: updateData.familyIncomeRange || updateData.financialNeed?.familyIncomeRange || null,
+                researchArea: updateData.researchArea || updateData.researchInterest?.researchArea || null,
+                proposedResearchTopic: updateData.proposedResearchTopic || updateData.researchInterest?.proposedTopic || null,
+                notificationPreferences: updateData.notifications ? JSON.stringify(updateData.notifications) : (updateData.notificationPreferences ? (typeof updateData.notificationPreferences === 'string' ? updateData.notificationPreferences : JSON.stringify(updateData.notificationPreferences)) : null),
                 
                 // Document URLs
                 cvUrl,
