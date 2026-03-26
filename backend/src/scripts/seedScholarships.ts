@@ -1,46 +1,68 @@
 import { ScholarshipSourceRepository } from "../repositories/ScholarshipSourceRepository.js";
 
 export const seedScholarshipSources = async () => {
-    const sources = [
-        {
-            
-            baseUrl: "https://www.fastweb.com/college-scholarships",
-            domainName: "Fastweb",
-        },
-            
-        {
-            baseUrl: "https://scholarships360.org/scholarships/",
-            domainName: "Scholarships360",
-        },
-        
-        {
-            baseUrl: "https://bold.org/scholarships",
-            domainName: "Bold",
-        },
-            
-        {
-          baseUrl: "https://www.scholars4dev.com/",
-            domainName: "Scholars4dev",
-        },
-        {
-            baseUrl: "https://www.eacea.ec.europa.eu/scholarships/erasmus-mundus-catalogue_en",
-            domainName: "Erasmus Mundus",
-        },
-            
-        {baseUrl: "https://www.scholars4dev.com/",
-            domainName: "Scholars4dev",
-        },
-        {
-            baseUrl: "https://cscuk.fcdo.gov.uk/scholarships",
-            domainName: "cscuk.fcdo.gov.uk",
-        },
-        {
-            baseUrl: "https://www.mastersportal.com/",
-            domainName: "mastersportal.com",
-        },
-
-
-    ];
+   const sources = [
+    {
+        baseUrl: "https://opportunitiesforafricans.com/",
+        domainName: "Opportunities For Africans"
+    },
+    {
+        baseUrl: "https://www.afterschoolafrica.com/",
+        domainName: "After School Africa"
+    },
+    {
+        baseUrl: "https://www.scholarshiptab.com/",
+        domainName: "ScholarshipTab"
+    },
+    {
+        baseUrl: "https://scholarship-positions.com/",
+        domainName: "Scholarship Positions"
+    },
+    {
+        baseUrl: "https://www.scholarshipregion.com/",
+        domainName: "Scholarship Region"
+    },
+    {
+        baseUrl: "https://globalscholarships.com/",
+        domainName: "Global Scholarships"
+    },
+    {
+        baseUrl: "https://www.profellow.com/",
+        domainName: "ProFellow"
+    },
+    {
+        baseUrl: "https://opportunitydesk.org/",
+        domainName: "Opportunity Desk"
+    },
+    {
+        baseUrl: "https://www.internationalscholarships.com/",
+        domainName: "International Scholarships"
+    },
+    {
+        baseUrl: "https://www.scholars4dev.com/",
+        domainName: "Scholars4Dev"
+    },
+    {
+        baseUrl: "https://www.iefa.org/scholarships",
+        domainName: "IEFA"
+    },
+    {
+        baseUrl: "https://www.educations.com/scholarships/",
+        domainName: "Educations Scholarships"
+    },
+    {
+        baseUrl: "https://www.mastersportal.com/scholarships/",
+        domainName: "Masters Portal Scholarships"
+    },
+    {
+        baseUrl: "https://www.phdportal.com/scholarships/",
+        domainName: "PhD Portal Scholarships"
+    },
+    {
+        baseUrl: "https://www.bachelorsportal.com/scholarships/",
+        domainName: "Bachelors Portal Scholarships"
+    }
+];
 
     console.log("Seeding scholarship sources...");
 

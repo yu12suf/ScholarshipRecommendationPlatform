@@ -10,6 +10,7 @@ import { Input, Button } from "@/components/ui";
 export const ScholarshipList = () => {
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ScholarshipFilters>({});
 
   useEffect(() => {
@@ -19,8 +20,10 @@ export const ScholarshipList = () => {
       try {
         const data = await getScholarships(filters);
         setScholarships(data);
-      } catch (error) {
-        console.error("Failed to fetch scholarships", error);
+        setError(null);
+      } catch (err: any) {
+        console.error("Failed to fetch scholarships", err);
+        setError(err.response?.data?.message || "Failed to load matching scholarships.");
       } finally {
         setLoading(false);
       }
@@ -76,6 +79,18 @@ export const ScholarshipList = () => {
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
 
         </div>
+      ) : error ? (
+        <div className="text-center py-20 bg-destructive/5 rounded-sm border border-destructive/20">
+          <p className="text-destructive font-medium mb-4">{error}</p>
+          {error.includes("onboarded") && (
+            <Button 
+               onClick={() => window.location.href = '/onboarding'}
+               className="primary-gradient text-primary-foreground"
+            >
+              Complete Profile
+            </Button>
+          )}
+        </div>
       ) : scholarships.length > 0 ? (
 
         /* Results Grid */
@@ -93,7 +108,7 @@ export const ScholarshipList = () => {
       ) : (
 
         /* Empty State */
-        <div className="text-center py-20 bg-muted rounded-lg border-2 border-dashed border-border">
+        <div className="text-center py-20 bg-muted rounded-sm border-2 border-dashed border-border">
 
           <p className="text-muted-foreground font-medium">
             No scholarships found. Try adjusting your search or filters.

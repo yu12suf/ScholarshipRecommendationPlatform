@@ -1,25 +1,26 @@
-import { GoogleGenerativeAI ,TaskType} from "@google/generative-ai";
+import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 import configs from "../config/configs.js";
 import { ExtractedScholarshipData } from "../types/scholarshipTypes.js";
 
 const genAI = new GoogleGenerativeAI(configs.GEMINI_API_KEY!);
 
 export class GeminiIngestionService {
+  /**
+   * Extracts structured scholarship data from raw text using Gemini 2.5 Flash.
+   * Retries on 429 Too Many Requests with exponential backoff.
+   */
+  static async extractScholarshipData(
+    text: string,
+  ): Promise<ExtractedScholarshipData> {
+    // Use gemini-2.5-flash for best performance in 2026
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
 
-    /**
-     * Extracts structured scholarship data from raw text using Gemini 1.5 Flash (002).
-     * Retries on 429 Too Many Requests with exponential backoff.
-     */
-    static async extractScholarshipData(text: string): Promise<ExtractedScholarshipData> {
-        // Use gemini-1.5-flash-002 for cost efficiency and speed
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            generationConfig: {
-                responseMimeType: "application/json",
-            }
-        });
-
-        const prompt = `
+    const prompt = `
             You are an expert scholarship data extractor.
             Analyze the following text from a scholarship webpage and extract the details.
             
@@ -37,66 +38,98 @@ export class GeminiIngestionService {
             ${text.substring(0, 10000)} -- Truncated to avoid token limits if necessary
         `;
 
-        return this.retryWithBackoff(async () => {
-            const result = await model.generateContent(prompt);
-            const response = result.response;
-            return JSON.parse(response.text()) as ExtractedScholarshipData;
-        }, "Extract Data");
+    return this.retryWithBackoff(async () => {
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      return JSON.parse(response.text()) as ExtractedScholarshipData;
+    }, "Extract Data");
+  }
+
+  /**
+   * Generates a text embedding vector using gemini-embedding-001.
+   * Retries on 429 Too Many Requests. Handles fallback to preview if needed.
+   */
+  static async generateEmbedding(text: string): Promise<number[]> {
+    try {
+      // Primary Model: gemini-embedding-001 (Available in 2026)
+      const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+      const result = await model.embedContent({
+        content: {
+          role: "user",
+          parts: [{ text: text }],
+        },
+        // taskType: TaskType.SEMANTIC_SIMILARITY, // taskType is optional and can be omitted if causing issues
+      });
+      return result.embedding.values;
+    } catch (error: any) {
+      console.warn(
+        `[Gemini] gemini-embedding-001 failed (${error.message}). Attempting fallback to gemini-embedding-2-preview.`,
+      );
+
+      try {
+        // Fallback Model: gemini-embedding-2-preview
+        const fallbackModel = genAI.getGenerativeModel({
+          model: "gemini-embedding-2-preview",
+        });
+        const result = await fallbackModel.embedContent({
+          content: {
+            role: "user",
+            parts: [{ text: text }],
+          },
+        });
+        return result.embedding.values;
+      } catch (fallbackError) {
+        console.error("[Gemini] Both embedding models failed:", fallbackError);
+        throw fallbackError;
+      }
     }
+  }
 
-    /**
-     * Generates a text embedding vector (768 dimensions) using text-embedding-004.
-     * Retries on 429 Too Many Requests.
-     */
-    static async generateEmbedding(text: string): Promise<number[]> {
-        const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
-        const result = await model.embedContent({
-            content: { 
-                role: "user", 
-                parts: [{ text: text }] 
-            },
-            taskType: TaskType.SEMANTIC_SIMILARITY,
-        }); 
+  /**
+   * Utility to retry an async operation with exponential backoff on 429 errors.
+   */
+  private static async retryWithBackoff<T>(
+    operation: () => Promise<T>,
+    operationName: string,
+    maxRetries = 3,
+  ): Promise<T> {
+    let attempt = 0;
 
-        return  result.embedding.values;
+    while (attempt <= maxRetries) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        if (
+          error.status === 429 ||
+          (error.message && error.message.includes("429"))
+        ) {
+          attempt++;
+          if (attempt > maxRetries) {
+            console.error(
+              `[Gemini] ${operationName} failed after ${maxRetries} retries due to rate limiting.`,
+            );
+            throw error;
+          }
 
-       
-    }
+          // Extract retry delay from error if available, or use default exponential backoff
+          // Google's library might not expose the header directly in the error object comfortably,
+          // so we use a safe default: (2^attempt * 1000ms) + jitter
+          let delayMs = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
 
-    /**
-     * Utility to retry an async operation with exponential backoff on 429 errors.
-     */
-    private static async retryWithBackoff<T>(operation: () => Promise<T>, operationName: string, maxRetries = 3): Promise<T> {
-        let attempt = 0;
+          // If error has a specific retry delay (rare in simple error objects), use it
+          // NOTE: implementation depends on exact error structure from library
 
-        while (attempt <= maxRetries) {
-            try {
-                return await operation();
-            } catch (error: any) {
-                if (error.status === 429 || (error.message && error.message.includes("429"))) {
-                    attempt++;
-                    if (attempt > maxRetries) {
-                        console.error(`[Gemini] ${operationName} failed after ${maxRetries} retries due to rate limiting.`);
-                        throw error;
-                    }
-
-                    // Extract retry delay from error if available, or use default exponential backoff
-                    // Google's library might not expose the header directly in the error object comfortably,
-                    // so we use a safe default: (2^attempt * 1000ms) + jitter
-                    let delayMs = (Math.pow(2, attempt) * 1000) + (Math.random() * 1000);
-
-                    // If error has a specific retry delay (rare in simple error objects), use it
-                    // NOTE: implementation depends on exact error structure from library
-
-                    console.warn(`[Gemini] 429 Too Many Requests during ${operationName}. Retrying in ${Math.round(delayMs)}ms (Attempt ${attempt}/${maxRetries})`);
-                    await new Promise(resolve => setTimeout(resolve, delayMs));
-                } else {
-                    // Non-retriable error
-                    console.error(`[Gemini] Error during ${operationName}:`, error);
-                    throw error;
-                }
-            }
+          console.warn(
+            `[Gemini] 429 Too Many Requests during ${operationName}. Retrying in ${Math.round(delayMs)}ms (Attempt ${attempt}/${maxRetries})`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        } else {
+          // Non-retriable error
+          console.error(`[Gemini] Error during ${operationName}:`, error);
+          throw error;
         }
-        throw new Error("Unreachable");
+      }
     }
+    throw new Error("Unreachable");
+  }
 }

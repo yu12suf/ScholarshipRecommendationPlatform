@@ -14,7 +14,7 @@ export function Card({ className, glass, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden',
+        'rounded-sm border border-border bg-card text-card-foreground shadow-sm overflow-hidden',
         glass && 'glass-morphism',
         className
       )}

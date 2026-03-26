@@ -15,6 +15,7 @@ import {
   PanelLeftOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 export function StudentSidebar() {
   const pathname = usePathname();
@@ -41,16 +42,21 @@ export function StudentSidebar() {
       <div className={`h-20 flex items-center border-b border-border relative ${collapsed ? 'justify-center' : 'px-6'}`}>
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full primary-gradient flex items-center justify-center shrink-0">
-              <GraduationCap size={18} className="text-primary-foreground"/>
+            <div className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+              <Image 
+                src="/admas.png" 
+                alt="Logo" 
+                width={40} 
+                height={40} 
+                className="h-full w-full object-cover"
+              />
             </div>
-
           </div>
         )}
 
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={`p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground cursor-pointer shrink-0 ${collapsed ? 'mx-auto' : 'ml-auto'}`}
+          className={`p-2 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground cursor-pointer shrink-0 ${collapsed ? 'mx-auto' : 'ml-auto'}`}
           title={collapsed ? "Open sidebar" : "Close sidebar"}
         >
           {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
@@ -72,7 +78,7 @@ export function StudentSidebar() {
               key={item.href}
               href={item.href}
               title={collapsed ? item.name : undefined}
-              className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition focus:outline-none focus:bg-transparent ${active
+              className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-sm transition focus:outline-none focus:bg-transparent ${active
                 ? 'text-primary font-bold bg-primary/10'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground font-medium rounded-sm'
                 } ${collapsed ? 'justify-center' : ''}`}
@@ -108,7 +114,7 @@ export function StudentSidebar() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className={`absolute bottom-full mb-2 bg-card border border-border rounded-lg shadow-lg py-1 flex flex-col overflow-hidden z-50 ${collapsed ? 'left-3 right-3 items-center' : 'left-3 right-3'}`}
+              className={`absolute bottom-full mb-2 bg-card border border-border rounded-sm shadow-lg py-1 flex flex-col overflow-hidden z-50 ${collapsed ? 'left-3 right-3 items-center' : 'left-3 right-3'}`}
             >
               <Link
                 href="/dashboard/settings"
@@ -136,7 +142,7 @@ export function StudentSidebar() {
 
         <button
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer ${collapsed ? 'justify-center' : ''}`}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-muted transition-colors cursor-pointer ${collapsed ? 'justify-center' : ''}`}
           title={collapsed ? "Profile" : undefined}
         >
           <div className="h-8 w-8 rounded-full primary-gradient flex items-center justify-center shrink-0">

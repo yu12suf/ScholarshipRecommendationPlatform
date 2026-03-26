@@ -16,7 +16,7 @@ export function RoleSelection() {
           </h1>
 
           <p className="text-muted-foreground max-w-xl mx-auto text-sm md:text-base">
-            Select how you want to use EduPathway and start your journey.
+            Select how you want to use አድማስ and start your journey.
           </p>
         </div>
 
@@ -25,12 +25,12 @@ export function RoleSelection() {
 
           {/* STUDENT */}
           <Link href="/register?role=student" className="group">
-            <div className="bg-card rounded-lg border border-border shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-card rounded-sm border border-border shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
 
               <div className="p-8">
 
                 {/* Icon */}
-                <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6 transition group-hover:scale-110">
+                <div className="w-14 h-14 bg-primary/10 rounded-sm flex items-center justify-center mb-6 transition group-hover:scale-110">
                   <GraduationCap className="h-7 w-7 text-primary" />
                 </div>
 
@@ -61,7 +61,7 @@ export function RoleSelection() {
                 </ul>
 
                 {/* Button */}
-                <div className="flex items-center justify-center w-full py-3 rounded-md bg-primary text-primary-foreground font-medium transition hover:opacity-90">
+                <div className="flex items-center justify-center w-full py-3 rounded-sm bg-primary text-primary-foreground font-medium transition hover:opacity-90">
                   Start as Student
                 </div>
 
@@ -71,12 +71,12 @@ export function RoleSelection() {
 
           {/* COUNSELOR */}
           <Link href="/register?role=counselor" className="group">
-            <div className="bg-card rounded-lg border border-border shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-card rounded-sm border border-border shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
 
               <div className="p-8">
 
                 {/* Icon */}
-                <div className="w-14 h-14 bg-secondary/10 rounded-lg flex items-center justify-center mb-6 transition group-hover:scale-110">
+                <div className="w-14 h-14 bg-secondary/10 rounded-sm flex items-center justify-center mb-6 transition group-hover:scale-110">
                   <Briefcase className="h-7 w-7 text-secondary" />
                 </div>
 
@@ -107,7 +107,7 @@ export function RoleSelection() {
                 </ul>
 
                 {/* Button */}
-                <div className="flex items-center justify-center w-full py-3 rounded-md bg-primary text-primary-foreground font-medium transition hover:opacity-90">
+                <div className="flex items-center justify-center w-full py-3 rounded-sm bg-primary text-primary-foreground font-medium transition hover:opacity-90">
                   Start as Counselor
                 </div>
 

@@ -38,3 +38,8 @@ export const refreshToken = async (): Promise<{ accessToken: string }> => {
   const response = await api.post('/auth/refresh-token');
   return response.data;
 };
+
+export const getMe = async (): Promise<any> => {
+  const response = await api.get('/auth/me');
+  return response.data;
+};

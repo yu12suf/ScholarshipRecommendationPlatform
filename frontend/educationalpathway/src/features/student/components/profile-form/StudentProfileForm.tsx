@@ -25,15 +25,17 @@ import {
   Globe,
   DollarSign,
   Bell,
+  AlertCircle,
 } from "lucide-react";
 import Select, { MultiValue, SingleValue } from "react-select";
-import { toast } from "react-hot-toast";
+import { PhoneInput } from 'react-international-phone';
+
+import 'react-international-phone/style.css';
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ProfileFormValues } from "../../lib/profile-schema";
-import { COUNTRY_PHONE_CODES } from "../../constants/country-phone-codes";
-import { FIELDS_OF_STUDY_GROUPED } from "../../constants/fields-of-study";
+import { FIELDS_OF_STUDY, FIELDS_OF_STUDY_GROUPED } from "../../constants/fields-of-study";
 import { useGeoData, CountryData, UniversityData } from "../../hooks/useGeoData";
 
 const formatCountryOption = (option: any) => (
@@ -94,6 +96,7 @@ const STEPS: Step[] = [
       "languageTestType",
       "testScore",
       "researchArea",
+      "proposedResearchTopic",
     ],
   },
   {
@@ -122,7 +125,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedPhoneCode, setSelectedPhoneCode] = useState<{ code: string; flag: string; iso: string } | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   const methods = useForm<ProfileFormValues>({
     // resolver: zodResolver(profileSchema) as any, // disabled validation for now
@@ -139,6 +142,12 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
       ...initialData,
     },
   });
+
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      methods.reset({ ...methods.getValues(), ...initialData });
+    }
+  }, [initialData, methods]);
 
   const {
     watch,
@@ -232,15 +241,19 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
 
   const handleFormSubmit = async (data: ProfileFormValues) => {
     setIsSubmitting(true);
+    setSubmitStatus(null);
     try {
       await onSubmit(data);
-      toast.success("Profile submitted successfully!", {
-        icon: "🎉",
-        duration: 5000,
+      setSubmitStatus({ 
+        type: 'success', 
+        message: 'Profile updated successfully! Redirecting...' 
       });
     } catch (error) {
       console.error("Submission error:", error);
-      toast.error("Failed to submit profile. Please try again.");
+      setSubmitStatus({ 
+        type: 'error', 
+        message: 'Failed to update profile. Please check your inputs and try again.' 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -325,7 +338,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
         {/* Form */}
         <form
           onSubmit={handleSubmit(handleFormSubmit)}
-          className="bg-card rounded-lg shadow-sm border border-border p-6"
+          className="bg-card rounded-sm shadow-sm border border-border p-6"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -393,55 +406,17 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       <label className="text-label">
                         Phone Number
                       </label>
-                      <div className="flex gap-2">
-                        {/* Country code picker */}
-                        <div className="w-44 shrink-0">
-                          <Select
-                            options={COUNTRY_PHONE_CODES.map((c) => ({
-                              value: c.code,
-                              label: `${c.flag} ${c.code}`,
-                              flag: c.flag,
-                              iso: c.iso,
-                            }))}
-                            onChange={(val) => {
-                              if (val) {
-                                setSelectedPhoneCode({ code: val.value, flag: (val as any).flag, iso: (val as any).iso });
-                                const currentNum = methods.getValues("phoneNumber") || "";
-                                const stripped = currentNum.replace(/^\+\d+\s*/, "");
-                                setValue("phoneNumber", `${val.value} ${stripped}`);
-                              }
-                            }}
-                            classNamePrefix="react-select"
-                            placeholder="🌍 Code"
-                            isSearchable
-                            isClearable
-                            formatOptionLabel={(opt: any) => (
-                              <span className="flex items-center gap-1">
-                                <span className="text-lg">{opt.flag}</span>
-                                <span className="text-sm">{opt.value}</span>
-                              </span>
-                            )}
-                          />
-                        </div>
-                        {/* Number input */}
-                        <div className="relative flex-1">
-                          {selectedPhoneCode && (
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg select-none">{selectedPhoneCode.flag}</span>
-                          )}
-                          {!selectedPhoneCode && (
-                            <Phone
-                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-                              size={18}
-                            />
-                          )}
-                          <Input
-                            {...methods.register("phoneNumber")}
-                            placeholder="912 345 6789"
-                            className={selectedPhoneCode ? "pl-10" : "pl-10"}
-                            error={errors.phoneNumber?.message}
-                          />
-                        </div>
+                      <div className="w-full">
+                        <PhoneInput
+                          defaultCountry="us"
+                          value={watch("phoneNumber") || ""}
+                          onChange={(phone) => setValue("phoneNumber", phone)}
+                          className="w-full [&>input]:flex-1 [&>input]:h-10 [&>input]:bg-muted [&>input]:border-input [&>input]:rounded-r-sm [&>.react-international-phone-country-selector-button]:h-10 [&>.react-international-phone-country-selector-button]:bg-muted [&>.react-international-phone-country-selector-button]:border-input [&>.react-international-phone-country-selector-button]:rounded-l-sm"
+                        />
                       </div>
+                      {errors.phoneNumber?.message && (
+                        <p className="text-destructive text-sm mt-1">{errors.phoneNumber.message}</p>
+                      )}
                     </div>
 
                     {/* Date of Birth */}
@@ -470,7 +445,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       </label>
                       <select
                         {...methods.register("gender")}
-                        className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                        className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
                         <option value="">Select gender</option>
                         <option value="Male">Male</option>
@@ -498,8 +473,13 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                             label: c.name,
                             flag: c.flag,
                           }))}
+                          value={watch("nationality") ? { 
+                            value: watch("nationality"), 
+                            label: watch("nationality"), 
+                            flag: countries.find(c => c.name === watch("nationality"))?.flag || "" 
+                          } : null}
                           onChange={(
-                            val: SingleValue<{ value: string; label: string; flag: string }>,
+                            val: SingleValue<any>,
                           ) => setValue("nationality", val?.value || "")}
                           className="pl-7"
                           classNamePrefix="react-select"
@@ -528,8 +508,13 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                             label: c.name,
                             flag: c.flag,
                           }))}
+                          value={watch("countryOfResidence") ? { 
+                            value: watch("countryOfResidence"), 
+                            label: watch("countryOfResidence"), 
+                            flag: countries.find(c => c.name === watch("countryOfResidence"))?.flag || "" 
+                          } : null}
                           onChange={(
-                            val: SingleValue<{ value: string; label: string; flag: string }>,
+                            val: SingleValue<any>,
                           ) => setValue("countryOfResidence", val?.value || "")}
                           className="pl-7"
                           classNamePrefix="react-select"
@@ -551,6 +536,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                           value: city,
                           label: city,
                         }))}
+                        value={watch("city") ? { value: watch("city"), label: watch("city") } : null}
                         isDisabled={!countryOfResidence || loadingCities}
                         onChange={(val: SingleValue<{ value: string; label: string }>) =>
                           setValue("city", val?.value || "")
@@ -616,7 +602,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       </label>
                       <select
                         {...methods.register("currentEducationLevel")}
-                        className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                        className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
                         <option value="">Select level</option>
                         <option value="High School">High School</option>
@@ -633,7 +619,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       </label>
                       <select
                         {...methods.register("degreeSeeking")}
-                        className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                        className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
                         <option value="">Select degree</option>
                         <option value="Bachelor's">Bachelor&apos;s</option>
@@ -650,6 +636,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       <Select
                         isMulti
                         options={FIELDS_OF_STUDY_GROUPED as any}
+                        value={FIELDS_OF_STUDY.filter(f => (watch("fieldOfStudyInput") || []).includes(f.value))}
                         onChange={(
                           val: MultiValue<{ value: string; label: string }>,
                         ) =>
@@ -675,6 +662,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                           value: u.name,
                           label: u.name,
                         }))}
+                        value={watch("previousUniversity") ? { value: watch("previousUniversity"), label: watch("previousUniversity") } : null}
                         onChange={(
                           val: SingleValue<{ value: string; label: string }>,
                         ) => setValue("previousUniversity", val?.value || "")}
@@ -740,7 +728,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       </label>
                       <select
                         {...methods.register("languageTestType")}
-                        className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                        className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
                         <option value="None">None</option>
                         <option value="IELTS">IELTS</option>
@@ -770,6 +758,19 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       <Input
                         {...methods.register("researchArea")}
                         placeholder="e.g., Artificial Intelligence, Climate Change"
+                      />
+                    </div>
+
+                    {/* Proposed Research Topic */}
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-label">
+                        Proposed Research Topic (Optional)
+                      </label>
+                      <textarea
+                        {...methods.register("proposedResearchTopic")}
+                        rows={3}
+                        className="w-full px-3 py-2 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                        placeholder="Describe your intended research topic or interests..."
                       />
                     </div>
                   </div>
@@ -807,6 +808,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                             { value: "Master's", label: "Master's" },
                             { value: "PhD", label: "PhD" },
                           ]}
+                          value={(watch("preferredDegreeLevel") || []).map(val => ({ value: val, label: val }))}
                           onChange={(
                             val: MultiValue<{ value: string; label: string }>,
                           ) =>
@@ -827,7 +829,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         </label>
                         <select
                           {...methods.register("preferredFundingType")}
-                          className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                          className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                         >
                           <option value="Fully Funded">Fully Funded</option>
                           <option value="Partially Funded">
@@ -844,7 +846,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         </label>
                         <select
                           {...methods.register("studyMode")}
-                          className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                          className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                         >
                           <option value="On-Campus">On-Campus</option>
                           <option value="Online">Online</option>
@@ -870,8 +872,13 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                           label: c.name,
                           flag: c.flag,
                         }))}
+                        value={(watch("preferredCountries") || []).map(val => ({ 
+                          value: val, 
+                          label: val,
+                          flag: countries.find(c => c.name === val)?.flag || ""
+                        }))}
                         onChange={(
-                          val: MultiValue<{ value: string; label: string; flag: string }>,
+                          val: MultiValue<any>,
                         ) =>
                           setValue(
                             "preferredCountries",
@@ -914,7 +921,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                                   preferenceLevel: "Medium",
                                 });
                               } else {
-                                toast.error(`${val.value} is already added`);
+                                // Already added - silently ignore or handle via UI
                               }
                             }
                           }}
@@ -929,7 +936,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       </div>                      {uniFields.map((field, index) => (
                         <div
                           key={field.id}
-                          className="flex items-start gap-3 p-4 bg-muted rounded-lg border border-border"
+                          className="flex items-start gap-3 p-4 bg-muted rounded-sm border border-border"
                         >
                           <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                             <div className="col-span-2">
@@ -952,7 +959,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                                   `preferredUniversities.${index}.preferenceLevel`,
                                 )}
                                 aria-label="Preference level"
-                                className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                                className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
                               >
                                 <option value="High">High Priority</option>
                                 <option value="Medium">Medium Priority</option>
@@ -1010,7 +1017,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                     {workFields.map((field, index) => (
                       <div
                         key={field.id}
-                        className="flex items-start gap-3 p-4 bg-muted rounded-lg border border-border"
+                        className="flex items-start gap-3 p-4 bg-muted rounded-sm border border-border"
                       >
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                           <Input
@@ -1035,7 +1042,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                               { valueAsNumber: true },
                             )}
                             aria-label="Years of experience"
-                            className="bg-background border border-input rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="bg-background border border-input rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             <option value="0">Less than 1 year</option>
                             <option value="1">1 year</option>
@@ -1069,7 +1076,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         </label>
                         <select
                           {...methods.register("familyIncomeRange")}
-                          className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+                          className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                         >
                           <option value="">Select range</option>
                           <option value="< $10,000">Below $10,000</option>
@@ -1128,7 +1135,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       ].map((doc) => (
                         <div
                           key={doc.name}
-                          className="relative border-2 border-dashed border-input rounded-lg p-4 hover:border-primary transition-colors group bg-muted/50"
+                          className="relative border-2 border-dashed border-input rounded-sm p-4 hover:border-primary transition-colors group bg-muted/50"
                         >
                           <input
                             type="file"
@@ -1140,9 +1147,6 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                               const file = e.target.files?.[0];
                               if (file) {
                                 setValue(`documents.${doc.name}` as any, file);
-                                toast.success(
-                                  `${doc.label} uploaded successfully`,
-                                );
                               }
                             }}
                           />
@@ -1151,9 +1155,26 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                             <p className="mt-2 text-sm font-medium text-foreground">
                               {doc.label}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              Click to upload
-                            </p>
+                            {watch(`documents.${doc.name}` as any) && typeof watch(`documents.${doc.name}` as any) === 'string' ? (
+                              <div className="mt-1 flex flex-col items-center gap-1">
+                                <span className="text-xs text-primary font-medium">File uploaded</span>
+                                <a 
+                                  href={watch(`documents.${doc.name}` as any)} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-[10px] text-muted-foreground hover:text-primary underline pointer-events-auto relative z-10"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  View current file
+                                </a>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                {watch(`documents.${doc.name}` as any) instanceof File 
+                                  ? (watch(`documents.${doc.name}` as any) as File).name 
+                                  : "Click to upload"}
+                              </p>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1202,6 +1223,24 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
               )}
             </motion.div>
           </AnimatePresence>
+
+          {/* Submit Status Feedback */}
+          {submitStatus && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`p-4 rounded-sm border flex items-center gap-3 mb-6 ${
+                submitStatus.type === 'success' 
+                ? 'bg-success/10 border-success/20 text-success' 
+                : 'bg-destructive/10 border-destructive/20 text-destructive'
+              }`}
+            >
+              <div className={`p-1 rounded-full ${submitStatus.type === 'success' ? 'bg-success/20' : 'bg-destructive/20'}`}>
+                <AlertCircle size={16} />
+              </div>
+              <p className="text-sm font-medium">{submitStatus.message}</p>
+            </motion.div>
+          )}
 
           {/* Navigation Buttons */}
           <div className="mt-8 flex items-center justify-between pt-6 border-t border-border">

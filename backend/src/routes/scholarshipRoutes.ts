@@ -8,5 +8,6 @@ const router = express.Router();
 router.post("/trigger-discovery", ScholarshipController.triggerDiscovery);
 router.get("/sources", ScholarshipController.getSources);
 router.get("/match", authenticate, ScholarshipController.getMatches);
+router.get("/:id", authenticate, ScholarshipController.getDetails);
 
 export default router;

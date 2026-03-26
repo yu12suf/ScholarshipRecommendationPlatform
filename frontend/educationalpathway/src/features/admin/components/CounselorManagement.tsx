@@ -9,10 +9,13 @@ import { Button, Card, CardBody } from '@/components/ui';
 import { Loader2, UserPlus, Check, X, Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { ConfirmModal } from '@/components/ui';
 
 export const CounselorManagement = () => {
   const [counselors, setCounselors] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [targetId, setTargetId] = useState<number | null>(null);
 
   const fetchCounselors = async () => {
     setLoading(true);
@@ -36,9 +39,14 @@ export const CounselorManagement = () => {
   };
 
   const handleReject = async (id: number) => {
-    if (confirm('Reject this counselor?')) {
-      toast.error('Counselor rejected');
-    }
+    setTargetId(id);
+    setIsRejectModalOpen(true);
+  };
+
+  const confirmReject = async () => {
+    if (!targetId) return;
+    toast.error('Counselor rejected');
+    setTargetId(null);
   };
 
   if (loading) {
@@ -245,6 +253,14 @@ export const CounselorManagement = () => {
 
       </Card>
 
+      <ConfirmModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        onConfirm={confirmReject}
+        title="Reject Counselor"
+        description="Are you sure you want to reject this counselor application?"
+        confirmText="Reject"
+      />
     </div>
   );
 };

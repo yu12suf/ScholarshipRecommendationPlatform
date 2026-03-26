@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Open_Sans } from "next/font/google";
+import { Open_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/providers/auth-context";
 import { ThemeProvider } from "@/providers/theme-context";
@@ -8,25 +8,27 @@ import { Toaster } from "react-hot-toast";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-open-sans" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", weight: ["400", "600", "700", "800", "900"] });
 
 export const metadata: Metadata = {
-  title: "Educational Pathway | Scholarship Platform",
+  title: "አድማስ | Scholarship Platform",
   description: "Your journey to academic success starts here.",
   icons: {
     icon: [
       {
-        url: "/favicon.png",
+        url: "/admas.png",
         type: "image/png",
       },
     ],
     apple: [
       {
-        url: "/favicon.png",
+        url: "/admas.png",
         sizes: "180x180",
         type: "image/png",
       },
     ],
   },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -46,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${openSans.variable} font-sans antialiased text-foreground bg-background`}
+        className={`${openSans.variable} ${playfair.variable} font-sans antialiased text-foreground bg-background`}
       >
         {googleClientId ? (
           <GoogleOAuthProvider clientId={googleClientId}>

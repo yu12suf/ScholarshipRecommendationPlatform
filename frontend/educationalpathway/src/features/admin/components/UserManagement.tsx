@@ -8,10 +8,13 @@ import { Button, Card, CardBody } from '@/components/ui';
 
 import { Loader2, UserMinus, Shield } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { ConfirmModal } from '@/components/ui';
 
 export const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -29,12 +32,20 @@ export const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  const handleToggleStatus = async () => {
+  const handleToggleStatus = (user: User) => {
+    setSelectedUser(user);
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmToggle = async () => {
+    if (!selectedUser) return;
     try {
-      toast.success('Action performed');
+      toast.success('User status updated');
       fetchUsers();
     } catch {
       toast.error('Action failed');
+    } finally {
+      setSelectedUser(null);
     }
   };
 
@@ -157,7 +168,7 @@ export const UserManagement = () => {
                         variant="ghost"
                         size="sm"
                         className="text-destructive hover:bg-destructive/10"
-                        onClick={() => handleToggleStatus()}
+                        onClick={() => handleToggleStatus(user)}
                       >
                         <UserMinus className="h-4 w-4" />
                       </Button>
@@ -178,6 +189,14 @@ export const UserManagement = () => {
 
       </CardBody>
 
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={confirmToggle}
+        title="Deactivate User"
+        description={`Are you sure you want to deactivate ${selectedUser?.name}? They will lose access to the platform.`}
+        confirmText="Deactivate"
+      />
     </Card>
   );
 };

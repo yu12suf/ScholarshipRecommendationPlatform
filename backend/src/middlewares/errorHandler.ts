@@ -7,20 +7,31 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  console.error("Error:", {
+  console.error("Error Details:", {
     message: error.message,
     stack: error.stack,
     path: req.path,
-    method: req.method,
-    timestamp: new Date().toISOString(),
   });
 
   const statusCode = error.statusCode || 500;
-  const message = error.message || "Internal Server Error";
-
-  res.status(statusCode).json({
-    success: false,
-    error: message,
-    ...(configs.NODE_ENV === "development" && { stack: error.stack }),
-  });
+  
+  if (configs.NODE_ENV === "development") {
+    res.status(statusCode).json({
+      status: "error",
+      message: error.message,
+      stack: error.stack
+    });
+  } else {
+    if (error.isOperational) {
+      res.status(statusCode).json({
+        status: "fail",
+        message: error.message
+      });
+    } else {
+      res.status(500).json({
+        status: "error",
+        message: "Something went very wrong!"
+      });
+    }
+  }
 };

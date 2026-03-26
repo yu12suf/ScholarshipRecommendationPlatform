@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/providers/auth-context';
-import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
@@ -16,6 +15,7 @@ export function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { forgotPassword } = useAuth();
 
@@ -23,22 +23,15 @@ export function ForgotPasswordForm() {
 
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
-
       await forgotPassword({ email });
-
       setIsSent(true);
-      toast.success('Reset link sent to your email!');
-
-    } catch (error: unknown) {
-
-      toast.error(getErrorMessage(error, 'Failed to send reset link'));
-
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to send reset link. Please try again.'));
     } finally {
-
       setIsLoading(false);
-
     }
 
   };
@@ -62,7 +55,7 @@ export function ForgotPasswordForm() {
         className="w-full max-w-md"
       >
 
-        <Card className="bg-card border border-border rounded-xl relative overflow-hidden">
+        <Card className="bg-card border border-border rounded-sm relative overflow-hidden">
 
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50" />
 
@@ -134,6 +127,12 @@ export function ForgotPasswordForm() {
                     />
 
                   </div>
+
+                  {error && (
+                    <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-sm border border-destructive/20 animate-in fade-in slide-in-from-top-1">
+                      {error}
+                    </div>
+                  )}
 
                   <Button
                     type="submit"

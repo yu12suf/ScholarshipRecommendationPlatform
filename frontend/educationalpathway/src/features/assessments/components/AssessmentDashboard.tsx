@@ -135,7 +135,7 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                   {averages.band}
                 </h3>
               </div>
-              <div className="bg-primary/10 p-3 rounded-lg text-primary">
+              <div className="bg-primary/10 p-3 rounded-sm text-primary">
                 <Target size={22} />
               </div>
             </div>
@@ -153,7 +153,7 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                 <p className="text-label text-muted-foreground">Tests Taken</p>
                 <h3 className="text-4xl font-black mt-2">{averages.tests}</h3>
               </div>
-              <div className="bg-info/10 p-3 rounded-lg text-info">
+              <div className="bg-info/10 p-3 rounded-sm text-info">
                 <TrendingUp size={22} />
               </div>
             </div>
@@ -221,7 +221,7 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                       <button
                         key={t}
                         onClick={() => setExamType(t)}
-                        className={`flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                        className={`flex-1 py-2.5 rounded-sm border text-sm font-semibold transition-all ${
                           examType === t
                             ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
                             : "bg-transparent border-border text-foreground hover:bg-muted"
@@ -241,7 +241,7 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                       <button
                         key={d}
                         onClick={() => setDifficulty(d)}
-                        className={`py-2.5 rounded-lg border text-sm font-semibold transition-all ${
+                        className={`py-2.5 rounded-sm border text-sm font-semibold transition-all ${
                           difficulty === d
                             ? d === "Easy"
                               ? "bg-success text-white border-success"
@@ -352,11 +352,11 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.04 * index }}
-                      className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/40 transition-colors group"
+                      className="flex items-center justify-between p-4 rounded-sm border border-border hover:bg-muted/40 transition-colors group"
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0 overflow-hidden">
                         {/* Band Badge */}
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
                           <span className="text-primary font-black text-sm">
                             {parseFloat(String(item.overallBand)).toFixed(1)}
                           </span>

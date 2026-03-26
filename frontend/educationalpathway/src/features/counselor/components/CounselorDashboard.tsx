@@ -125,10 +125,10 @@ export const CounselorDashboard = () => {
               <p className="text-sm text-slate-500 font-medium">Manage your assigned students and their progress</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="rounded-xl border-slate-200">
+              <Button variant="outline" size="sm" className="rounded-sm border-slate-200">
                 <Filter className="h-4 w-4 mr-2" /> Filter
               </Button>
-              <Button variant="outline" size="sm" className="rounded-xl border-slate-200">
+              <Button variant="outline" size="sm" className="rounded-sm border-slate-200">
                 <Search className="h-4 w-4 mr-2" /> Search
               </Button>
             </div>
@@ -169,7 +169,7 @@ export const CounselorDashboard = () => {
           {/* Quick Tips or Insights */}
           <div className="p-6 rounded-[2rem] bg-indigo-600 text-white shadow-xl shadow-indigo-600/20">
             <div className="flex items-start justify-between mb-4">
-              <div className="p-2 bg-white/20 rounded-lg">
+              <div className="p-2 bg-white/20 rounded-sm">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">Pro Tip</span>

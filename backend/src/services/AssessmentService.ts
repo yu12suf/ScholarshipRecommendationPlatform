@@ -1,18 +1,40 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGroq } from "@langchain/groq";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { v4 as uuidv4 } from "uuid";
 import configs from "../config/configs.js";
 import { redisConnection, assessmentQueue } from "../config/redis.js";
-import { AssessmentResult } from "../models/AssessmentResult.js"; // Keeping for type if needed, or remove if unused
+import { AssessmentResult } from "../models/AssessmentResult.js";
 import { AssessmentRepository } from "../repositories/AssessmentRepository.js";
 
-const model = new ChatGoogleGenerativeAI({
-    model: "gemini-2.5-flash",
-    apiKey: configs.GEMINI_API_KEY as string,
+const model = new ChatGroq({
+    model: "llama-3.3-70b-versatile",
+    apiKey: configs.GROQ_API_KEY as string,
+    temperature: 0.2,
+    maxTokens: 4096,
 });
 
 export class AssessmentService {
+    private static sanitizeJson(jsonString: string): string {
+        try {
+            // Remove NULL characters and other extreme control characters
+            let cleaned = jsonString.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g, "");
+
+            // Escape literal newlines, carriage returns, and tabs inside double quotes
+            cleaned = cleaned.replace(/"((?:[^"\\\\]|\\\\.)*)"/g, (match, p1) => {
+                return '"' + p1
+                    .replace(/\n/g, '\\n')
+                    .replace(/\r/g, '\\r')
+                    .replace(/\t/g, '\\t')
+                    + '"';
+            });
+            return cleaned;
+        } catch (e) {
+            console.error("Sanitization error:", e);
+            return jsonString;
+        }
+    }
+
     static async generateExam(examType: "IELTS" | "TOEFL", difficulty: "Easy" | "Medium" | "Hard") {
         const testId = uuidv4();
 
@@ -53,12 +75,19 @@ export class AssessmentService {
         // Ensure response is valid JSON
         let blueprint;
         try {
+            console.log("--- GENERATE EXAM AI RESPONSE ---");
+            console.log(response);
+            
             // Some models might wrap JSON in markdown blocks
             const jsonMatch = response.match(/\{[\s\S]*\}/);
-            blueprint = JSON.parse(jsonMatch ? jsonMatch[0] : response);
-        } catch (error) {
+            const rawJson = jsonMatch ? jsonMatch[0] : response;
+            const sanitized = this.sanitizeJson(rawJson);
+            
+            blueprint = JSON.parse(sanitized);
+        } catch (error: any) {
             console.error("Failed to parse AI response as JSON:", response);
-            throw new Error("Assessment generation failed due to invalid AI response.");
+            console.error(error);
+            throw new Error(`Assessment generation failed: ${error.message}`);
         }
 
         // Force the testId to match what we generated to avoid AI hallucinations
@@ -69,11 +98,11 @@ export class AssessmentService {
         // Store full blueprint in Redis for 2 hours
         await redisConnection.set(`test_id:${testId}`, JSON.stringify(blueprint), "EX", 7200);
         // Sanitize for frontend
-        const sanitized = JSON.parse(JSON.stringify(blueprint));
-        sanitized.data.sections.reading.questions.forEach((q: any) => delete q.correct_answer);
-        sanitized.data.sections.listening.questions.forEach((q: any) => delete q.correct_answer);
+        const sanitizedData = JSON.parse(JSON.stringify(blueprint));
+        sanitizedData.data.sections.reading.questions.forEach((q: any) => delete q.correct_answer);
+        sanitizedData.data.sections.listening.questions.forEach((q: any) => delete q.correct_answer);
 
-        return sanitized;
+        return sanitizedData;
     }
 
     static async submitAssessment(testId: string, responses: any, studentId: number, audioBuffer?: Buffer) {
@@ -134,13 +163,30 @@ export class AssessmentService {
         });
 
         let evaluation;
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        const rawJson = jsonMatch ? jsonMatch[0] : response;
+        const sanitized = this.sanitizeJson(rawJson);
         try {
-            const jsonMatch = response.match(/\{[\s\S]*\}/);
-            evaluation = JSON.parse(jsonMatch ? jsonMatch[0] : response);
-            console.log(evaluation);
-        } catch (error) {
-            console.log(error);
-            throw new Error("Assessment evaluation failed due to invalid AI response.");
+            console.log("--- EVALUATE ASSESSMENT AI RESPONSE ---");
+            console.log(response);
+
+            // Attempt to parse sanitized JSON
+            evaluation = JSON.parse(sanitized);
+            console.log("✅ PARSED EVALUATION SUCCESS");
+        } catch (error: any) {
+            console.error("❌ PARSE EVALUATION ERROR:", error.message);
+            
+            // Helpful debugging for position-based errors
+            if (error.message.includes("position")) {
+                const posStr = error.message.match(/position (\d+)/)?.[1];
+                if (posStr) {
+                    const pos = parseInt(posStr);
+                    console.log("Error at or near:", sanitized.substring(Math.max(0, pos - 20), Math.min(sanitized.length, pos + 20)));
+                }
+            }
+            
+            console.log("Sanitized JSON was:", sanitized);
+            throw new Error(`Assessment evaluation failed: ${error.message}`);
         }
 
         // Store result in Redis

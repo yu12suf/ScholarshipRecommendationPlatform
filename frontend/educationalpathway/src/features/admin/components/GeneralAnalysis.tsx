@@ -137,7 +137,7 @@ export const GeneralAnalysis = () => {
                 transition={{ delay: 0.1 }}
                 className="flex items-center gap-3 mb-4"
               >
-                <div className="p-2 primary-gradient rounded-xl shadow-lg shadow-primary/20">
+                <div className="p-2 primary-gradient rounded-sm shadow-lg shadow-primary/20">
                   <Shield className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <span className="text-small uppercase tracking-wider">
@@ -170,11 +170,11 @@ export const GeneralAnalysis = () => {
               transition={{ delay: 0.4 }}
               className="flex gap-3"
             >
-              <Button className="primary-gradient text-primary-foreground font-semibold px-6 py-3 rounded-xl shadow-lg shadow-primary/25 transition-all duration-200 hover:scale-105">
+              <Button className="primary-gradient text-primary-foreground font-semibold px-6 py-3 rounded-sm shadow-lg shadow-primary/25 transition-all duration-200 hover:scale-105">
                 <Settings className="h-5 w-5 mr-2" />
                 Configuration
               </Button>
-              <Button variant="outline" className="border-border hover:border-primary/50 text-foreground font-semibold px-6 py-3 rounded-xl bg-card/80 backdrop-blur-sm transition-all duration-200">
+              <Button variant="outline" className="border-border hover:border-primary/50 text-foreground font-semibold px-6 py-3 rounded-sm bg-card/80 backdrop-blur-sm transition-all duration-200">
                 <Zap className="h-5 w-5 mr-2" />
                 Quick Actions
               </Button>
@@ -205,7 +205,7 @@ export const GeneralAnalysis = () => {
                 
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${colors.bg}`}>
+                    <div className={`p-3 rounded-sm ${colors.bg}`}>
                       <stat.icon className={`h-6 w-6 ${colors.text}`} />
                     </div>
                     

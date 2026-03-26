@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap } from "lucide-react";
+import Image from "next/image";
 
 export function Footer() {
   return (
@@ -8,15 +8,21 @@ export function Footer() {
 
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 text-primary" />
+          <Image 
+            src="/admas.png" 
+            alt="አድማስ Logo" 
+            width={24} 
+            height={24} 
+            className="h-6 w-6 object-contain"
+          />
           <span className="text-lg font-semibold text-foreground">
-            EduPathway
+            አድማስ
           </span>
         </div>
 
         {/* Copyright */}
         <p className="text-sm text-muted-foreground">
-          © 2024 EduPathway Platform. All rights reserved.
+          © 2024 አድማስ Platform. All rights reserved.
         </p>
 
         {/* Links */}
