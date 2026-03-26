@@ -102,7 +102,7 @@ export class Scholarship extends Model {
     // Note: We use DataType.JSONB for maximum compatibility without pgvector extension.
     // If pgvector is installed, this can be changed to 'VECTOR(3072)' for optimized search.
     @Column({
-        type: DataType.JSONB,
+        type: 'VECTOR(3072)',
         allowNull: true,
     })
     declare embedding: any;
@@ -113,8 +113,11 @@ export class Scholarship extends Model {
         field: 'created_at'
     })
     declare createdAt: Date;
-    @Column(DataType.JSONB) // Store as JSON array: ["Bachelor", "Master"]
-    declare degree_levels: string[];
+    @Column({
+        type: DataType.JSONB,
+        field: 'degree_levels'
+    }) // Store as JSON array: ["Bachelor", "Master"]
+    declare degreeLevels: string[];
 
     @UpdatedAt
     @Column({

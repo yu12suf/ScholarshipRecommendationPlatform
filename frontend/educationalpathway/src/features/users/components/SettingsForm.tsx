@@ -103,7 +103,7 @@ export const SettingsForm = () => {
                       <select
                         value={mode}
                         onChange={(e) => setMode(e.target.value as ThemeMode)}
-                        className="appearance-none bg-muted hover:bg-muted/80 text-foreground text-sm font-medium border border-border/50 rounded-md py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-colors"
+                        className="appearance-none bg-muted hover:bg-muted/80 text-foreground text-sm font-medium border border-border/50 rounded-sm py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-colors"
                       >
                         <option value="light">Light</option>
                         <option value="dark">Dark</option>

@@ -7,10 +7,13 @@ import { getAllUsers } from '../api/admin-api';
 import { Button, Card, CardBody } from '@/components/ui';
 import { Loader2, Edit, Trash2, Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { ConfirmModal } from '@/components/ui';
 
 export const StudentManagement = () => {
   const [students, setStudents] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<number | null>(null);
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -29,14 +32,22 @@ export const StudentManagement = () => {
     fetchStudents();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this student?')) {
-      try {
-        toast.success('Student deleted');
-        fetchStudents();
-      } catch {
-        toast.error('Delete failed');
-      }
+  const handleDelete = (id: number) => {
+    setStudentToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!studentToDelete) return;
+
+    try {
+      // In a real app, call delete API: await deleteUser(studentToDelete);
+      toast.success('Student deleted');
+      fetchStudents();
+    } catch {
+      toast.error('Delete failed');
+    } finally {
+      setStudentToDelete(null);
     }
   };
 
@@ -180,6 +191,15 @@ export const StudentManagement = () => {
         </div>
 
       </CardBody>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Student"
+        description="Are you sure you want to delete this student profile? This action cannot be undone."
+        confirmText="Delete"
+      />
     </Card>
   );
 };

@@ -49,6 +49,7 @@ function setConfigs() {
         CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
         CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
         GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+        GROQ_API_KEY: process.env.GROQ_API_KEY,
         REDIS_HOST: process.env.REDIS_HOST || "127.0.0.1",
         REDIS_PORT: parseInt(process.env.REDIS_PORT || "6379"),
         REDIS_PASSWORD: process.env.REDIS_PASSWORD || ""

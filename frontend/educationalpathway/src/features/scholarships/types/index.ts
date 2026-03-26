@@ -9,9 +9,11 @@ export interface Scholarship {
   intakeSeason: string | null;
   country: string | null;
   originalUrl: string;
-  degree_levels: string[];
+  degreeLevels: string[];
   createdAt: string;
   updatedAt: string;
+  matchScore?: number;
+  matchReason?: string;
 }
 
 export interface ScholarshipFilters {

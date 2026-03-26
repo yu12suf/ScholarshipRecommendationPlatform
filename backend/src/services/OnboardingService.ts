@@ -6,6 +6,8 @@ import { AIService } from "./AIService.js";
 import { IdentityService } from "./IdentityService.js";
 import { FileService } from "./FileService.js";
 import { VectorService } from "./VectorService.js";
+import { MatchingService } from "./MatchingService.js";
+import { sendEmail } from "../utils/emailService.js";
 
 export class OnboardingService {
     /**
@@ -72,12 +74,14 @@ export class OnboardingService {
             // Handle file uploads if any
             let cvUrl = instance.cvUrl;
             let transcriptUrl = instance.transcriptUrl;
-            let certificateUrl = instance.certificateUrl;
+            let degreeCertificateUrl = instance.degreeCertificateUrl;
+            let languageCertificateUrl = instance.languageCertificateUrl;
 
             if (files) {
                 if (files.cv) cvUrl = await FileService.uploadFile(files.cv.data, "documents/cvs");
                 if (files.transcript) transcriptUrl = await FileService.uploadFile(files.transcript.data, "documents/transcripts");
-                if (files.certificate) certificateUrl = await FileService.uploadFile(files.certificate.data, "documents/certificates");
+                if (files.degreeCertificate) degreeCertificateUrl = await FileService.uploadFile(files.degreeCertificate.data, "documents/certificates/degree");
+                if (files.languageCertificate) languageCertificateUrl = await FileService.uploadFile(files.languageCertificate.data, "documents/certificates/language");
             }
 
             if (updateData.fullName) {
@@ -85,14 +89,11 @@ export class OnboardingService {
             }
 
             const updatedStudent = await repository.update(userId, {
-                calculatedGpa: updateData.gpa ?? updateData.calculatedGpa ?? null,
+                calculatedGpa: updateData.gpa || updateData.calculatedGpa || null,
                 academicHistory: updateData.academicHistory ? (typeof updateData.academicHistory === 'string' ? updateData.academicHistory : JSON.stringify(updateData.academicHistory)) : "[]",
                 studyPreferences: updateData.studyPreferences || "",
                 intakeSeason: updateData.intakeSeason || null,
                 fundingRequirement: updateData.preferredFundingType || updateData.fundingType || updateData.fundingRequirement || null,
-                ieltsScore: updateData.ieltsScore || null,
-                toeflScore: updateData.toeflScore || null,
-                duolingoScore: updateData.duolingoScore || null,
                 gender: updateData.gender || null,
                 age: updateData.age || null,
                 workExperience: updateData.workExperience ? (typeof updateData.workExperience === 'string' ? updateData.workExperience : JSON.stringify(updateData.workExperience)) : null,
@@ -100,37 +101,74 @@ export class OnboardingService {
                 highSchool: updateData.highSchool || null,
                 academicStatus: updateData.currentEducationLevel || updateData.academicStatus || null,
                 
-                // New Fields from the Profile Form
+                // Demographic Info
                 dateOfBirth: updateData.dateOfBirth || null,
                 nationality: updateData.nationality || null,
                 countryOfResidence: updateData.countryOfResidence || null,
                 city: updateData.city || null,
                 phoneNumber: updateData.phoneNumber || null,
-                fieldOfStudy: updateData.fieldOfStudyInput ? JSON.stringify(updateData.fieldOfStudyInput) : (updateData.fieldOfStudy || null),
+                
+                // Academic Info
+                fieldOfStudy: updateData.fieldOfStudyInput ? (typeof updateData.fieldOfStudyInput === 'string' ? updateData.fieldOfStudyInput : JSON.stringify(updateData.fieldOfStudyInput)) : (updateData.fieldOfStudy || null),
                 currentUniversity: updateData.currentUniversity || updateData.previousUniversity || null,
-                graduationYear: updateData.graduationYear ? parseInt(updateData.graduationYear as string) : null,
+                graduationYear: (updateData.graduationYear && !isNaN(parseInt(updateData.graduationYear as string))) 
+                    ? parseInt(updateData.graduationYear as string) 
+                    : null,
                 degreeSeeking: updateData.degreeSeeking || null,
+                
+                // Preferences
+                preferredDegreeLevel: updateData.preferredDegreeLevel ? (typeof updateData.preferredDegreeLevel === 'string' ? updateData.preferredDegreeLevel : JSON.stringify(updateData.preferredDegreeLevel)) : null,
+                studyMode: updateData.studyMode || null,
                 preferredCountries: updateData.preferredCountries ? (typeof updateData.preferredCountries === 'string' ? updateData.preferredCountries : JSON.stringify(updateData.preferredCountries)) : null,
                 preferredUniversities: updateData.preferredUniversities ? (typeof updateData.preferredUniversities === 'string' ? updateData.preferredUniversities : JSON.stringify(updateData.preferredUniversities)) : null,
-                languageTestType: updateData.languageTestType || updateData.languageQualification?.testType || null,
-                languageScore: updateData.testScore || updateData.languageQualification?.score || null,
-                needsFinancialSupport: updateData.needsFinancialSupport ?? updateData.financialNeed?.needsSupport ?? null,
-                familyIncomeRange: updateData.familyIncomeRange || updateData.financialNeed?.familyIncomeRange || null,
-                researchArea: updateData.researchArea || updateData.researchInterest?.researchArea || null,
-                proposedResearchTopic: updateData.proposedResearchTopic || updateData.researchInterest?.proposedTopic || null,
-                notificationPreferences: updateData.notifications ? JSON.stringify(updateData.notifications) : (updateData.notificationPreferences ? (typeof updateData.notificationPreferences === 'string' ? updateData.notificationPreferences : JSON.stringify(updateData.notificationPreferences)) : null),
+                
+                // Language Qualification Mapping
+                languageTestType: updateData.languageTestType || null,
+                languageScore: updateData.testScore || null,
+                ieltsScore: updateData.languageTestType === 'IELTS' ? (parseFloat(updateData.testScore) || null) : (updateData.ieltsScore || null),
+                toeflScore: updateData.languageTestType === 'TOEFL' ? (parseInt(updateData.testScore) || null) : (updateData.toeflScore || null),
+                duolingoScore: updateData.languageTestType === 'Duolingo' ? (parseInt(updateData.testScore) || null) : (updateData.duolingoScore || null),
+                
+                // Financial & Research
+                needsFinancialSupport: (updateData.needsFinancialSupport === 'true' || updateData.needsFinancialSupport === true),
+                familyIncomeRange: updateData.familyIncomeRange || null,
+                researchArea: updateData.researchArea || null,
+                proposedResearchTopic: updateData.proposedResearchTopic || null,
+                notificationPreferences: updateData.notifications ? (typeof updateData.notifications === 'string' ? updateData.notifications : JSON.stringify(updateData.notifications)) : null,
                 
                 // Document URLs
                 cvUrl,
                 transcriptUrl,
-                certificateUrl,
+                degreeCertificateUrl,
+                languageCertificateUrl,
 
                 isOnboarded: true
             });
 
             // Refresh embedding immediately after onboarding/update
             if (updatedStudent) {
-                await VectorService.generateStudentEmbedding(updatedStudent);
+                try {
+                    await VectorService.generateStudentEmbedding(updatedStudent);
+                } catch (err) {
+                    console.error("[OnboardingService] Failed to generate student embedding:", err);
+                    // Continue even if embedding fails - matching will fall back to default ranking
+                }
+                
+                // Trigger background notification for matches
+                setTimeout(async () => {
+                    try {
+                        const matches = await MatchingService.getTopMatches(userId);
+                        if (matches.length > 0) {
+                            await sendEmail({
+                                to: user.email,
+                                subject: "Scholarship Matches Found!",
+                                text: `Hello ${user.name},\n\nWe've found ${matches.length} scholarships that match your profile. Check your dashboard to view them.\n\nBest,\nPathway Team`
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Background match notification failed:", err);
+                    }
+                }, 1000);
             }
         } else if (user.role === UserRole.COUNSELOR) {
             await repository.update(userId, {

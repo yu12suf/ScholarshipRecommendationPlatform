@@ -23,7 +23,35 @@ export const verifyIdentity = async (idCard: File, selfie: File) => {
   return response.data;
 };
 
-export const updateProfile = async (payload: Record<string, unknown>) => {
-  const response = await api.put('/onboarding/update-profile', payload);
+export const updateProfile = async (payload: any) => {
+  const formData = new FormData();
+  
+  // Append all non-file fields to FormData
+  Object.keys(payload).forEach(key => {
+    if (key === 'documents') return; // Handle documents separately
+    
+    const value = payload[key];
+    if (value !== undefined && value !== null) {
+      if (typeof value === 'object' && !(value instanceof File)) {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
+      }
+    }
+  });
+
+  // Append documents correctly
+  if (payload.documents) {
+    Object.keys(payload.documents).forEach(docKey => {
+      const file = payload.documents[docKey];
+      if (file instanceof File) {
+        formData.append(docKey, file);
+      }
+    });
+  }
+
+  const response = await api.put('/onboarding/update-profile', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
   return response.data;
 };

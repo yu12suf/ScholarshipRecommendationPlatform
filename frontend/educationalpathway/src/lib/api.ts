@@ -34,9 +34,15 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle token refresh
+// Add a response interceptor to handle token refresh and data unwrapping
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Automatically unwrap the standard JSend-like { status: 'success', data: ... } format
+    if (response.data && response.data.status === 'success' && response.data.data !== undefined) {
+      return { ...response, data: response.data.data };
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
 

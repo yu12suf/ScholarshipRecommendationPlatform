@@ -1,6 +1,7 @@
 import { Scholarship } from "../types";
 import { Card, CardBody, Button, Badge } from "@/components/ui";
-import { MapPin, ExternalLink } from "lucide-react";
+import { MapPin, ExternalLink, Info } from "lucide-react";
+import Link from "next/link";
 
 interface ScholarshipCardProps {
   scholarship: Scholarship;
@@ -11,8 +12,12 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
     ? new Date(scholarship.deadline).toLocaleDateString()
     : "No deadline";
 
+  const matchScore = scholarship.matchScore;
+  const matchReason = scholarship.matchReason;
+  const degreeLevels = scholarship.degreeLevels;
+
   return (
-    <Card className="rounded-lg border-border bg-card hover:shadow-md transition-all duration-200 overflow-hidden">
+    <Card className="rounded-sm border-border bg-card hover:shadow-md transition-all duration-200 overflow-hidden">
       <CardBody className="p-6 space-y-6">
 
         {/* Header */}
@@ -22,23 +27,43 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
               {scholarship.title}
             </h3>
 
-            <div className="flex items-center gap-2 text-small">
-              <MapPin className="h-3.5 w-3.5" />
-              <span>{scholarship.country || "International"}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-small text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5" />
+                <span>{scholarship.country || "International"}</span>
+              </div>
+
+              {matchScore !== undefined && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  {Math.round(matchScore)}% Match
+                </div>
+              )}
             </div>
           </div>
 
           <Badge
             variant="outline"
-            className="text-label border-border text-muted-foreground"
+            className="px-2 py-1 text-[10px] font-medium border-border text-muted-foreground shrink-0"
           >
             {scholarship.fundType || "Scholarship"}
           </Badge>
         </div>
 
-        {/* Details */}
-        <div className="grid gap-4">
+        {/* AI Reason Preview */}
+        {matchReason && (
+          <div className="bg-primary/5 rounded-sm p-3 border border-primary/10">
+            <p className="text-[11px] text-primary leading-relaxed italic line-clamp-2">
+              "AI: {matchReason}"
+            </p>
+          </div>
+        )}
 
+        {/* Details Summary */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col">
             <span className="text-label">Amount</span>
             <span className="text-sm font-semibold text-foreground">
@@ -52,33 +77,33 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
               {deadline}
             </span>
           </div>
-
-          <div className="flex flex-col">
-            <span className="text-label">Eligibility</span>
-            <span className="text-sm font-medium text-foreground truncate">
-              {scholarship.degree_levels?.join(", ") || "All levels"}
-            </span>
-          </div>
-
         </div>
 
         {/* Actions */}
         <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Link 
+              href={`/dashboard/student/scholarships/${scholarship.id}`}
+              className="flex-1 h-11 flex items-center justify-center gap-2 rounded-sm bg-muted hover:bg-muted/80 text-foreground text-sm font-medium transition-colors"
+            >
+              <Info className="h-4 w-4" />
+              Details
+            </Link>
 
-          <Button className="w-full h-11 primary-gradient text-primary-foreground rounded-md">
-            Apply Now
-          </Button>
+            <a 
+               href={scholarship.originalUrl}
+               target="_blank"
+               rel="noopener noreferrer"
+               className="flex-1 h-11 primary-gradient text-primary-foreground rounded-sm flex items-center justify-center gap-2 text-sm font-medium"
+            >
+              Apply Now
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
 
-          <a
-            href={scholarship.originalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-foreground transition"
-          >
-            Original source
-            <ExternalLink className="h-3 w-3" />
-          </a>
-
+          <p className="text-[10px] text-center text-muted-foreground italic">
+            Redirects to original source provider 
+          </p>
         </div>
 
       </CardBody>

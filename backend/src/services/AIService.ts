@@ -1,20 +1,27 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import configs from "../config/configs.js";
 
 const genAI = new GoogleGenerativeAI(configs.GEMINI_API_KEY!);
-export class AIService {
-    static async extractOnboardingData(fileBuffer: Buffer, mimeType: string, role: string) {
-        // IMPROVEMENT: Use 'gemini-1.5-flash' or 'gemini-2.0-flash' for even better speed
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            // NEW: Enforce JSON output at the configuration level
-            generationConfig: {
-                responseMimeType: "application/json",
-            }
-        });
+const groq = new Groq({ apiKey: configs.GROQ_API_KEY });
 
-        const prompt = role === 'student'
-            ? `Extract academic history, skills, GPA, work experience, high school information, and academic status. 
+export class AIService {
+  static async extractOnboardingData(
+    fileBuffer: Buffer,
+    mimeType: string,
+    role: string,
+  ) {
+    // Keep using Gemini for Vision tasks (Extracting data from files/images)
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const prompt =
+      role === "student"
+        ? `Extract academic history, skills, GPA, work experience, high school information, and academic status. 
                Instructions:
                1. Academic history: array of {institution, degree, year}.
                2. GPA: Convert Ethiopian 5.0 scale or 100% scale to 4.0 scale.
@@ -23,37 +30,35 @@ export class AIService {
                5. High School: If the document is from a high school student, extract the high school name and GPA.
                6. Academic Status: Infer current academic level (highschool, degree, or masters).
                Return as JSON: { "academic_history": [], "skills": [], "gpa": number, "work_experience": string | null, "high_school": string | null, "academic_status": string | null }`
-            : `Extract bio, expertise, and experience. 
+        : `Extract bio, expertise, and experience. 
                Instructions:
                1. Bio: Short professional summary.
                2. Areas of expertise: array of strings.
                3. Years of experience: numeric value only.
                Return as JSON: { "bio": "", "areas_of_expertise": [], "years_of_experience": number }`;
 
-        const result = await model.generateContent([
-            {
-                inlineData: {
-                    data: fileBuffer.toString("base64"),
-                    mimeType: mimeType
-                }
-            },
-            prompt,
-        ]);
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: fileBuffer.toString("base64"),
+          mimeType: mimeType,
+        },
+      },
+      prompt,
+    ]);
 
-        // With responseMimeType: "application/json", response.text() is guaranteed to be valid JSON
-        return JSON.parse(result.response.text());
-    }
+    return JSON.parse(result.response.text());
+  }
 
-    static async verifyIdentity(idCardBuffer: Buffer, selfieBuffer: Buffer) {
-        // IMPROVEMENT: 2.0-flash is excellent for "spatial reasoning" (comparing faces)
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            generationConfig: {
-                responseMimeType: "application/json",
-            }
-        });
+  static async verifyIdentity(idCardBuffer: Buffer, selfieBuffer: Buffer) {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
 
-        const prompt = `
+    const prompt = `
             Task: Compare the person in the selfie (Image B) to the ID card (Image A).
             1. Provide a confidence_score between 0 and 1 (1 is a perfect match).
             2. Extract full_name and dob (format: YYYY-MM-DD) from the ID card.
@@ -61,12 +66,111 @@ export class AIService {
             Return JSON: { "confidence_score": number, "full_name": string, "dob": string }
         `;
 
-        const response = await model.generateContent([
-            prompt,
-            { inlineData: { data: idCardBuffer.toString("base64"), mimeType: "image/jpeg" } },
-            { inlineData: { data: selfieBuffer.toString("base64"), mimeType: "image/jpeg" } }
-        ]);
+    const response = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: idCardBuffer.toString("base64"),
+          mimeType: "image/jpeg",
+        },
+      },
+      {
+        inlineData: {
+          data: selfieBuffer.toString("base64"),
+          mimeType: "image/jpeg",
+        },
+      },
+    ]);
 
-        return JSON.parse(response.response.text());
+    return JSON.parse(response.response.text());
+  }
+
+  /**
+   * AI-powered scholarship ranking using Groq (Llama 3.3).
+   * Stable performance compared to Gemini during high demand.
+   * Optimized for Groq's token limits by pruning inputs.
+   */
+  static async rankScholarships(studentData: any, scholarships: any[]) {
+    if (!scholarships.length) return [];
+
+    // TOKEN OPTIMIZATION: Prune student profile down to essential matching fields
+    const prunedStudent = {
+      degree_seeking: studentData.degreeSeeking,
+      major: studentData.fieldOfStudy || studentData.fieldOfStudyInput,
+      gpa: studentData.calculatedGpa || studentData.gpa,
+      academic_status: studentData.academicStatus,
+      preferred_countries: studentData.preferredCountries,
+      research_interests: studentData.researchArea,
+      experience: studentData.workExperience?.slice(0, 500), // Truncate long work exp
+      funding_needs: studentData.preferredFundingType,
+    };
+
+    // TOKEN OPTIMIZATION: Prune scholarships to essential fields and truncate descriptions
+    const prunedScholarships = scholarships.map((s) => ({
+      id: s.id,
+      title: s.title,
+      description: s.description?.slice(0, 300) + "...", // Truncate long descriptions
+      requirements: s.requirements?.slice(0, 200) + "...", 
+      country: s.country,
+      degree_levels: s.degreeLevels || s.degree_levels,
+    }));
+
+    const prompt = `
+            You are an expert academic advisor. Compare the following student profile with the list of scholarships.
+            
+            Student Profile:
+            ${JSON.stringify(prunedStudent, null, 2)}
+            
+            Scholarships:
+            ${JSON.stringify(prunedScholarships, null, 2)}
+            
+            Task:
+            1. Evaluate how well each scholarship matches the student's background, interests, and goals.
+            2. Assign a 'match_score' (0-100) and provide a short 'match_reason' (max 150 chars). 
+               - Be VERY critical. 100 is for a perfect match (identical field, degree, and funding).
+               - 80 is for a very strong match.
+               - 50 is for a mediocre match.
+               - 20 is for a weak match.
+               - DO NOT give the same score to all scholarships unless they are truly identical.
+            3. Return the results as a JSON object with a 'matches' key containing an array of ALL processed scholarship IDs.
+            
+            IMPORTANT: Return ONLY a valid JSON object.
+            Format:
+            {
+              "matches": [
+                { "id": number, "match_score": number, "match_reason": string }
+              ]
+            }
+        `;
+
+    try {
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: "llama-3.3-70b-versatile",
+        response_format: { type: "json_object" },
+        temperature: 0.6,
+      });
+
+      const responseText = completion.choices[0]?.message?.content || "{\"matches\": []}";
+      console.log(`[AIService] Groq Response for ${scholarships.length} scholarships:`, responseText);
+      const parsed = JSON.parse(responseText);
+
+      // Extract the array from the normalized Groq response
+      if (parsed.matches && Array.isArray(parsed.matches)) {
+        return parsed.matches;
+      }
+      
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+
+      // Final fallback: try to find any array in the object
+      const firstArray = Object.values(parsed).find(v => Array.isArray(v));
+      return Array.isArray(firstArray) ? firstArray : [];
+      
+    } catch (error: any) {
+      console.error("[AIService] Error ranking scholarships with Groq:", error);
+      throw error; 
     }
+  }
 }

@@ -280,7 +280,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
         <Card className="border border-border">
           <CardBody className="p-6">
             <h3 className="h4 mb-4">AI Feedback Report</h3>
-            <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-xl border border-border/50">
+            <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-sm border border-border/50">
               <p className="whitespace-pre-wrap leading-relaxed text-sm">
                 {evaluation.feedback_report || "No detailed feedback generated."}
               </p>
@@ -371,7 +371,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
         <div className="flex items-center gap-3 flex-wrap">
           {/* Timer */}
           <div
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono text-sm font-bold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-sm border font-mono text-sm font-bold transition-colors ${
               isTimeLow
                 ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse"
                 : "bg-muted text-foreground border-border"
@@ -427,7 +427,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
               {meta.label}
               {sec === "reading" || sec === "listening" ? (
                 <span
-                  className={`text-xs px-1.5 py-0.5 rounded-md ${
+                  className={`text-xs px-1.5 py-0.5 rounded-sm ${
                     isActive ? "bg-white/20" : "bg-muted-foreground/10"
                   }`}
                 >
@@ -472,7 +472,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                         {q.options?.map((opt: string, j: number) => (
                           <label
                             key={j}
-                            className={`flex items-start p-3 rounded-lg border cursor-pointer transition-colors ${
+                            className={`flex items-start p-3 rounded-sm border cursor-pointer transition-colors ${
                               responses.reading[q.id] === opt
                                 ? "bg-primary/5 border-primary"
                                 : "border-border hover:bg-muted/50"
@@ -504,7 +504,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                 <CardBody className="p-6 h-[560px] overflow-y-auto custom-scrollbar">
                   <h3 className="h4 mb-4 flex items-center gap-2">
                     Listening Script{" "}
-                    <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                    <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-sm">
                       Simulated Transcript
                     </span>
                   </h3>
@@ -526,7 +526,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                         {q.options?.map((opt: string, j: number) => (
                           <label
                             key={j}
-                            className={`flex items-start p-3 rounded-lg border cursor-pointer transition-colors ${
+                            className={`flex items-start p-3 rounded-sm border cursor-pointer transition-colors ${
                               responses.listening[q.id] === opt
                                 ? "bg-primary/5 border-primary"
                                 : "border-border hover:bg-muted/50"
@@ -567,7 +567,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                   value={responses.writing}
                   onChange={(e) => setResponses({ ...responses, writing: e.target.value })}
                   placeholder="Type your essay here... Minimum 250 words recommended."
-                  className="w-full h-80 p-5 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 shadow-inner text-sm"
+                  className="w-full h-80 p-5 rounded-sm border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 shadow-inner text-sm"
                 />
               </div>
               <div className="flex justify-between text-sm text-muted-foreground font-medium">
@@ -596,7 +596,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
               <Card className="border border-border shadow-sm">
                 <CardBody className="p-8 text-center">
                   <h3 className="font-bold text-lg mb-4">Speaking Task</h3>
-                  <div className="bg-muted p-6 rounded-xl border border-border text-left mb-8">
+                  <div className="bg-muted p-6 rounded-sm border border-border text-left mb-8">
                     <p className="text-foreground whitespace-pre-wrap text-sm">
                       {sections.speaking?.prompt || "No prompt provided."}
                     </p>
@@ -640,7 +640,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                     )}
 
                     {audioBlob && !isRecording && (
-                      <div className="w-full max-w-sm bg-success/10 text-success p-3.5 rounded-xl border border-success/25 flex items-center justify-center gap-2">
+                      <div className="w-full max-w-sm bg-success/10 text-success p-3.5 rounded-sm border border-success/25 flex items-center justify-center gap-2">
                         <CheckCircle2 size={18} />
                         <span className="font-semibold text-sm">
                           Audio recorded ({formatTime(recordingSeconds)})
@@ -664,7 +664,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                 value={responses.speaking}
                 onChange={(e) => setResponses({ ...responses, speaking: e.target.value })}
                 placeholder="If you cannot record audio, type what you would say here..."
-                className="w-full h-32 p-4 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 shadow-inner text-sm"
+                className="w-full h-32 p-4 rounded-sm border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 shadow-inner text-sm"
               />
             </div>
           )}

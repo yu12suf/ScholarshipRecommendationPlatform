@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/providers/auth-context";
-import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -31,6 +30,7 @@ export function SignupForm({
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { register, googleLogin } = useAuth();
 
@@ -44,12 +44,12 @@ export function SignupForm({
 
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       await register(formData);
-      toast.success("Account created!");
-    } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Failed to sign up"));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to sign up. Please try again."));
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +77,7 @@ export function SignupForm({
         className="w-full max-w-md"
       >
 
-        <Card className="bg-card border border-border rounded-lg shadow-sm">
+        <Card className="bg-card border border-border rounded-sm shadow-sm">
 
           <CardHeader className="text-center pt-10 pb-4">
 
@@ -170,6 +170,12 @@ export function SignupForm({
 
               </div>
 
+              {error && (
+                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-sm border border-destructive/20 animate-in fade-in slide-in-from-top-1">
+                  {error}
+                </div>
+              )}
+
               {/* Submit */}
 
               <Button
@@ -209,7 +215,7 @@ export function SignupForm({
                       googleLogin(credentialResponse.credential);
                     }
                   }}
-                  onError={() => toast.error("Google Signup Failed")}
+                  onError={() => setError("Google Signup Failed")}
                   use_fedcm_for_prompt={false}
                   theme="outline"
                   shape="pill"

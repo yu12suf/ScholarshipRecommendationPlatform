@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export function CounselorNavbar() {
   const { user, logout } = useAuth();
@@ -25,11 +26,16 @@ export function CounselorNavbar() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
        {/* Logo */}
        <div className="flex items-center gap-4 group cursor-pointer">
-          <div className="p-2.5 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/20 group-hover:rotate-6 transition-transform duration-300">
-            <GraduationCap className="h-6 w-6 text-white" />
+          <div className="relative h-11 w-11 overflow-hidden rounded-2xl shadow-lg shadow-indigo-500/10 group-hover:rotate-6 transition-transform duration-300">
+            <Image 
+              src="/admas.png" 
+              alt="አድማስ Logo" 
+              fill
+              className="object-cover"
+            />
           </div>
           <div className="hidden sm:block">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">Pathway</h2>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">አድማስ</h2>
             <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest mt-1">Counselor Portal</p>
           </div>
        </div>
@@ -64,7 +70,7 @@ export function CounselorNavbar() {
 
           {/* User Profile */}
           <button className="flex items-center gap-3 p-1.5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all group">
-            <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-indigo-500/20 group-hover:-rotate-3 transition-transform">
+            <div className="h-9 w-9 rounded-sm bg-indigo-600 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-indigo-500/20 group-hover:-rotate-3 transition-transform">
               {user?.name?.charAt(0) || 'C'}
             </div>
             <div className="text-left leading-tight pr-1 hidden sm:block">

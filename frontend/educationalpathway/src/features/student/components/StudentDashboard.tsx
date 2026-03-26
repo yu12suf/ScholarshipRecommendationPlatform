@@ -15,9 +15,34 @@ import Link from "next/link";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { getScholarships } from "@/features/scholarships/api/get-scholarships";
+import { Scholarship } from "@/features/scholarships/types";
+import { ScholarshipCard } from "@/features/scholarships/components/ScholarshipCard";
 
 export const StudentDashboard = () => {
   const { user } = useAuth();
+  const [matches, setMatches] = useState<Scholarship[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const data = await getScholarships();
+        setMatches(data);
+      } catch (error) {
+        console.error("Failed to fetch matches:", error);
+      } finally {
+        setLoadingMatches(false);
+      }
+    };
+
+    if (user?.isOnboarded) {
+      fetchMatches();
+    } else {
+      setLoadingMatches(false);
+    }
+  }, [user?.isOnboarded]);
 
   const calculateCompletion = () => {
     if (!user) return 0;
@@ -40,20 +65,30 @@ export const StudentDashboard = () => {
       user.countryOfResidence,
       user.city,
       user.phoneNumber,
-      user.academicStatus || user.currentEducationLevel,
+      user.currentEducationLevel || user.academicStatus,
       user.degreeSeeking,
-      user.currentUniversity || user.previousUniversity,
+      user.previousUniversity || user.currentUniversity,
       user.graduationYear,
-      user.calculatedGpa || user.gpa,
-      user.fundingRequirement || user.preferredFundingType,
+      user.gpa || user.calculatedGpa,
+      user.preferredFundingType || user.fundingRequirement,
       user.studyMode,
+      user.languageTestType,
+      user.languageScore || user.testScore,
+      user.researchArea,
+      user.proposedResearchTopic,
+      user.familyIncomeRange,
+      user.cvUrl,
+      user.transcriptUrl,
+      user.degreeCertificateUrl,
+      user.languageCertificateUrl,
     ];
 
     const arrayFields = [
-      safeParse(user.fieldOfStudy || user.fieldOfStudyInput),
+      safeParse(user.fieldOfStudyInput || user.fieldOfStudy),
       safeParse(user.preferredDegreeLevel),
       safeParse(user.preferredCountries),
       safeParse(user.preferredUniversities),
+      safeParse(user.workExperience),
     ];
 
     const filledBasic = fields.filter(
@@ -106,7 +141,7 @@ export const StudentDashboard = () => {
       <motion.section
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-lg border border-border bg-card p-10 shadow-sm relative overflow-hidden"
+        className="rounded-sm border border-border bg-card p-10 shadow-sm relative overflow-hidden"
       >
         <div className="relative z-10 max-w-3xl">
           <h1 className="h1 mb-4">
@@ -192,27 +227,33 @@ export const StudentDashboard = () => {
           </div>
 
 
-          <Card className="border border-dashed border-border bg-muted">
-
-            <CardBody className="py-24 text-center">
-
-              <h3 className="h4">
-                Scanning for matches...
-              </h3>
-
-              <p className="text-small mt-2 max-w-sm mx-auto">
-                Complete your profile to unlock more scholarship opportunities.
-              </p>
-
-              <Link href="/dashboard/student/profile">
-                <Button className="mt-8 primary-gradient text-white">
-                  Enhance Your Profile
-                </Button>
-              </Link>
-
-            </CardBody>
-
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {loadingMatches ? (
+              Array.from({ length: 2 }).map((_, i) => (
+                <Card key={i} className="animate-pulse border border-border bg-card h-48" />
+              ))
+            ) : matches.length > 0 ? (
+              matches.slice(0, 4).map((match) => (
+                <ScholarshipCard key={match.id} scholarship={match} />
+              ))
+            ) : (
+              <Card className="border border-dashed border-border bg-muted col-span-2">
+                <CardBody className="py-24 text-center">
+                  <h3 className="h4">Scanning for matches...</h3>
+                  <p className="text-small mt-2 max-w-sm mx-auto">
+                    {user?.isOnboarded 
+                      ? "We haven't found exact matches yet. Try updating your profile with more details."
+                      : "Complete your profile to unlock more scholarship opportunities."}
+                  </p>
+                  <Link href="/dashboard/student/profile">
+                    <Button className="mt-8 primary-gradient text-white">
+                      {user?.isOnboarded ? "Update Profile" : "Enhance Your Profile"}
+                    </Button>
+                  </Link>
+                </CardBody>
+              </Card>
+            )}
+          </div>
 
         </div>
 
@@ -232,27 +273,42 @@ export const StudentDashboard = () => {
 
             <CardBody className="p-8 space-y-8">
 
+              {!user?.isOnboarded && (
+                <div className="flex gap-4">
+                  <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-sm">
+                    <FileText className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">
+                      Profile Completion Required
+                    </p>
+                    <p className="text-small mt-1">
+                      Your current visibility to scholarships is limited.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {user?.isOnboarded && matches.length > 0 && (
+                <div className="flex gap-4">
+                  <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-sm">
+                    <Award className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">
+                      Scholarships Matched
+                    </p>
+                    <p className="text-small mt-1">
+                      We found {matches.length} scholarship{matches.length > 1 ? 's' : ''} for you.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+
               <div className="flex gap-4">
 
-                <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-md">
-                  <FileText className="h-5 w-5 text-warning" />
-                </div>
-
-                <div>
-                  <p className="font-semibold text-sm">
-                    Profile Completion Required
-                  </p>
-                  <p className="text-small mt-1">
-                    Your current visibility to scholarships is limited.
-                  </p>
-                </div>
-
-              </div>
-
-
-              <div className="flex gap-4">
-
-                <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-md">
+                <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-sm">
                   <MessageSquare className="h-5 w-5 text-info" />
                 </div>
 

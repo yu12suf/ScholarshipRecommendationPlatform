@@ -113,6 +113,20 @@ export class Student extends Model {
     @Column({
         type: DataType.STRING,
         allowNull: true,
+        field: 'degree_certificate_url'
+    })
+    declare degreeCertificateUrl: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'language_certificate_url'
+    })
+    declare languageCertificateUrl: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
         field: 'intake_season'
     })
     declare intakeSeason: string;
@@ -219,7 +233,7 @@ export class Student extends Model {
     declare phoneNumber: string;
 
     @Column({
-        type: DataType.STRING,
+        type: DataType.TEXT,
         allowNull: true,
         field: 'field_of_study'
     })
@@ -245,6 +259,20 @@ export class Student extends Model {
         field: 'degree_seeking'
     })
     declare degreeSeeking: string;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'preferred_degree_level'
+    })
+    declare preferredDegreeLevel: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'study_mode'
+    })
+    declare studyMode: string;
 
     @Column({
         type: DataType.TEXT,
@@ -338,7 +366,7 @@ export class Student extends Model {
     declare updatedAt: Date;
 
     @Column({
-        type: DataType.JSONB,
+        type: 'VECTOR(3072)',
         allowNull: true,
     })
     declare embedding: any;

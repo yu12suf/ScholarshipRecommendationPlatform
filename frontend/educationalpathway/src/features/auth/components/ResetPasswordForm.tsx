@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Lock, GraduationCap, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/providers/auth-context'
-import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/Button'
 import { Input, Label } from '@/components/ui/Input'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card'
@@ -19,6 +18,8 @@ export function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const { resetPassword } = useAuth()
   const searchParams = useSearchParams()
@@ -27,33 +28,27 @@ export function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
 
     e.preventDefault()
+    setError(null)
 
     if (!token) {
-      toast.error('Invalid or missing reset token')
+      setError('Invalid or missing reset token. Please request a new link.')
       return
     }
 
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match')
+      setError('Passwords do not match')
       return
     }
 
     setIsLoading(true)
 
     try {
-
       await resetPassword({ token, password })
-
-      toast.success('Password reset successfully!')
-
-    } catch (error: unknown) {
-
-      toast.error(getErrorMessage(error, 'Failed to reset password'))
-
+      setIsSuccess(true)
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to reset password'))
     } finally {
-
       setIsLoading(false)
-
     }
 
   }
@@ -75,18 +70,18 @@ export function ResetPasswordForm() {
         className="w-full max-w-md"
       >
 
-        <Card className="bg-card border border-border rounded-xl relative overflow-hidden">
+        <Card className="bg-card border border-border rounded-sm relative overflow-hidden">
 
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50" />
 
           <CardHeader className="text-center pt-10 pb-4">
 
             <h1 className="text-3xl font-semibold text-foreground">
-              Reset Password
+              {isSuccess ? 'Success!' : 'Reset Password'}
             </h1>
 
             <p className="text-sm text-muted-foreground mt-2">
-              Enter your new password below.
+              {isSuccess ? 'Your password has been reset successfully.' : 'Enter your new password below.'}
             </p>
 
           </CardHeader>
@@ -151,21 +146,40 @@ export function ResetPasswordForm() {
 
               </div>
 
-              <Button
-                type="submit"
-                variant="scholarship"
-                size="lg"
-                className="w-full h-12"
-                isLoading={isLoading}
-                disabled={!token}
-              >
-                Update Password
-              </Button>
+              {isSuccess ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-success/10 border border-success/20 text-success rounded-sm text-sm text-center">
+                    You can now login with your new password.
+                  </div>
+                  <Link href="/login" className="block w-full">
+                    <Button variant="scholarship" className="w-full h-12">
+                      Go to Login
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <Button
+                  type="submit"
+                  variant="scholarship"
+                  size="lg"
+                  className="w-full h-12"
+                  isLoading={isLoading}
+                  disabled={!token}
+                >
+                  Update Password
+                </Button>
+              )}
+
+              {error && (
+                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-sm border border-destructive/20 animate-in fade-in slide-in-from-top-1">
+                  {error}
+                </div>
+              )}
 
             </form>
 
             {!token && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-4 rounded-md">
+              <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-4 rounded-sm">
                 Invalid reset link. Please request a new one.
               </div>
             )}

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useOnboarding } from "@/features/onboarding/hooks/useOnboarding";
@@ -31,7 +32,13 @@ export function OnboardingFlow() {
     <div className="min-h-screen bg-muted/30 flex flex-col items-center py-12 px-4">
       <div className="w-full max-w-3xl">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <GraduationCap className="h-10 w-10 text-primary" />
+          <Image 
+            src="/admas.png" 
+            alt="Logo" 
+            width={40} 
+            height={40} 
+            className="h-10 w-10 object-contain"
+          />
           <h1 className="text-2xl font-bold text-primary">
             Setting Up Your Account
           </h1>
@@ -161,7 +168,7 @@ export function OnboardingFlow() {
                   </div>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-xl flex gap-3 text-sm text-yellow-800">
+                <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-sm flex gap-3 text-sm text-yellow-800">
                   <AlertCircle className="h-5 w-5 shrink-0" />
                   <p>Ensure your face is clear and matches your ID.</p>
                 </div>

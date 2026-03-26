@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/providers/auth-context";
-import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -17,18 +16,19 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { login, googleLogin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       await login({ email, password });
-      toast.success("Welcome back!");
-    } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Failed to login"));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to login. Please check your credentials."));
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +50,7 @@ export function LoginForm() {
         transition={{ duration: 0.35 }}
         className="w-full max-w-md"
       >
-        <Card className="bg-card border border-border shadow-sm rounded-lg">
+        <Card className="bg-card border border-border shadow-sm rounded-sm">
 
           <CardHeader className="text-center pt-10 pb-4">
 
@@ -120,6 +120,12 @@ export function LoginForm() {
 
               </div>
 
+              {error && (
+                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-sm border border-destructive/20 animate-in fade-in slide-in-from-top-1">
+                  {error}
+                </div>
+              )}
+
               {/* Submit */}
 
               <Button
@@ -172,7 +178,7 @@ export function LoginForm() {
                       googleLogin(credentialResponse.credential);
                     }
                   }}
-                  onError={() => toast.error("Google Login Failed")}
+                  onError={() => setError("Google Login Failed")}
                   use_fedcm_for_prompt={false}
                   theme="outline"
                   shape="pill"

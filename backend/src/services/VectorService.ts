@@ -11,12 +11,17 @@ export class VectorService {
     static async generateStudentEmbedding(student: Student): Promise<void> {
         // We use a structured list. This makes the "meaning" denser.
         const studentContext = `
+            Nationality: ${student.nationality || ""}
+            Residence: ${student.countryOfResidence || ""}
             Level: ${student.academicStatus || ""}
-            Interests: ${student.studyPreferences || ""}
+            Seeking: ${student.degreeSeeking || ""}
+            PreferredLevels: ${student.preferredDegreeLevel || ""}
+            StudyMode: ${student.studyMode || ""}
+            Interests: ${student.studyPreferences || student.fieldOfStudy || ""}
+            Research: ${student.researchArea || ""} ${student.proposedResearchTopic || ""}
             History: ${student.academicHistory || ""}
-            Skills: ${student.extractedData || ""}
             Experience: ${student.workExperience || ""}
-            Goal_Country: ${student.countryInterest || ""}
+            Goal_Country: ${student.countryInterest || student.preferredCountries || ""}
         `.replace(/\s+/g, ' ').trim();
 
         const currentHash = crypto.createHash("md5").update(studentContext).digest("hex");

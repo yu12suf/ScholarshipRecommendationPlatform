@@ -47,6 +47,7 @@
 
   /* Typography */
   --font-sans: var(--font-open-sans), "Open Sans", system-ui, sans-serif;
+  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
 }
 
 /* ---------------- LIGHT MODE ---------------- */
@@ -55,22 +56,22 @@
 
   /* Base */
   --background: #ffffff;
-  --foreground: #0f172a;
+  --foreground: #111827;
 
   /* Surfaces */
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #111827;
 
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --popover-foreground: #111827;
 
-  /* Primary */
-  --primary: #2563eb;
+  /* Primary — Emerald Green (brand only) */
+  --primary: #059669;
   --primary-foreground: #ffffff;
 
   /* Secondary UI */
   --secondary: #f3f4f6;
-  --secondary-foreground: #111827;
+  --secondary-foreground: #1f2937;
 
   /* Muted Surfaces */
   --muted: #f9fafb;
@@ -86,14 +87,14 @@
 
   --success: #10b981;
   --warning: #f59e0b;
-  --info: #3b82f6;
+  --info: #0ea5e9;
 
   /* Borders */
   --border: #e5e7eb;
-  --input: #e5e7eb;
-  --ring: #2563eb;
+  --input: #f3f4f6;
+  --ring: #059669;
 
-  --radius: 0.75rem;
+  --radius: 0.25rem;
 }
 
 /* ---------------- DARK MODE ---------------- */
@@ -101,31 +102,31 @@
 .dark {
 
   /* Base */
-  --background: #0d0d0d;
-  --foreground: #ececec;
+  --background: #0f172a;
+  --foreground: #f1f5f9;
 
   /* Surfaces */
-  --card: #171717;
-  --card-foreground: #ececec;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
 
-  --popover: #171717;
-  --popover-foreground: #ececec;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
 
   /* Primary */
-  --primary: #3b82f6;
+  --primary: #10b981;
   --primary-foreground: #ffffff;
 
   /* Sidebar / panels */
-  --secondary: #202123;
-  --secondary-foreground: #ececec;
+  --secondary: #1e293b;
+  --secondary-foreground: #cbd5e1;
 
-  /* Chat message surfaces */
-  --muted: #1f1f1f;
-  --muted-foreground: #a1a1aa;
+  /* Muted surfaces */
+  --muted: #0f172a;
+  --muted-foreground: #94a3b8;
 
   /* Hover surfaces */
-  --accent: #2a2a2a;
-  --accent-foreground: #ececec;
+  --accent: #1e293b;
+  --accent-foreground: #f1f5f9;
 
   /* Semantics */
   --destructive: #ef4444;
@@ -133,12 +134,12 @@
 
   --success: #10b981;
   --warning: #f59e0b;
-  --info: #3b82f6;
+  --info: #0ea5e9;
 
   /* Borders */
-  --border: #2a2a2a;
-  --input: #2a2a2a;
-  --ring: #3b82f6;
+  --border: #334155;
+  --input: #1e293b;
+  --ring: #10b981;
 }
 
 /* ---------------- BASE STYLES ---------------- */
@@ -150,35 +151,49 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+button {
+  cursor: pointer;
+}
+
 /* ---------------- GRADIENT UTILITIES ---------------- */
 
 .primary-gradient {
-  background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #059669 0%, #065f46 100%);
 }
 
 .secondary-gradient {
-  background: linear-gradient(135deg, var(--secondary) 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 70%, #059669 100%);
 }
 
 /* ---------------- GLASS MORPHISM ---------------- */
 
 .glass-morphism {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.07);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .dark .glass-morphism {
-  background: rgba(20,20,20,0.5);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.1);
 }
 
 /* ---------------- TYPOGRAPHY ---------------- */
 
-.h1 { @apply text-4xl font-extrabold tracking-tight md:text-5xl; }
-.h2 { @apply text-3xl font-bold tracking-tight md:text-4xl; }
-.h3 { @apply text-2xl font-semibold tracking-tight; }
-.h4 { @apply text-xl font-semibold tracking-tight; }
+.h1 { @apply text-4xl font-extrabold tracking-tight md:text-5xl; font-family: var(--font-serif); }
+.h2 { @apply text-3xl font-bold tracking-tight md:text-4xl; font-family: var(--font-serif); }
+.h3 { @apply text-2xl font-semibold tracking-tight; font-family: var(--font-serif); }
+.h4 { @apply text-xl font-semibold tracking-tight; font-family: var(--font-serif); }
 
 .text-body { @apply text-base leading-relaxed text-foreground; }
 .text-small { @apply text-sm text-muted-foreground font-medium; }
@@ -252,3 +267,18 @@ body {
   background: var(--destructive) !important;
   color: var(--destructive-foreground) !important;
 }
+
+/* ---------------- SCROLLBAR UTILITIES ---------------- */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
