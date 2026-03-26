@@ -3,6 +3,7 @@ import { Scholarship } from "../models/Scholarship.js";
 import { Student } from "../models/Student.js";
 import { MatchedScholarship } from "../types/scholarshipTypes.js";
 import { Op } from "sequelize";
+import { User } from "../models/User.js";
 
 export class MatchingRepository {
     /**
@@ -61,5 +62,61 @@ export class MatchingRepository {
             ...m,
             match_score: parseFloat((m as any).match_score?.toString() || "0")
         })) as unknown as MatchedScholarship[];
+    }
+    /**
+     * Finds top students for a given scholarship.
+     */
+    static async findTopMatchingStudentsForScholarship(scholarshipEmbedding: string, limit: number = 5): Promise<any[]> {
+        // Query students whose embedding is closest to the scholarship
+        // We join Users to get email/name
+        const students = await Student.findAll({
+            where: Sequelize.literal('embedding IS NOT NULL') as any,
+            attributes: [
+                'id', 'userId',
+                [
+                    Sequelize.literal(`(1 - (embedding <=> '${scholarshipEmbedding}'::halfvec(3072))) * 100`),
+                    'match_score'
+                ]
+            ],
+            include: [{
+                model: User,
+                attributes: ['name', 'email', 'fcmToken']
+            }],
+            order: [
+                Sequelize.literal(`embedding <=> '${scholarshipEmbedding}'::halfvec(3072) ASC`)
+            ],
+            limit: limit,
+            raw: true,
+            nest: true
+        });
+
+        return students;
+    }
+    /**
+     * Finds all students whose profile matches the given scholarship embedding above a certain score.
+     */
+    static async findStudentsExceedingThreshold(scholarshipEmbedding: string, threshold: number = 75): Promise<any[]> {
+        const students = await Student.findAll({
+            where: Sequelize.literal('embedding IS NOT NULL') as any,
+            attributes: [
+                'id', 'userId',
+                [
+                    Sequelize.literal(`(1 - (embedding <=> '${scholarshipEmbedding}'::halfvec(3072))) * 100`),
+                    'match_score'
+                ]
+            ],
+            include: [{
+                model: User,
+                attributes: ['name', 'email', 'fcmToken']
+            }],
+            having: Sequelize.literal(`(1 - (embedding <=> '${scholarshipEmbedding}'::halfvec(3072))) * 100 > ${threshold}`),
+            order: [
+                Sequelize.literal(`embedding <=> '${scholarshipEmbedding}'::halfvec(3072) ASC`)
+            ],
+            raw: true,
+            nest: true
+        });
+
+        return students;
     }
 }

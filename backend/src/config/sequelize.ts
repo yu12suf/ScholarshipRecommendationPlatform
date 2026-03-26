@@ -7,6 +7,7 @@ import { Counselor } from "../models/Counselor.js";
 import { ScholarshipSource } from "../models/ScholarshipSource.js";
 import { Scholarship } from "../models/Scholarship.js";
 import { AssessmentResult } from "../models/AssessmentResult.js";
+import { Notification } from "../models/Notification.js";
 import { Video } from "../models/Video.js";
 import { LearningPath } from "../models/LearningPath.js";
 import { LearningPathProgress } from "../models/LearningPathProgress.js";
@@ -36,7 +37,7 @@ export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
     timezone: "+00:00", // Force UTC to avoid timezone issues
-    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, ScholarshipSource, Scholarship, AssessmentResult, Video, LearningPath, LearningPathProgress], // Add all models here
+    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, ScholarshipSource, Scholarship, AssessmentResult, Notification], // Add all models here
 } as SequelizeOptions);
 
 export const connectSequelize = async () => {
