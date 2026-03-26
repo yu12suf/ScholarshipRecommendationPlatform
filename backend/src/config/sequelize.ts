@@ -8,6 +8,9 @@ import { ScholarshipSource } from "../models/ScholarshipSource.js";
 import { Scholarship } from "../models/Scholarship.js";
 import { AssessmentResult } from "../models/AssessmentResult.js";
 import { Notification } from "../models/Notification.js";
+import { Video } from "../models/Video.js";
+import { LearningPath } from "../models/LearningPath.js";
+import { LearningPathProgress } from "../models/LearningPathProgress.js";
 import configs from "./configs.js";
 
 // Determine connection options based on environment
@@ -41,6 +44,14 @@ export const connectSequelize = async () => {
     try {
         await sequelize.authenticate();
         console.log("Sequelize connected successfully");
+
+        // Enable pgvector extension
+        try {
+            await sequelize.query('CREATE EXTENSION IF NOT EXISTS vector;');
+            console.log("pgvector extension ensured");
+        } catch (extensionError) {
+            console.warn("⚠️ Warning: Failed to enable pgvector extension. Ensure it is installed on your PostgreSQL system.");
+        }
 
         // Sync models with database (creates tables if missing)
         // Note: In production, migrations are preferred.

@@ -5,6 +5,8 @@ import onboardingRouter from "./onboardingRoutes.js";
 import scholarshipRouter from "./scholarshipRoutes.js";
 import assessmentRouter from "./assessmentRouter.js";
 import notificationRouter from "./notificationRoutes.js";
+import videoRouter from "./videoRoutes.js";
+import learningPathRouter from "./learningPathRoutes.js";
 
 export default {
     userRouter,
@@ -12,5 +14,6 @@ export default {
     onboardingRouter,
     scholarshipRouter,
     assessmentRouter,
-    notificationRouter,
+    videoRouter,
+    learningPathRouter,
 };
