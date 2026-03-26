@@ -25,12 +25,26 @@ export class AssessmentController {
                 return;
             }
 
-            let audioBuffer: Buffer | undefined;
+            // If sending via FormData (with a file), 'responses' will usually come in as a stringifed JSON payload
+            let parsedResponses = responses;
+            if (typeof responses === "string") {
+                try {
+                    parsedResponses = JSON.parse(responses);
+                } catch (e) {
+                    res.status(400).json({ error: "responses must be a valid JSON object or stringified JSON" });
+                    return;
+                }
+            }
+
+            let audioData: { buffer: Buffer; mimetype: string } | undefined;
             // express-fileupload attaches files to req.files
             if (req.files && req.files.audio) {
                 const audioFile = Array.isArray(req.files.audio) ? req.files.audio[0] : req.files.audio;
                 if (audioFile) {
-                    audioBuffer = audioFile.data;
+                    audioData = {
+                        buffer: audioFile.data,
+                        mimetype: audioFile.mimetype
+                    };
                 }
             }
 
@@ -40,7 +54,7 @@ export class AssessmentController {
                 return;
             }
 
-            const result = await AssessmentService.submitAssessment(test_id, responses, student.id, audioBuffer);
+            const result = await AssessmentService.submitAssessment(test_id, parsedResponses, student.id, audioData);
             res.json(result);
         } catch (error) {
             next(error);
