@@ -66,6 +66,24 @@ export class LearningPath extends Model {
         speaking: string;
     };
 
+    @Column({
+        type: DataType.JSONB,
+        allowNull: false,
+        field: 'learning_mode_sections',
+        defaultValue: {
+            reading: [],
+            listening: [],
+            writing: [],
+            speaking: []
+        }
+    })
+    declare learningModeSections: {
+        reading: any[];
+        listening: any[];
+        writing: any[];
+        speaking: any[];
+    };
+
     @CreatedAt
     @Column({
         type: DataType.DATE,

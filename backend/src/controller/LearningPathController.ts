@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { LearningPathService } from "../services/LearningPathService.js";
 import { LearningPathProgress } from "../models/LearningPathProgress.js";
+import { StudentRepository } from "../repositories/StudentRepository.js";
 
 export class LearningPathController {
     /**
@@ -8,27 +9,25 @@ export class LearningPathController {
      */
     static async getMyPath(req: Request, res: Response) {
         try {
-            const studentId = req.user?.id; // Assuming student ID is mapped in JWT or needs lookup
-            // Note: In this system, userId and studentId might differ. 
-            // We need to ensure we have the student record ID.
-
-            if (!studentId) {
+            const userId = req.user?.id;
+            if (!userId) {
                 return res.status(401).json({ success: false, error: "Unauthorized" });
             }
 
-            const path = await LearningPathService.getFormattedPath(studentId);
+            const student = await StudentRepository.findByUserId(userId);
+            if (!student) {
+                return res.status(404).json({ success: false, error: "Student profile not found" });
+            }
+
+            const path = await LearningPathService.getFormattedPath(student.id);
 
             if (!path) {
                 return res.status(404).json({
-                    success: false,
                     message: "Learning path not generated yet. Complete an assessment first."
                 });
             }
 
-            return res.status(200).json({
-                success: true,
-                data: path
-            });
+            return res.status(200).json(path);
         } catch (error: any) {
             return res.status(500).json({
                 success: false,
@@ -42,16 +41,21 @@ export class LearningPathController {
      */
     static async markComplete(req: Request, res: Response) {
         try {
-            const studentId = req.user?.id;
+            const userId = req.user?.id;
             const { videoId, section, isCompleted } = req.body;
 
-            if (!studentId) {
+            if (!userId) {
                 return res.status(401).json({ success: false, error: "Unauthorized" });
+            }
+
+            const student = await StudentRepository.findByUserId(userId);
+            if (!student) {
+                return res.status(404).json({ success: false, error: "Student profile not found" });
             }
 
             const [progress, created] = await LearningPathProgress.findOrCreate({
                 where: {
-                    studentId,
+                    studentId: student.id,
                     videoId: videoId || null,
                     section
                 },

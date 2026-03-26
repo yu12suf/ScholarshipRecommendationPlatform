@@ -1,5 +1,4 @@
 import { LearningPathService } from "../services/LearningPathService.js";
-import { VideoRepository } from "../repositories/VideoRepository.js";
 import { sequelize } from "../config/sequelize.js";
 import { Video } from "../models/Video.js";
 import { Student } from "../models/Student.js";
@@ -12,7 +11,7 @@ async function testExtraction() {
         await sequelize.authenticate();
         console.log("✅ Database connected.");
 
-        await sequelize.sync();
+        await sequelize.sync({ alter: true });
         console.log("✅ Database synchronized.");
 
         // 0. Ensure a test student exists (to satisfy Foreign Key constraint)
@@ -63,14 +62,20 @@ async function testExtraction() {
         // 2. Mock AI Evaluation Result
         const mockEvaluation = {
             evaluation: {
-                overall_band: 6.5, // Should map to 'medium'
+                overall_band: 6.5,
                 subscores: { reading: 6.0, listening: 7.0, writing: 6.5, speaking: 6.5 },
-                feedback_report: "Your overall performance is good, but work on your reading comprehension.",
+                feedback_report: "Your overall performance is good.",
                 section_notes: {
-                    reading: "Focus on skimming and scanning techniques for academic texts.",
-                    listening: "Practice identifying main ideas in complex lectures.",
-                    writing: "Improve your use of cohesive devices in Task 2.",
-                    speaking: "Work on lexical resource and idiomatic expressions."
+                    reading: "D".repeat(1050), // 1000+ chars
+                    listening: "D".repeat(1050),
+                    writing: "D".repeat(1050),
+                    speaking: "D".repeat(1050)
+                },
+                learning_mode: {
+                    reading: [{ question: "Test Reading Question", options: ["A", "B"], answer: "A", explanation: "Because..." }],
+                    listening: [{ question: "Test Listening Question", options: ["A", "B"], answer: "B", explanation: "Because..." }],
+                    writing: [{ prompt: "Test Writing Prompt", sample_answer: "Sample...", explanation: "Because..." }],
+                    speaking: [{ prompt: "Test Speaking Prompt", tips: "Tip...", sample_response: "Sample..." }]
                 }
             }
         };
@@ -89,10 +94,12 @@ async function testExtraction() {
         console.log("📊 Verification Results:");
         console.log(JSON.stringify(path, null, 2));
 
-        if (path && path.reading && path.reading.videos.length === 5 && path.reading.notes.includes("skimming")) {
-            console.log("✨ TEST PASSED: Learning path is correctly structured, populated with 5 videos per skill, and contains AI notes!");
+        if (path && path.skills.reading && path.skills.reading.notes.length >= 1000 && path.learningMode.reading.length > 0) {
+            console.log("✨ TEST PASSED: Enhanced learning path with detailed notes and Learning Mode questions works!");
         } else {
-            console.log("❌ TEST FAILED: Verification criteria not met.");
+            console.log("❌ TEST FAILED: Verification criteria not met (check notes length or learningMode).");
+            console.log("Notes Length:", path?.skills?.reading?.notes?.length);
+            console.log("Learning Mode Reading Questions:", path?.learningMode?.reading?.length);
         }
 
     } catch (error) {

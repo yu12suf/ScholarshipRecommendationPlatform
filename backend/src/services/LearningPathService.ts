@@ -1,5 +1,5 @@
 import { LearningPathRepository } from "../repositories/LearningPathRepository.js";
-import { VideoRepository } from "../repositories/VideoRepository.js";
+import { VideoService } from "../services/VideoService.js";
 import { Video } from "../models/Video.js";
 
 export class LearningPathService {
@@ -20,7 +20,7 @@ export class LearningPathService {
         const level = this.mapScoreToLevel(overallBand);
 
         // 1. Fetch 5 videos per skill matching the student's level
-        const videoMap = await VideoRepository.findFivePerType(level);
+        const videoMap = await VideoService.getFivePerType(level);
 
         const videoSections = {
             reading: videoMap['reading']?.map(v => v.id) || [],
@@ -41,10 +41,19 @@ export class LearningPathService {
             speaking: aiNotes.speaking || generalFeedback
         };
 
-        // 3. Persist the learning path
+        // 3. Extract Learning Mode Sections (Practice Questions)
+        const learningModeSections = evaluation.evaluation?.learning_mode || {
+            reading: [],
+            listening: [],
+            writing: [],
+            speaking: []
+        };
+
+        // 4. Persist the learning path
         await LearningPathRepository.upsert(studentId, {
             videoSections,
-            noteSections
+            noteSections,
+            learningModeSections
         });
     }
 
@@ -60,9 +69,10 @@ export class LearningPathService {
 
         for (const skill of skills) {
             const videoIds = (path.videoSections as any)[skill] || [];
+
             // Fetch video details for each ID
             const videos = await Promise.all(
-                videoIds.map((id: number) => VideoRepository.findById(id))
+                videoIds.map((id: number) => VideoService.getById(id))
             );
 
             result[skill] = {
@@ -71,6 +81,9 @@ export class LearningPathService {
             };
         }
 
-        return result;
+        return {
+            skills: result,
+            learningMode: path.learningModeSections
+        };
     }
 }

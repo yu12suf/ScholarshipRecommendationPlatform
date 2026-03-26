@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { VideoRepository } from "../repositories/VideoRepository.js";
+import { VideoService } from "../services/VideoService.js";
 
 export class VideoController {
     static async create(req: Request, res: Response) {
         try {
-            const video = await VideoRepository.create(req.body);
+            const video = await VideoService.create(req.body);
             return res.status(201).json({
                 success: true,
                 data: video
@@ -19,7 +19,7 @@ export class VideoController {
 
     static async getAll(req: Request, res: Response) {
         try {
-            const videos = await VideoRepository.findAll();
+            const videos = await VideoService.getAll();
             return res.status(200).json({
                 success: true,
                 data: videos
@@ -35,7 +35,7 @@ export class VideoController {
     static async getById(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const video = await VideoRepository.findById(Number(id));
+            const video = await VideoService.getById(Number(id));
             if (!video) {
                 return res.status(404).json({
                     success: false,
@@ -57,7 +57,7 @@ export class VideoController {
     static async update(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const [affectedCount, updatedVideos] = await VideoRepository.update(Number(id), req.body);
+            const [affectedCount, updatedVideos] = await VideoService.update(Number(id), req.body);
             if (affectedCount === 0) {
                 return res.status(404).json({
                     success: false,
@@ -79,7 +79,7 @@ export class VideoController {
     static async delete(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const affectedCount = await VideoRepository.delete(Number(id));
+            const affectedCount = await VideoService.delete(Number(id));
             if (affectedCount === 0) {
                 return res.status(404).json({
                     success: false,

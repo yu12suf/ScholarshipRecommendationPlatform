@@ -24,14 +24,14 @@ export class Video extends Model {
         allowNull: false,
         field: 'video_link'
     })
-    declare videoLink: string;
+    declare videolink: string;
 
     @Column({
         type: DataType.STRING(255),
         allowNull: false,
         field: 'thumbnail_link'
     })
-    declare thumbnailLink: string;
+    declare thubnail: string;
 
     @Column({
         type: DataType.STRING(20),
