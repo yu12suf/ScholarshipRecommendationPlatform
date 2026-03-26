@@ -28,5 +28,5 @@ export interface MatchedScholarship {
     country: string | null;
     originalUrl: string;
     matchScore: number;
-    matchReason?: string;
+    matchReason?: string | null;
 }

@@ -2,8 +2,8 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "አድማስ",
-    short_name: "አድማስ",
+    name: "Admas",
+    short_name: "Admas",
     description: "Your journey to academic success starts here.",
     start_url: "/",
     display: "standalone",
@@ -14,16 +14,19 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/admas.png",
         sizes: "any",
         type: "image/png",
+        purpose: "any",
       },
       {
         src: "/admas.png",
         sizes: "192x192",
         type: "image/png",
+        purpose: "maskable",
       },
       {
         src: "/admas.png",
         sizes: "512x512",
         type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

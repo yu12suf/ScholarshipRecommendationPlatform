@@ -26,8 +26,8 @@ async function start() {
   try {
     await connectSequelize();
 
-    // Ensure the assessment worker is running (explicit reference prevents tree-shaking)
-    console.log(`🧠 Assessment worker started: ${assessmentWorker.name}`);
+    // Ensure the assessment worker is instantiated (explicit reference prevents tree-shaking)
+    console.log(`🧠 Assessment worker initialized: ${assessmentWorker.name}`);
 
     // // Initialize Scholarship Ingestion System
     // await seedScholarshipSources();

@@ -466,7 +466,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                   <Card key={q.id || i} className="border border-border shadow-sm">
                     <CardBody className="p-5">
                       <p className="font-semibold text-sm mb-4">
-                        {i + 1}. {q.text}
+                        {i + 1}. {q.question}
                       </p>
                       <div className="space-y-2">
                         {q.options?.map((opt: string, j: number) => (
@@ -503,16 +503,42 @@ export function AssessmentTest({ examData, onComplete }: Props) {
               <Card className="border border-border">
                 <CardBody className="p-6 h-[560px] overflow-y-auto custom-scrollbar">
                   <h3 className="h4 mb-4 flex items-center gap-2">
-                    Listening Script{" "}
+                    Listening Task{" "}
                     <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-sm">
-                      Simulated Transcript
+                      Audio Only
                     </span>
                   </h3>
-                  <div className="prose prose-sm max-w-none text-muted-foreground border-l-4 border-info pl-4 py-2 bg-info/5 rounded-r-lg">
-                    <p className="whitespace-pre-wrap leading-relaxed text-sm">
-                      {sections.listening?.script || "No script provided."}
-                    </p>
-                  </div>
+                  
+                  {sections.listening?.audio_base64 ? (
+                    <div className="mt-8 mb-6 p-8 bg-linear-to-br from-primary/5 to-accent/5 rounded-sm border border-border flex flex-col items-center justify-center space-y-6 text-center shadow-inner">
+                      <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Headphones className="size-10 text-primary animate-pulse" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-bold text-lg text-foreground">Play Listening Audio</p>
+                        <p className="text-sm text-muted-foreground max-w-sm">
+                          Listen carefully to the recording and answer the questions on the right. You can play it as many times as needed.
+                        </p>
+                      </div>
+                      <audio 
+                        controls 
+                        className="w-full max-w-md h-12"
+                        src={`data:audio/mp3;base64,${sections.listening.audio_base64}`}
+                      >
+                        Your browser does not support the audio element.
+                      </audio>
+                    </div>
+                  ) : (
+                    <div className="mt-8 p-6 bg-destructive/5 rounded-sm border border-destructive/20 flex flex-col items-center gap-4 text-center">
+                      <AlertCircle className="size-10 text-destructive" />
+                      <div>
+                        <p className="font-bold text-destructive">Audio Missing</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          We encountered an error loading the audio for this section. Please try generating a new exam.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardBody>
               </Card>
               <div className="space-y-5 h-[560px] overflow-y-auto custom-scrollbar pr-2">
@@ -520,7 +546,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                   <Card key={q.id || i} className="border border-border shadow-sm">
                     <CardBody className="p-5">
                       <p className="font-semibold text-sm mb-4">
-                        {i + 1}. {q.text}
+                        {i + 1}. {q.question}
                       </p>
                       <div className="space-y-2">
                         {q.options?.map((opt: string, j: number) => (

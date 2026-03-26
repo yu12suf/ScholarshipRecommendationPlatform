@@ -1,6 +1,7 @@
 import { LearningPathRepository } from "../repositories/LearningPathRepository.js";
 import { VideoService } from "../services/VideoService.js";
 import { Video } from "../models/Video.js";
+import { LearningPathProgress } from "../models/LearningPathProgress.js";
 
 export class LearningPathService {
     /**
@@ -15,12 +16,12 @@ export class LearningPathService {
     /**
      * Generates a new learning path or updates existing one based on evaluation.
      */
-    static async generateForStudent(studentId: number, evaluation: any) {
+    static async generateForStudent(studentId: number, evaluation: any, examType: 'IELTS' | 'TOEFL' = 'IELTS') {
         const overallBand = evaluation.evaluation?.overall_band || 0;
         const level = this.mapScoreToLevel(overallBand);
 
-        // 1. Fetch 5 videos per skill matching the student's level
-        const videoMap = await VideoService.getFivePerType(level);
+        // 1. Fetch 5 videos per skill matching the student's level and exam type
+        const videoMap = await VideoService.getFivePerType(level, examType);
 
         const videoSections = {
             reading: videoMap['reading']?.map(v => v.id) || [],
@@ -53,7 +54,9 @@ export class LearningPathService {
         await LearningPathRepository.upsert(studentId, {
             videoSections,
             noteSections,
-            learningModeSections
+            learningModeSections,
+            proficiencyLevel: level,
+            examType
         });
     }
 
@@ -71,17 +74,34 @@ export class LearningPathService {
             const videoIds = (path.videoSections as any)[skill] || [];
 
             // Fetch video details for each ID
-            const videos = await Promise.all(
-                videoIds.map((id: number) => VideoService.getById(id))
+            const videosProgress = await Promise.all(
+                videoIds.map(async (id: number) => {
+                    const video = await VideoService.getById(id);
+                    if (!video) return null;
+
+                    const progress = await LearningPathProgress.findOne({
+                        where: {
+                            studentId,
+                            videoId: id,
+                        }
+                    });
+
+                    return {
+                        ...video.get({ plain: true }),
+                        isCompleted: progress?.isCompleted || false
+                    };
+                })
             );
 
             result[skill] = {
-                videos: videos.filter(v => v !== null),
+                videos: videosProgress.filter(v => v !== null),
                 notes: (path.noteSections as any)[skill] || ""
             };
         }
 
         return {
+            proficiencyLevel: path.proficiencyLevel,
+            examType: path.examType,
             skills: result,
             learningMode: path.learningModeSections
         };

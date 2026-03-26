@@ -104,7 +104,7 @@ export class MatchingService {
         return {
           ...c,
           matchScore: finalScore,
-          matchReason: "Matched based on scholarship criteria and profile interests.",
+          matchReason: null,
         };
       });
 
@@ -134,7 +134,7 @@ export class MatchingService {
           return {
             ...c,
             matchScore: finalScore,
-            matchReason: "Matched based on profile compatibility.",
+            matchReason: null,
           };
         })
         .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
@@ -244,7 +244,7 @@ export class MatchingService {
     const vectorScore = candidate.matchScore || 0;
     const hScore = MatchingService.calculateHeuristicScore(student, candidate);
     let score = vectorScore > 0 ? Math.round((vectorScore * 0.7) + (hScore * 0.3)) : hScore;
-    let reason = "Matched based on profile.";
+    let reason = null;
 
     try {
       // Re-rank this single candidate via AI for precise details

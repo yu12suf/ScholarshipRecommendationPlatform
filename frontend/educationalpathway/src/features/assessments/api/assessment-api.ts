@@ -41,3 +41,13 @@ export const getAssessmentProgress = async (examType?: string) => {
   const response = await api.get('/assessment/progress', { params: { examType } });
   return response.data;
 };
+
+export const getLearningPath = async () => {
+    const response = await api.get('/learning-path/my-path');
+    return response.data;
+};
+
+export const trackProgress = async (videoId: number, section: string, isCompleted: boolean = true) => {
+    const response = await api.post('/learning-path/track', { videoId, section, isCompleted });
+    return response.data;
+};

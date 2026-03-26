@@ -121,7 +121,7 @@ export const LandingPageContent = () => {
               Log In
             </Button>
           </Link>
-          <Link href="/register">
+          <Link href="/role-selection">
             <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-200">
               Get Started
             </Button>
@@ -188,7 +188,7 @@ export const LandingPageContent = () => {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
             >
-              <Link href="/register">
+              <Link href="/role-selection">
                 <Button size="xl" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold shadow-xl shadow-emerald-500/20 px-10 group">
                   Find Your Scholarship
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -304,7 +304,7 @@ export const LandingPageContent = () => {
             </div>
 
             <div className="text-center mt-12">
-              <Link href="/register">
+              <Link href="/role-selection">
                 <Button size="lg" className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold px-10 shadow-lg group">
                   Start Your Journey
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -329,7 +329,7 @@ export const LandingPageContent = () => {
               Join thousands of students who transformed their academic future with አድማስ. Your scholarship is waiting — let's find it together.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register">
+              <Link href="/role-selection">
                 <Button size="xl" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-12 shadow-xl shadow-emerald-500/20 group">
                   Create Free Account
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />

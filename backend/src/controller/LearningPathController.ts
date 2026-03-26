@@ -11,27 +11,24 @@ export class LearningPathController {
         try {
             const userId = req.user?.id;
             if (!userId) {
-                return res.status(401).json({ success: false, error: "Unauthorized" });
+                return res.status(401).json({ status: "error", message: "Unauthorized" });
             }
 
             const student = await StudentRepository.findByUserId(userId);
             if (!student) {
-                return res.status(404).json({ success: false, error: "Student profile not found" });
+                return res.status(404).json({ status: "error", message: "Student profile not found" });
             }
 
             const path = await LearningPathService.getFormattedPath(student.id);
 
-            if (!path) {
-                return res.status(404).json({
-                    message: "Learning path not generated yet. Complete an assessment first."
-                });
-            }
-
-            return res.status(200).json(path);
+            return res.status(200).json({
+                status: "success",
+                data: path
+            });
         } catch (error: any) {
             return res.status(500).json({
-                success: false,
-                error: error.message
+                status: "error",
+                message: error.message
             });
         }
     }

@@ -45,6 +45,14 @@ export class Video extends Model {
     })
     declare type: 'Writing' | 'Speaking' | 'Reading' | 'Listening';
 
+    @Column({
+        type: DataType.STRING(20),
+        allowNull: false,
+        field: 'exam_type',
+        defaultValue: 'IELTS'
+    })
+    declare examType: 'IELTS' | 'TOEFL';
+
     @CreatedAt
     @Column({
         type: DataType.DATE,

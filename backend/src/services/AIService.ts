@@ -4,6 +4,7 @@ import configs from "../config/configs.js";
 
 const genAI = new GoogleGenerativeAI(configs.GEMINI_API_KEY!);
 const groq = new Groq({ apiKey: configs.GROQ_API_KEY });
+const geminiModelName = configs.GEMINI_MODEL || "gemini-2.0-flash";
 
 export class AIService {
   static async extractOnboardingData(
@@ -13,7 +14,7 @@ export class AIService {
   ) {
     // Keep using Gemini for Vision tasks (Extracting data from files/images)
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: geminiModelName,
       generationConfig: {
         responseMimeType: "application/json",
       },
@@ -52,7 +53,7 @@ export class AIService {
 
   static async verifyIdentity(idCardBuffer: Buffer, selfieBuffer: Buffer) {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: geminiModelName,
       generationConfig: {
         responseMimeType: "application/json",
       },
@@ -109,8 +110,8 @@ export class AIService {
     const prunedScholarships = scholarships.map((s) => ({
       id: s.id,
       title: s.title,
-      description: s.description?.slice(0, 300) + "...", // Truncate long descriptions
-      requirements: s.requirements?.slice(0, 200) + "...", 
+      description: s.description?.slice(0, 1000), // Larger window for better matching
+      requirements: s.requirements?.slice(0, 800),
       country: s.country,
       degree_levels: s.degreeLevels || s.degree_levels,
     }));
@@ -126,12 +127,13 @@ export class AIService {
             
             Task:
             1. Evaluate how well each scholarship matches the student's background, interests, and goals.
-            2. Assign a 'match_score' (0-100) and provide a short 'match_reason' (max 150 chars). 
-               - Be VERY critical. 100 is for a perfect match (identical field, degree, and funding).
-               - 80 is for a very strong match.
-               - 50 is for a mediocre match.
-               - 20 is for a weak match.
-               - DO NOT give the same score to all scholarships unless they are truly identical.
+            2. Assign a 'match_score' (0-100) and provide a detailed 'match_reason' (max 300 chars). 
+               - Be CRITICAL but FAIR. 
+               - 100: Perfect match (same major/field, exact degree level).
+               - 80: Strong match; good field overlap or a high-quality "Any Major" scholarship for the correct degree level.
+               - 50: Partial match; correct degree level but field/country is only tangentially related.
+               - 20: Weak match; significant degree or field mismatch.
+               - IMPORTANT: If a scholarship is open to "ALL FIELDS" or "ANY MAJOR", do NOT penalize it for lacking a specific major name match. Give it a high score if other criteria fit.
             3. Return the results as a JSON object with a 'matches' key containing an array of ALL processed scholarship IDs.
             
             IMPORTANT: Return ONLY a valid JSON object.
@@ -151,26 +153,29 @@ export class AIService {
         temperature: 0.6,
       });
 
-      const responseText = completion.choices[0]?.message?.content || "{\"matches\": []}";
-      console.log(`[AIService] Groq Response for ${scholarships.length} scholarships:`, responseText);
+      const responseText =
+        completion.choices[0]?.message?.content || '{"matches": []}';
+      console.log(
+        `[AIService] Groq Response for ${scholarships.length} scholarships:`,
+        responseText,
+      );
       const parsed = JSON.parse(responseText);
 
       // Extract the array from the normalized Groq response
       if (parsed.matches && Array.isArray(parsed.matches)) {
         return parsed.matches;
       }
-      
+
       if (Array.isArray(parsed)) {
         return parsed;
       }
 
       // Final fallback: try to find any array in the object
-      const firstArray = Object.values(parsed).find(v => Array.isArray(v));
+      const firstArray = Object.values(parsed).find((v) => Array.isArray(v));
       return Array.isArray(firstArray) ? firstArray : [];
-      
     } catch (error: any) {
       console.error("[AIService] Error ranking scholarships with Groq:", error);
-      throw error; 
+      throw error;
     }
   }
 }

@@ -84,6 +84,22 @@ export class LearningPath extends Model {
         speaking: any[];
     };
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+        field: 'proficiency_level',
+        defaultValue: 'easy'
+    })
+    declare proficiencyLevel: 'easy' | 'medium' | 'hard';
+    
+    @Column({
+        type: DataType.STRING(20),
+        allowNull: false,
+        field: 'exam_type',
+        defaultValue: 'IELTS'
+    })
+    declare examType: 'IELTS' | 'TOEFL';
+
     @CreatedAt
     @Column({
         type: DataType.DATE,

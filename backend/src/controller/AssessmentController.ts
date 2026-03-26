@@ -5,11 +5,25 @@ import { StudentRepository } from "../repositories/StudentRepository.js";
 export class AssessmentController {
     static async generate(req: Request, res: Response, next: NextFunction) {
         try {
-            const { examType, difficulty } = req.body;
+            const examType = typeof req.body?.examType === "string" ? req.body.examType.trim() : "";
+            const difficulty = typeof req.body?.difficulty === "string" ? req.body.difficulty.trim() : "";
+
             if (!examType || !difficulty) {
                 res.status(400).json({ error: "examType and difficulty are required" });
                 return;
             }
+
+            const examTypeUpper = examType.toUpperCase();
+            const difficultyLower = difficulty.toLowerCase();
+            if (!["IELTS", "TOEFL"].includes(examTypeUpper)) {
+                res.status(400).json({ error: "examType must be IELTS or TOEFL" });
+                return;
+            }
+            if (!["easy", "medium", "hard"].includes(difficultyLower)) {
+                res.status(400).json({ error: "difficulty must be Easy, Medium, or Hard" });
+                return;
+            }
+
             const result = await AssessmentService.generateExam(examType, difficulty);
             res.status(201).json(result);
         } catch (error) {
@@ -91,9 +105,7 @@ export class AssessmentController {
                 res.status(404).json({ error: "Student profile not found" });
                 return;
             }
-            console.log(student.id);
-            console.log(examType);
-            const progress = await AssessmentService.getStudentProgress(student.id as number, examType as string);
+            const progress = await AssessmentService.getStudentProgress(student.id as number, examType);
             res.json({
                 status: "success",
                 data: progress

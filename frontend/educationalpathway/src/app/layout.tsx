@@ -11,24 +11,12 @@ const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-open-sans" })
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", weight: ["400", "600", "700", "800", "900"] });
 
 export const metadata: Metadata = {
-  title: "አድማስ | Scholarship Platform",
+  title: "Admas",
   description: "Your journey to academic success starts here.",
   icons: {
-    icon: [
-      {
-        url: "/admas.png",
-        type: "image/png",
-      },
-    ],
-    apple: [
-      {
-        url: "/admas.png",
-        sizes: "180x180",
-        type: "image/png",
-      },
-    ],
+    icon: "/admas.png",
+    apple: "/admas.png",
   },
-  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

@@ -12,7 +12,9 @@ import {
   LogOut,
   Settings,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Compass,
+  ClipboardList,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -27,7 +29,8 @@ export function StudentSidebar() {
     { name: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
     { name: 'Scholarships', href: '/dashboard/scholarships', icon: GraduationCap },
     { name: 'Counselors', href: '/dashboard/counselors', icon: Users },
-    { name: 'Assessment', href: '/dashboard/assessment', icon: BookOpen },
+    { name: 'Assessment', href: '/dashboard/assessment', icon: ClipboardList },
+    { name: 'Learning Path', href: '/dashboard/learning-path', icon: Compass },
   ];
 
   return (
