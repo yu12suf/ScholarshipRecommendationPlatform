@@ -26,20 +26,25 @@ export class AssessmentController {
             }
 
             // Normalize responses: may arrive as a JSON string (multipart) or object (JSON body)
-            let responses: any;
-            try {
-                responses = typeof rawResponses === "string" ? JSON.parse(rawResponses) : rawResponses;
-            } catch {
-                res.status(400).json({ error: "Invalid responses format." });
-                return;
+            let parsedResponses = rawResponses;
+            if (typeof rawResponses === "string") {
+                try {
+                    parsedResponses = JSON.parse(rawResponses);
+                } catch (e) {
+                    res.status(400).json({ error: "responses must be a valid JSON object or stringified JSON" });
+                    return;
+                }
             }
 
-            let audioBuffer: Buffer | undefined;
+            let audioData: { buffer: Buffer; mimetype: string } | undefined;
             // express-fileupload attaches files to req.files
             if (req.files && req.files.audio) {
                 const audioFile = Array.isArray(req.files.audio) ? req.files.audio[0] : req.files.audio;
                 if (audioFile) {
-                    audioBuffer = audioFile.data;
+                    audioData = {
+                        buffer: audioFile.data,
+                        mimetype: audioFile.mimetype
+                    };
                 }
             }
 
@@ -49,7 +54,7 @@ export class AssessmentController {
                 return;
             }
 
-            const result = await AssessmentService.submitAssessment(test_id, responses, student.id, audioBuffer);
+            const result = await AssessmentService.submitAssessment(test_id, parsedResponses, student.id, audioData);
             res.json(result);
         } catch (error) {
             next(error);

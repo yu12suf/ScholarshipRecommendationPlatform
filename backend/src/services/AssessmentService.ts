@@ -6,6 +6,8 @@ import configs from "../config/configs.js";
 import { redisConnection, assessmentQueue } from "../config/redis.js";
 import { AssessmentResult } from "../models/AssessmentResult.js";
 import { AssessmentRepository } from "../repositories/AssessmentRepository.js";
+import { LearningPathService } from "./LearningPathService.js";
+import { TTSService } from "./TTSService.js";
 
 const model = new ChatGroq({
     model: "llama-3.3-70b-versatile",
@@ -13,26 +15,44 @@ const model = new ChatGroq({
     temperature: 0.2,
     maxTokens: 4096,
 });
-
 export class AssessmentService {
-    private static sanitizeJson(jsonString: string): string {
-        try {
-            // Remove NULL characters and other extreme control characters
-            let cleaned = jsonString.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g, "");
-
-            // Escape literal newlines, carriage returns, and tabs inside double quotes
-            cleaned = cleaned.replace(/"((?:[^"\\\\]|\\\\.)*)"/g, (match, p1) => {
-                return '"' + p1
-                    .replace(/\n/g, '\\n')
-                    .replace(/\r/g, '\\r')
-                    .replace(/\t/g, '\\t')
-                    + '"';
-            });
-            return cleaned;
-        } catch (e) {
-            console.error("Sanitization error:", e);
-            return jsonString;
+    public static sanitizeJSONString(str: string): string {
+        let isInsideString = false;
+        let isEscaped = false;
+        let result = "";
+        for (let i = 0; i < str.length; i++) {
+            const char = str[i];
+            
+            if (isInsideString) {
+                if (char === '"' && !isEscaped) {
+                    isInsideString = false;
+                    result += char; 
+                } else if (char === '\\') {
+                    isEscaped = !isEscaped;
+                    result += char;
+                } else {
+                    isEscaped = false;
+                    if (char === '\n') {
+                        result += '\\n';
+                    } else if (char === '\r') {
+                        result += '\\r';
+                    } else if (char === '\t') {
+                        result += '\\t';
+                    } else if (char && char.charCodeAt(0) < 32) {
+                        // ignore other control characters to be safe
+                    } else {
+                        result += char;
+                    }
+                }
+            } else {
+                if (char === '"') {
+                    isInsideString = true;
+                }
+                result += char;
+            }
         }
+        // Remove trailing commas to prevent parsing errors
+        return result.replace(/,\s*([\]}])/g, '$1');
     }
 
     static async generateExam(examType: "IELTS" | "TOEFL", difficulty: "Easy" | "Medium" | "Hard") {
@@ -67,25 +87,31 @@ export class AssessmentService {
                 }}
               }}
             }}
+
+            CRITICAL JSON FORMATTING RULES:
+            - Ensure output is strictly VALID JSON.
+            - Do NOT include literal newline characters (\\n), carriage returns (\\r), or tabs (\\t) unescaped inside JSON string values.
+            - If you need a line break inside a string, use the escaped sequence "\\n" instead of a real line break.
+            - NEVER use single quotes for keys or values. ONLY use double quotes ("key": "value").
+            - Do NOT add trailing commas at the end of JSON objects or arrays.
         `);
 
         const chain = prompt.pipe(model).pipe(new StringOutputParser());
         const response = await chain.invoke({ examType, difficulty, testId });
 
-        // Ensure response is valid JSON
         let blueprint;
+        let rawJson = "";
         try {
             console.log("--- GENERATE EXAM AI RESPONSE ---");
             console.log(response);
             
             // Some models might wrap JSON in markdown blocks
             const jsonMatch = response.match(/\{[\s\S]*\}/);
-            const rawJson = jsonMatch ? jsonMatch[0] : response;
-            const sanitized = this.sanitizeJson(rawJson);
-            
-            blueprint = JSON.parse(sanitized);
+            rawJson = jsonMatch ? jsonMatch[0] : response;
+            blueprint = JSON.parse(AssessmentService.sanitizeJSONString(rawJson));
         } catch (error: any) {
             console.error("Failed to parse AI response as JSON:", response);
+            console.error("Sanitized JSON:", AssessmentService.sanitizeJSONString(rawJson));
             console.error(error);
             throw new Error(`Assessment generation failed: ${error.message}`);
         }
@@ -93,6 +119,19 @@ export class AssessmentService {
         // Force the testId to match what we generated to avoid AI hallucinations
         if (blueprint.data) {
             blueprint.data.test_id = testId;
+        }
+
+        // Generate audio for listening section
+        const listeningScript = blueprint.data?.sections?.listening?.script;
+        if (listeningScript) {
+            try {
+                const audioBase64 = await TTSService.generateAudioBase64(listeningScript);
+                if (audioBase64) {
+                    blueprint.data.sections.listening.audio_base64 = audioBase64;
+                }
+            } catch (ttsErr) {
+                console.error("Failed to generate audio for listening script:", ttsErr);
+            }
         }
 
         // Store full blueprint in Redis for 2 hours
@@ -105,7 +144,7 @@ export class AssessmentService {
         return sanitizedData;
     }
 
-    static async submitAssessment(testId: string, responses: any, studentId: number, audioBuffer?: Buffer) {
+    static async submitAssessment(testId: string, responses: any, studentId: number, audioData?: { buffer: Buffer; mimetype: string }) {
         // Fetch blueprint from Redis
         const blueprintData = await redisConnection.get(`test_id:${testId}`);
         if (!blueprintData) {
@@ -117,7 +156,10 @@ export class AssessmentService {
             blueprint: JSON.parse(blueprintData),
             responses,
             studentId,
-            audioBuffer: audioBuffer ? audioBuffer.toString("base64") : null
+            audioData: audioData ? {
+                base64: audioData.buffer.toString("base64"),
+                mimetype: audioData.mimetype
+            } : null
         }, {
             jobId: testId,
             removeOnComplete: false,
@@ -127,9 +169,9 @@ export class AssessmentService {
         return { status: "submitted", jobId: job.id, testId };
     }
 
-    static async evaluateAssessment(testId: string, blueprint: any, responses: any, studentId: number, audioBase64?: string) {
+    static async evaluateAssessment(testId: string, blueprint: any, responses: any, studentId: number, audioData?: { base64: string; mimetype: string }) {
         // ... (existing code omitted for brevity but actually kept in full
-        const prompt = PromptTemplate.fromTemplate(`
+        const promptTemplate = PromptTemplate.fromTemplate(`
             Role: English Proficiency Engine
             Task: Evaluate student responses based on the provided blueprint.
             
@@ -143,33 +185,78 @@ export class AssessmentService {
                - Speaking: (If audio) Analyze Fluency, Pronunciation, and Content.
             2. ADAPTIVE MAPPING:
                - Identify "Weakness Tags" (e.g., "Present_Perfect", "Lexical_Diversity").
+            3. INSTRUCTIONAL NOTES:
+               - For EACH skill (Reading, Listening, Writing, Speaking), generate a highly detailed "Actionable Study Note" (minimum 1000 characters each).
+               - The note MUST include:
+                 a) A clear explanation of the weakness identified.
+                 b) Specific examples of where the student made mistakes in THIS assessment.
+                 c) Step-by-step strategies to improve.
+                 d) Recommended exercise types.
+            4. LEARNING MODE PRACTICE:
+               - For EACH skill, generate 3-5 original practice questions based on the identified weaknesses.
+               - Each question must include the text/prompt, options (if applicable), the correct answer, and a clear explanation of WHY it is correct.
             
             Return JSON in the following schema:
             {{
               "evaluation": {{
                 "overall_band": 0.0,
                 "subscores": {{ "reading": 0, "listening": 0, "writing": 0, "speaking": 0 }},
-                "feedback_report": "string",
+                "feedback_report": "Overall feedback summary",
+                "section_notes": {{ 
+                  "reading": "Detailed 1000+ char note with examples for reading", 
+                  "listening": "Detailed 1000+ char note with examples for listening", 
+                  "writing": "Detailed 1000+ char note with examples for writing", 
+                  "speaking": "Detailed 1000+ char note with examples for speaking" 
+                }},
+                "learning_mode": {{
+                  "reading": [{{ "question": "string", "options": [], "answer": "string", "explanation": "string" }}],
+                  "listening": [{{ "question": "string", "options": [], "answer": "string", "explanation": "string" }}],
+                  "writing": [{{ "prompt": "string", "sample_answer": "string", "explanation": "string" }}],
+                  "speaking": [{{ "prompt": "string", "tips": "string", "sample_response": "string" }}]
+                }},
                 "adaptive_learning_tags": []
               }}
             }}
+
+            CRITICAL JSON FORMATTING RULES:
+            - The output MUST be strictly valid JSON.
+            - Do NOT include literal newline characters (\\n), carriage returns (\\r), or tabs (\\t) unescaped inside JSON string values.
+            - If you need a line break inside a string, use the escaped sequence "\\n" instead of a real line break.
+            - Double quotes inside string values MUST be escaped as "\\"".
+            - NEVER use single quotes for property names or values. ONLY use double quotes ("key": "value").
+            - Do NOT add trailing commas at the end of lists or objects.
         `);
 
-        const chain = prompt.pipe(model).pipe(new StringOutputParser());
-        const response = await chain.invoke({
+        const textPrompt = await promptTemplate.format({
             blueprint: JSON.stringify(blueprint),
             responses: JSON.stringify(responses),
-            hasAudio: audioBase64 ? "Yes" : "No"
+            hasAudio: audioData ? "Yes" : "No"
         });
 
+        const messagesContent: any[] = [{ type: "text", text: textPrompt }];
+        if (audioData && audioData.base64) {
+            messagesContent.push({
+                type: "media",
+                mimeType: audioData.mimetype || "audio/mp3",
+                data: audioData.base64
+            });
+        }
+
+        // We use HumanMessage directly for multimodal structure instead of the plain String Output
+        const { HumanMessage } = await import("@langchain/core/messages");
+        const chain = model.pipe(new StringOutputParser());
+        const response = await chain.invoke([new HumanMessage({ content: messagesContent })]);
+
         let evaluation;
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        const rawJson = jsonMatch ? jsonMatch[0] : response;
-        const sanitized = this.sanitizeJson(rawJson);
+        let rawJson = "";
         try {
             console.log("--- EVALUATE ASSESSMENT AI RESPONSE ---");
             console.log(response);
 
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            rawJson = jsonMatch ? jsonMatch[0] : response;
+            const sanitized = AssessmentService.sanitizeJSONString(rawJson);
+            
             // Attempt to parse sanitized JSON
             evaluation = JSON.parse(sanitized);
             console.log("✅ PARSED EVALUATION SUCCESS");
@@ -177,6 +264,7 @@ export class AssessmentService {
             console.error("❌ PARSE EVALUATION ERROR:", error.message);
             
             // Helpful debugging for position-based errors
+            const sanitized = AssessmentService.sanitizeJSONString(rawJson);
             if (error.message.includes("position")) {
                 const posStr = error.message.match(/position (\d+)/)?.[1];
                 if (posStr) {
@@ -187,6 +275,22 @@ export class AssessmentService {
             
             console.log("Sanitized JSON was:", sanitized);
             throw new Error(`Assessment evaluation failed: ${error.message}`);
+        }
+
+        // Generate audio for learning mode listening questions
+        if (evaluation.evaluation?.learning_mode?.listening) {
+            for (const q of evaluation.evaluation.learning_mode.listening) {
+                if (q.question) {
+                    try {
+                        const audioBase64 = await TTSService.generateAudioBase64(q.question);
+                        if (audioBase64) {
+                            q.audio_base64 = audioBase64;
+                        }
+                    } catch (ttsErr) {
+                        console.error("Failed to generate audio for learning mode question:", ttsErr);
+                    }
+                }
+            }
         }
 
         // Store result in Redis
@@ -206,8 +310,11 @@ export class AssessmentService {
                 evaluation,
                 overallBand
             });
+
+            // Trigger Learning Path Generation
+            await LearningPathService.generateForStudent(studentId, evaluation);
         } catch (dbError: any) {
-            console.error("❌ Failed to store assessment result in DB:", dbError.message);
+            console.error("❌ Failed to store assessment result or generate learning path:", dbError.message);
             console.error(dbError);
         }
 

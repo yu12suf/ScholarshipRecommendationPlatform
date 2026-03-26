@@ -23,8 +23,8 @@ function setConfigs() {
         // Auth Config
         JWT_SECRET: process.env.JWT_SECRET || "tempSecret",
         REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || "refreshSecret",
-        JWT_ACCESS_EXPIRATION: process.env.JWT_ACCESS_EXPIRATION || "15m",
-        JWT_REFRESH_EXPIRATION: process.env.JWT_REFRESH_EXPIRATION || "7d",
+        JWT_ACCESS_EXPIRATION: process.env.JWT_ACCESS_EXPIRATION || process.env.JWT_EXPIRES_IN || "1d",
+        JWT_REFRESH_EXPIRATION: process.env.JWT_REFRESH_EXPIRATION || process.env.JWT_REFRESH_EXPIRES_IN || "7d",
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 
         // Email SMTP Config
