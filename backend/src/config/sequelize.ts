@@ -7,6 +7,7 @@ import { Counselor } from "../models/Counselor.js";
 import { ScholarshipSource } from "../models/ScholarshipSource.js";
 import { Scholarship } from "../models/Scholarship.js";
 import { AssessmentResult } from "../models/AssessmentResult.js";
+import { Notification } from "../models/Notification.js";
 import configs from "./configs.js";
 
 // Determine connection options based on environment
@@ -33,7 +34,7 @@ export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
     timezone: "+00:00", // Force UTC to avoid timezone issues
-    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, ScholarshipSource, Scholarship, AssessmentResult], // Add all models here
+    models: [User, RefreshToken, PasswordResetToken, Student, Counselor, ScholarshipSource, Scholarship, AssessmentResult, Notification], // Add all models here
 } as SequelizeOptions);
 
 export const connectSequelize = async () => {
