@@ -7,15 +7,19 @@ const standardRedisOptions: RedisOptions = {
   host: configs.REDIS_HOST,
   port: configs.REDIS_PORT,
   password: configs.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: 0, // BullMQ recommendation
-  connectTimeout: 5000, 
+  // Keep API calls resilient during short Redis reconnect windows.
+  // BullMQ still uses a separate connection config below.
+  maxRetriesPerRequest: 3,
+  connectTimeout: 5000,
   retryStrategy(times) {
     if (times > 3) {
-      console.warn("⚠️ Redis connection failed after 3 retries. Redis-dependent features will be disabled.");
+      console.warn(
+        "⚠️ Redis connection failed after 3 retries. Redis-dependent features will be disabled.",
+      );
       return null; // stop retrying
     }
     return Math.min(times * 200, 1000);
-  }
+  },
 };
 
 let redisAvailable = false;

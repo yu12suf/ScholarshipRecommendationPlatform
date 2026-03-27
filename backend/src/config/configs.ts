@@ -59,8 +59,9 @@ function setConfigs() {
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-    GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-1.5-flash",
-    GROQ_API_KEY: process.env.GROQ_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+
+    ASSESSMENT_USE_QUEUE: process.env.ASSESSMENT_USE_QUEUE === "true",
     REDIS_HOST: process.env.REDIS_HOST || "127.0.0.1",
     REDIS_PORT: parseInt(process.env.REDIS_PORT || "6379"),
     REDIS_PASSWORD: process.env.REDIS_PASSWORD || "",

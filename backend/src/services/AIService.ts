@@ -1,9 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import Groq from "groq-sdk";
 import configs from "../config/configs.js";
 
 const genAI = new GoogleGenerativeAI(configs.GEMINI_API_KEY!);
-const groq = new Groq({ apiKey: configs.GROQ_API_KEY });
 const geminiModelName = configs.GEMINI_MODEL || "gemini-2.0-flash";
 
 export class AIService {
@@ -87,9 +85,7 @@ export class AIService {
   }
 
   /**
-   * AI-powered scholarship ranking using Groq (Llama 3.3).
-   * Stable performance compared to Gemini during high demand.
-   * Optimized for Groq's token limits by pruning inputs.
+   * AI-powered scholarship ranking using Gemini.
    */
   static async rankScholarships(studentData: any, scholarships: any[]) {
     if (!scholarships.length) return [];
@@ -107,7 +103,7 @@ export class AIService {
     };
 
     // TOKEN OPTIMIZATION: Prune scholarships to essential fields and truncate descriptions
-    const prunedScholarships = scholarships.map((s) => ({
+    const prunedScholarships = scholarships.map((s: any) => ({
       id: s.id,
       title: s.title,
       description: s.description?.slice(0, 1000), // Larger window for better matching
@@ -146,22 +142,24 @@ export class AIService {
         `;
 
     try {
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: "llama-3.3-70b-versatile",
-        response_format: { type: "json_object" },
-        temperature: 0.6,
+      const model = genAI.getGenerativeModel({
+        model: geminiModelName,
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.6,
+        },
       });
 
-      const responseText =
-        completion.choices[0]?.message?.content || '{"matches": []}';
+      const response = await model.generateContent([prompt]);
+      const responseText = response.response.text() || '{"matches": []}';
       console.log(
-        `[AIService] Groq Response for ${scholarships.length} scholarships:`,
+        `[AIService] Gemini Response for ${scholarships.length} scholarships:`,
         responseText,
       );
+      
       const parsed = JSON.parse(responseText);
 
-      // Extract the array from the normalized Groq response
+      // Extract the array from the normalized Gemini response
       if (parsed.matches && Array.isArray(parsed.matches)) {
         return parsed.matches;
       }
@@ -172,9 +170,9 @@ export class AIService {
 
       // Final fallback: try to find any array in the object
       const firstArray = Object.values(parsed).find((v) => Array.isArray(v));
-      return Array.isArray(firstArray) ? firstArray : [];
+      return Array.isArray(firstArray) ? (firstArray as any[]) : [];
     } catch (error: any) {
-      console.error("[AIService] Error ranking scholarships with Groq:", error);
+      console.error("[AIService] Error ranking scholarships with Gemini:", error);
       throw error;
     }
   }

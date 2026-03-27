@@ -338,7 +338,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
         {/* Form */}
         <form
           onSubmit={handleSubmit(handleFormSubmit)}
-          className="bg-card rounded-sm shadow-sm border border-border p-6"
+          className="bg-card rounded-sm border border-border p-6"
         >
           <AnimatePresence mode="wait">
             <motion.div

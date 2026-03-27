@@ -170,7 +170,7 @@ export function LoginForm() {
 
             {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
 
-              <div className="flex justify-center">
+              <div className="w-full flex justify-center [&>div]:w-full">
 
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {

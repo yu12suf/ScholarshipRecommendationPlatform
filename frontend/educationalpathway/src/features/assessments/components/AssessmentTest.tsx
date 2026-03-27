@@ -20,20 +20,64 @@ import {
 import { toast } from "react-hot-toast";
 import { submitAssessment, getAssessmentResult } from "../api/assessment-api";
 
+interface AssessmentQuestion {
+  id: string | number;
+  question: string;
+  options: string[];
+}
+
+interface AssessmentSections {
+  reading?: { passage?: string; questions?: AssessmentQuestion[] };
+  listening?: { audio_base64?: string; questions?: AssessmentQuestion[] };
+  writing?: { prompt?: string };
+  speaking?: { prompt?: string };
+}
+
+interface AssessmentBlueprint {
+  data?: AssessmentBlueprint;
+  test_id?: string;
+  sections?: AssessmentSections;
+  exam_summary?: { type?: string; difficulty?: string };
+}
+
 interface Props {
-  examData: any;
+  examData: AssessmentBlueprint;
   onComplete: () => void;
 }
 
 type SectionKey = "reading" | "listening" | "writing" | "speaking";
 
-const SECTION_ORDER: SectionKey[] = ["reading", "listening", "writing", "speaking"];
+const SECTION_ORDER: SectionKey[] = [
+  "reading",
+  "listening",
+  "writing",
+  "speaking",
+];
 
-const SECTION_META: Record<SectionKey, { label: string; icon: React.ReactNode; timeMinutes: number }> = {
-  reading: { label: "Reading", icon: <BookOpen className="size-4" />, timeMinutes: 20 },
-  listening: { label: "Listening", icon: <Headphones className="size-4" />, timeMinutes: 15 },
-  writing: { label: "Writing", icon: <PenLine className="size-4" />, timeMinutes: 40 },
-  speaking: { label: "Speaking", icon: <Mic className="size-4" />, timeMinutes: 15 },
+const SECTION_META: Record<
+  SectionKey,
+  { label: string; icon: React.ReactNode; timeMinutes: number }
+> = {
+  reading: {
+    label: "Reading",
+    icon: <BookOpen className="size-4" />,
+    timeMinutes: 20,
+  },
+  listening: {
+    label: "Listening",
+    icon: <Headphones className="size-4" />,
+    timeMinutes: 15,
+  },
+  writing: {
+    label: "Writing",
+    icon: <PenLine className="size-4" />,
+    timeMinutes: 40,
+  },
+  speaking: {
+    label: "Speaking",
+    icon: <Mic className="size-4" />,
+    timeMinutes: 15,
+  },
 };
 
 function formatTime(seconds: number) {
@@ -44,7 +88,7 @@ function formatTime(seconds: number) {
 
 export function AssessmentTest({ examData, onComplete }: Props) {
   const blueprint = examData.data || examData;
-  const testId = blueprint.test_id;
+  const testId = blueprint.test_id || "";
   const sections = blueprint.sections || {};
 
   const [currentSection, setCurrentSection] = useState<SectionKey>("reading");
@@ -56,7 +100,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
   });
 
   // Timer state (countdown per section)
-  const [timeLeft, setTimeLeft] = useState(SECTION_META.reading.timeMinutes * 60);
+  const [timeLeft, setTimeLeft] = useState(
+    SECTION_META.reading.timeMinutes * 60,
+  );
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Audio recording state
@@ -70,9 +116,12 @@ export function AssessmentTest({ examData, onComplete }: Props) {
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Track completion per section
-  const [completedSections, setCompletedSections] = useState<Set<SectionKey>>(new Set());
+  const [completedSections, setCompletedSections] = useState<Set<SectionKey>>(
+    new Set(),
+  );
 
   // Reset timer when section changes
   useEffect(() => {
@@ -84,7 +133,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current!);
-          toast(`⏰ Time's up for ${SECTION_META[currentSection].label}!`, { icon: "⚠️" });
+          toast(`⏰ Time's up for ${SECTION_META[currentSection].label}!`, {
+            icon: "⚠️",
+          });
           return 0;
         }
         return prev - 1;
@@ -99,14 +150,21 @@ export function AssessmentTest({ examData, onComplete }: Props) {
   const isSectionComplete = (sec: SectionKey): boolean => {
     if (sec === "reading") {
       const qs = sections.reading?.questions || [];
-      return qs.length > 0 && qs.every((q: any) => responses.reading[q.id]);
+      return (
+        qs.length > 0 &&
+        qs.every((q: any, i: number) => responses.reading[q.id ?? i])
+      );
     }
     if (sec === "listening") {
       const qs = sections.listening?.questions || [];
-      return qs.length > 0 && qs.every((q: any) => responses.listening[q.id]);
+      return (
+        qs.length > 0 &&
+        qs.every((q: any, i: number) => responses.listening[q.id ?? i])
+      );
     }
     if (sec === "writing") return responses.writing.trim().length >= 50;
-    if (sec === "speaking") return !!audioBlob || responses.speaking.trim().length > 10;
+    if (sec === "speaking")
+      return !!audioBlob || responses.speaking.trim().length > 10;
     return false;
   };
 
@@ -118,10 +176,14 @@ export function AssessmentTest({ examData, onComplete }: Props) {
       setCurrentSection(next);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentSection, responses, audioBlob]
+    [currentSection, responses, audioBlob],
   );
 
-  const handleOptionSelect = (section: "reading" | "listening", questionId: number, option: string) => {
+  const handleOptionSelect = (
+    section: "reading" | "listening",
+    questionId: number | string,
+    option: string,
+  ) => {
     setResponses((prev: any) => ({
       ...prev,
       [section]: {
@@ -150,10 +212,15 @@ export function AssessmentTest({ examData, onComplete }: Props) {
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setRecordingSeconds(0);
-      recordingTimerRef.current = setInterval(() => setRecordingSeconds((s) => s + 1), 1000);
+      recordingTimerRef.current = setInterval(
+        () => setRecordingSeconds((s) => s + 1),
+        1000,
+      );
       toast.success("Recording started");
     } catch (err) {
-      toast.error("Microphone access denied. You can type your response instead.");
+      toast.error(
+        "Microphone access denied. You can type your response instead.",
+      );
     }
   };
 
@@ -167,6 +234,8 @@ export function AssessmentTest({ examData, onComplete }: Props) {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     try {
       setIsSubmitting(true);
       // Mark current section as complete
@@ -182,16 +251,25 @@ export function AssessmentTest({ examData, onComplete }: Props) {
     }
   };
 
-  const pollResult = async () => {
-    const interval = setInterval(async () => {
+  const clearPollInterval = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
+  const pollResult = () => {
+    clearPollInterval();
+
+    pollIntervalRef.current = setInterval(async () => {
       try {
         const res = await getAssessmentResult(testId);
         if (res.status === "success") {
-          clearInterval(interval);
+          clearPollInterval();
           setResult(res.data);
           setIsSubmitting(false);
         } else if (res.status === "failed") {
-          clearInterval(interval);
+          clearPollInterval();
           toast.error("Evaluation failed.");
           setIsSubmitting(false);
         }
@@ -201,6 +279,12 @@ export function AssessmentTest({ examData, onComplete }: Props) {
       }
     }, 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      clearPollInterval();
+    };
+  }, []);
 
   // ============ RESULT VIEW ============
   if (result) {
@@ -220,14 +304,17 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           </motion.div>
           <h1 className="h2 text-foreground">Assessment Complete!</h1>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            Your AI evaluation is ready. Re-take exams anytime to track your progress towards your target scholarship band.
+            Your AI evaluation is ready. Re-take exams anytime to track your
+            progress towards your target scholarship band.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="border border-border">
             <CardBody className="p-8 text-center bg-linear-to-br from-primary/5 to-accent/5">
-              <p className="text-label text-muted-foreground">Overall Band Score</p>
+              <p className="text-label text-muted-foreground">
+                Overall Band Score
+              </p>
               <h2 className="text-7xl font-black mt-4 text-primary">
                 {evaluation.overall_band || "0.0"}
               </h2>
@@ -235,7 +322,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                 <motion.div
                   className="h-full bg-linear-to-r from-primary to-accent rounded-full"
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(100, (parseFloat(evaluation.overall_band || 0) / 9) * 100)}%` }}
+                  animate={{
+                    width: `${Math.min(100, (parseFloat(evaluation.overall_band || 0) / 9) * 100)}%`,
+                  }}
                   transition={{ duration: 0.8, delay: 0.3 }}
                 />
               </div>
@@ -266,7 +355,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                       <motion.div
                         className="h-full bg-primary"
                         initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(100, (parseFloat(s.val || 0) / 9) * 100)}%` }}
+                        animate={{
+                          width: `${Math.min(100, (parseFloat(s.val || 0) / 9) * 100)}%`,
+                        }}
                         transition={{ duration: 0.7, delay: 0.15 * i }}
                       />
                     </div>
@@ -282,32 +373,41 @@ export function AssessmentTest({ examData, onComplete }: Props) {
             <h3 className="h4 mb-4">AI Feedback Report</h3>
             <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-sm border border-border/50">
               <p className="whitespace-pre-wrap leading-relaxed text-sm">
-                {evaluation.feedback_report || "No detailed feedback generated."}
+                {evaluation.feedback_report ||
+                  "No detailed feedback generated."}
               </p>
             </div>
 
-            {evaluation.adaptive_learning_tags && evaluation.adaptive_learning_tags.length > 0 && (
-              <div className="mt-6">
-                <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
-                  <AlertCircle className="size-4 text-warning" /> Areas to Improve
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {evaluation.adaptive_learning_tags.map((tag: string, i: number) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 bg-destructive/10 text-destructive text-sm rounded-full font-medium border border-destructive/15"
-                    >
-                      {tag.replace(/_/g, " ")}
-                    </span>
-                  ))}
+            {evaluation.adaptive_learning_tags &&
+              evaluation.adaptive_learning_tags.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
+                    <AlertCircle className="size-4 text-warning" /> Areas to
+                    Improve
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {evaluation.adaptive_learning_tags.map(
+                      (tag: string, i: number) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1 bg-destructive/10 text-destructive text-sm rounded-full font-medium border border-destructive/15"
+                        >
+                          {tag.replace(/_/g, " ")}
+                        </span>
+                      ),
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </CardBody>
         </Card>
 
         <div className="text-center pt-4">
-          <Button onClick={onComplete} variant="outline" className="px-8 font-bold border-border shadow-sm">
+          <Button
+            onClick={onComplete}
+            variant="outline"
+            className="px-8 font-bold border-border shadow-sm"
+          >
             Back to Dashboard
           </Button>
         </div>
@@ -323,7 +423,8 @@ export function AssessmentTest({ examData, onComplete }: Props) {
         <div className="text-center">
           <h2 className="h3">AI Evaluator is grading your exam</h2>
           <p className="text-muted-foreground mt-2 max-w-sm">
-            Analyzing phrasing, assessing grammar, and matching your responses against the marking rubric...
+            Analyzing phrasing, assessing grammar, and matching your responses
+            against the marking rubric...
           </p>
         </div>
         <div className="flex gap-1 mt-2">
@@ -342,7 +443,8 @@ export function AssessmentTest({ examData, onComplete }: Props) {
 
   // ============ EXAM UI ============
   const currentIdx = SECTION_ORDER.indexOf(currentSection);
-  const timerPct = (timeLeft / (SECTION_META[currentSection].timeMinutes * 60)) * 100;
+  const timerPct =
+    (timeLeft / (SECTION_META[currentSection].timeMinutes * 60)) * 100;
   const isTimeLow = timeLeft <= 120; // 2 minutes warning
 
   const answeredReading = Object.keys(responses.reading).length;
@@ -354,7 +456,10 @@ export function AssessmentTest({ examData, onComplete }: Props) {
     reading: { done: answeredReading, total: totalReadingQ },
     listening: { done: answeredListening, total: totalListeningQ },
     writing: { done: responses.writing.trim().length >= 50 ? 1 : 0, total: 1 },
-    speaking: { done: !!audioBlob || responses.speaking.trim().length > 10 ? 1 : 0, total: 1 },
+    speaking: {
+      done: !!audioBlob || responses.speaking.trim().length > 10 ? 1 : 0,
+      total: 1,
+    },
   };
 
   return (
@@ -364,7 +469,8 @@ export function AssessmentTest({ examData, onComplete }: Props) {
         <div>
           <h1 className="h3">Mock Exam in Progress</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {blueprint.exam_summary?.type} · {blueprint.exam_summary?.difficulty} · ID:{" "}
+            {blueprint.exam_summary?.type} ·{" "}
+            {blueprint.exam_summary?.difficulty} · ID:{" "}
             {testId.split("-")[0].toUpperCase()}
           </p>
         </div>
@@ -405,7 +511,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           const meta = SECTION_META[sec];
           const prog = sectionProgress[sec];
           const isActive = currentSection === sec;
-          const isDone = completedSections.has(sec) || (prog.done === prog.total && prog.total > 0);
+          const isDone =
+            completedSections.has(sec) ||
+            (prog.done === prog.total && prog.total > 0);
 
           return (
             <button
@@ -415,25 +523,12 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                 isActive
                   ? "bg-primary text-white border-primary shadow-md"
                   : isDone
-                  ? "bg-success/10 text-success border-success/30"
-                  : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                    ? "bg-success/10 text-success border-success/30"
+                    : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
               }`}
             >
-              {isDone ? (
-                <CheckCircle2 className="size-3.5" />
-              ) : (
-                meta.icon
-              )}
+              {isDone ? <CheckCircle2 className="size-3.5" /> : meta.icon}
               {meta.label}
-              {sec === "reading" || sec === "listening" ? (
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded-sm ${
-                    isActive ? "bg-white/20" : "bg-muted-foreground/10"
-                  }`}
-                >
-                  {prog.done}/{prog.total}
-                </span>
-              ) : null}
             </button>
           );
         })}
@@ -452,7 +547,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           {currentSection === "reading" && (
             <div className="grid md:grid-cols-2 gap-8">
               <Card className="border border-border">
-                <CardBody className="p-6 h-[560px] overflow-y-auto custom-scrollbar">
+                <CardBody className="p-6 h-140 overflow-y-auto custom-scrollbar">
                   <h3 className="h4 mb-4">Reading Passage</h3>
                   <div className="prose prose-sm max-w-none text-muted-foreground">
                     <p className="whitespace-pre-wrap leading-relaxed text-sm">
@@ -461,9 +556,12 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                   </div>
                 </CardBody>
               </Card>
-              <div className="space-y-5 h-[560px] overflow-y-auto custom-scrollbar pr-2">
+              <div className="space-y-5 h-140 overflow-y-auto custom-scrollbar pr-2">
                 {sections.reading?.questions?.map((q: any, i: number) => (
-                  <Card key={q.id || i} className="border border-border shadow-sm">
+                  <Card
+                    key={q.id || i}
+                    className="border border-border shadow-sm"
+                  >
                     <CardBody className="p-5">
                       <p className="font-semibold text-sm mb-4">
                         {i + 1}. {q.question}
@@ -473,17 +571,19 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                           <label
                             key={j}
                             className={`flex items-start p-3 rounded-sm border cursor-pointer transition-colors ${
-                              responses.reading[q.id] === opt
+                              responses.reading[q.id ?? i] === opt
                                 ? "bg-primary/5 border-primary"
                                 : "border-border hover:bg-muted/50"
                             }`}
                           >
                             <input
                               type="radio"
-                              name={`reading-${q.id}`}
+                              name={`reading-${q.id ?? i}`}
                               value={opt}
-                              checked={responses.reading[q.id] === opt}
-                              onChange={() => handleOptionSelect("reading", q.id, opt)}
+                              checked={responses.reading[q.id ?? i] === opt}
+                              onChange={() =>
+                                handleOptionSelect("reading", q.id ?? i, opt)
+                              }
                               className="mt-1 mr-3 text-primary focus:ring-primary"
                             />
                             <span className="text-sm">{opt}</span>
@@ -501,27 +601,31 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           {currentSection === "listening" && (
             <div className="grid md:grid-cols-2 gap-8">
               <Card className="border border-border">
-                <CardBody className="p-6 h-[560px] overflow-y-auto custom-scrollbar">
+                <CardBody className="p-6 h-140 overflow-y-auto custom-scrollbar">
                   <h3 className="h4 mb-4 flex items-center gap-2">
                     Listening Task{" "}
                     <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-sm">
                       Audio Only
                     </span>
                   </h3>
-                  
+
                   {sections.listening?.audio_base64 ? (
                     <div className="mt-8 mb-6 p-8 bg-linear-to-br from-primary/5 to-accent/5 rounded-sm border border-border flex flex-col items-center justify-center space-y-6 text-center shadow-inner">
                       <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center">
                         <Headphones className="size-10 text-primary animate-pulse" />
                       </div>
                       <div className="space-y-2">
-                        <p className="font-bold text-lg text-foreground">Play Listening Audio</p>
+                        <p className="font-bold text-lg text-foreground">
+                          Play Listening Audio
+                        </p>
                         <p className="text-sm text-muted-foreground max-w-sm">
-                          Listen carefully to the recording and answer the questions on the right. You can play it as many times as needed.
+                          Listen carefully to the recording and answer the
+                          questions on the right. You can play it as many times
+                          as needed.
                         </p>
                       </div>
-                      <audio 
-                        controls 
+                      <audio
+                        controls
                         className="w-full max-w-md h-12"
                         src={`data:audio/mp3;base64,${sections.listening.audio_base64}`}
                       >
@@ -532,18 +636,24 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                     <div className="mt-8 p-6 bg-destructive/5 rounded-sm border border-destructive/20 flex flex-col items-center gap-4 text-center">
                       <AlertCircle className="size-10 text-destructive" />
                       <div>
-                        <p className="font-bold text-destructive">Audio Missing</p>
+                        <p className="font-bold text-destructive">
+                          Audio Missing
+                        </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          We encountered an error loading the audio for this section. Please try generating a new exam.
+                          We encountered an error loading the audio for this
+                          section. Please try generating a new exam.
                         </p>
                       </div>
                     </div>
                   )}
                 </CardBody>
               </Card>
-              <div className="space-y-5 h-[560px] overflow-y-auto custom-scrollbar pr-2">
+              <div className="space-y-5 h-140 overflow-y-auto custom-scrollbar pr-2">
                 {sections.listening?.questions?.map((q: any, i: number) => (
-                  <Card key={q.id || i} className="border border-border shadow-sm">
+                  <Card
+                    key={q.id || i}
+                    className="border border-border shadow-sm"
+                  >
                     <CardBody className="p-5">
                       <p className="font-semibold text-sm mb-4">
                         {i + 1}. {q.question}
@@ -553,17 +663,19 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                           <label
                             key={j}
                             className={`flex items-start p-3 rounded-sm border cursor-pointer transition-colors ${
-                              responses.listening[q.id] === opt
+                              responses.listening[q.id ?? i] === opt
                                 ? "bg-primary/5 border-primary"
                                 : "border-border hover:bg-muted/50"
                             }`}
                           >
                             <input
                               type="radio"
-                              name={`listening-${q.id}`}
+                              name={`listening-${q.id ?? i}`}
                               value={opt}
-                              checked={responses.listening[q.id] === opt}
-                              onChange={() => handleOptionSelect("listening", q.id, opt)}
+                              checked={responses.listening[q.id ?? i] === opt}
+                              onChange={() =>
+                                handleOptionSelect("listening", q.id ?? i, opt)
+                              }
                               className="mt-1 mr-3 text-primary focus:ring-primary"
                             />
                             <span className="text-sm">{opt}</span>
@@ -582,7 +694,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
             <div className="space-y-6">
               <Card className="border border-border bg-linear-to-r from-muted/50 to-transparent">
                 <CardBody className="p-6">
-                  <h3 className="font-bold text-foreground mb-2">Writing Task</h3>
+                  <h3 className="font-bold text-foreground mb-2">
+                    Writing Task
+                  </h3>
                   <p className="text-muted-foreground whitespace-pre-wrap text-sm">
                     {sections.writing?.prompt || "No prompt provided."}
                   </p>
@@ -591,7 +705,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
               <div className="relative">
                 <textarea
                   value={responses.writing}
-                  onChange={(e) => setResponses({ ...responses, writing: e.target.value })}
+                  onChange={(e) =>
+                    setResponses({ ...responses, writing: e.target.value })
+                  }
                   placeholder="Type your essay here... Minimum 250 words recommended."
                   className="w-full h-80 p-5 rounded-sm border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 shadow-inner text-sm"
                 />
@@ -599,7 +715,8 @@ export function AssessmentTest({ examData, onComplete }: Props) {
               <div className="flex justify-between text-sm text-muted-foreground font-medium">
                 <span
                   className={
-                    responses.writing.trim().split(/\s+/).filter(Boolean).length >= 250
+                    responses.writing.trim().split(/\s+/).filter(Boolean)
+                      .length >= 250
                       ? "text-success"
                       : ""
                   }
@@ -607,10 +724,14 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                   Word Count:{" "}
                   <strong>
                     {responses.writing.trim()
-                      ? responses.writing.trim().split(/\s+/).filter(Boolean).length
+                      ? responses.writing.trim().split(/\s+/).filter(Boolean)
+                          .length
                       : 0}
                   </strong>
-                  <span className="text-muted-foreground font-normal"> / 250 recommended</span>
+                  <span className="text-muted-foreground font-normal">
+                    {" "}
+                    / 250 recommended
+                  </span>
                 </span>
               </div>
             </div>
@@ -657,7 +778,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                           <Mic className="size-9" />
                         </button>
                         <div className="text-center">
-                          <p className="font-bold text-lg">Tap to Start Speaking</p>
+                          <p className="font-bold text-lg">
+                            Tap to Start Speaking
+                          </p>
                           <p className="text-sm text-muted-foreground mt-1">
                             Allow microphone access when prompted
                           </p>
@@ -688,7 +811,9 @@ export function AssessmentTest({ examData, onComplete }: Props) {
 
               <textarea
                 value={responses.speaking}
-                onChange={(e) => setResponses({ ...responses, speaking: e.target.value })}
+                onChange={(e) =>
+                  setResponses({ ...responses, speaking: e.target.value })
+                }
                 placeholder="If you cannot record audio, type what you would say here..."
                 className="w-full h-32 p-4 rounded-sm border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 shadow-inner text-sm"
               />
@@ -698,7 +823,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
       </AnimatePresence>
 
       {/* Fixed Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 lg:ml-[260px] p-4 bg-card/90 backdrop-blur-md border-t border-border z-10 flex justify-between items-center px-8 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-0 left-0 right-0 lg:ml-65 p-4 bg-card/90 backdrop-blur-md border-t border-border z-10 flex justify-between items-center px-8 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
         {/* Left: Previous */}
         <Button
           variant="outline"
@@ -722,8 +847,8 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                   isActive
                     ? "w-6 h-2.5 bg-primary"
                     : isDone
-                    ? "w-2.5 h-2.5 bg-success"
-                    : "w-2.5 h-2.5 bg-muted-foreground/30"
+                      ? "w-2.5 h-2.5 bg-success"
+                      : "w-2.5 h-2.5 bg-muted-foreground/30"
                 }`}
               />
             );

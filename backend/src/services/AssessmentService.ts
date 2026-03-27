@@ -1,6 +1,4 @@
-import { ChatGroq } from "@langchain/groq";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
 import { v4 as uuidv4 } from "uuid";
 import configs from "../config/configs.js";
 import {
@@ -18,13 +16,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const blueprintCache = new Map<string, any>();
 const evaluationCache = new Map<string, any>();
 
-const groqModel = new ChatGroq({
-  model: "llama-3.3-70b-versatile",
-  apiKey: configs.GROQ_API_KEY!,
-  temperature: 0.1,
-  maxTokens: 4096,
-});
-
 /**
  * Gemini is used for evaluation because it supports native audio input
  * and has a much larger output token limit (8k+) for detailed feedback.
@@ -32,44 +23,278 @@ const groqModel = new ChatGroq({
  */
 const genAI = new GoogleGenerativeAI(configs.GEMINI_API_KEY!);
 const geminiModel = genAI.getGenerativeModel(
-  { model: configs.GEMINI_MODEL || "gemini-1.5-flash" },
-  { apiVersion: "v1beta" },
+  { model: configs.GEMINI_MODEL || "gemini-2.0-flash" },
+  { apiVersion: "v1" },
 );
 
 export class AssessmentService {
-  private static isModelUnavailableError(error: any): boolean {
+  private static toRecord(value: any): Record<string, any> {
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? value
+      : {};
+  }
+
+  private static normalizeAnswer(value: any): string {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase();
+  }
+
+  private static roundBand(value: number): number {
+    return Math.max(0, Math.min(9, Number(value.toFixed(1))));
+  }
+
+  private static isFiniteBand(value: any): boolean {
+    return Number.isFinite(Number(value));
+  }
+
+  private static computeObjectiveSubscore(
+    questions: any[],
+    sectionResponses: Record<string, any>,
+  ): number | null {
+    if (!Array.isArray(questions) || questions.length === 0) return null;
+    const gradable = questions.filter(
+      (q) => AssessmentService.normalizeAnswer(q?.correct_answer).length > 0,
+    );
+    if (gradable.length === 0) return null;
+
+    let correct = 0;
+    for (const q of gradable) {
+      const key = String(q?.id ?? "");
+      const expected = AssessmentService.normalizeAnswer(q?.correct_answer);
+      const actual = AssessmentService.normalizeAnswer(sectionResponses[key]);
+      if (actual && expected && actual === expected) correct += 1;
+    }
+
+    return AssessmentService.roundBand((correct / gradable.length) * 9);
+  }
+
+  private static mergeObjectiveScores(
+    rawEvaluation: any,
+    blueprint: any,
+    responses: any,
+  ) {
+    const payload = AssessmentService.toRecord(rawEvaluation);
+    const nested = AssessmentService.toRecord(payload.evaluation);
+    const base = Object.keys(nested).length > 0 ? nested : payload;
+
+    const subscores = AssessmentService.toRecord(base.subscores);
+
+    const sections = AssessmentService.toRecord(
+      AssessmentService.toRecord(blueprint?.data).sections,
+    );
+    const readingQuestions = Array.isArray(sections.reading?.questions)
+      ? sections.reading.questions
+      : [];
+    const listeningQuestions = Array.isArray(sections.listening?.questions)
+      ? sections.listening.questions
+      : [];
+
+    const readingScore = AssessmentService.computeObjectiveSubscore(
+      readingQuestions,
+      AssessmentService.toRecord(responses?.reading),
+    );
+    const listeningScore = AssessmentService.computeObjectiveSubscore(
+      listeningQuestions,
+      AssessmentService.toRecord(responses?.listening),
+    );
+
+    if (readingScore !== null) subscores.reading = readingScore;
+    if (listeningScore !== null) subscores.listening = listeningScore;
+
+    const numericSubscores = [
+      subscores.reading,
+      subscores.listening,
+      subscores.writing,
+      subscores.speaking,
+    ]
+      .map((v) => Number(v))
+      .filter((v) => Number.isFinite(v));
+
+    const overallBand =
+      numericSubscores.length > 0
+        ? AssessmentService.roundBand(
+            numericSubscores.reduce((a, b) => a + b, 0) /
+              numericSubscores.length,
+          )
+        : 0;
+
+    base.subscores = subscores;
+    if (
+      !AssessmentService.isFiniteBand(base.overall_band) ||
+      Number(base.overall_band) === 0
+    ) {
+      base.overall_band = overallBand;
+    }
+
+    if (Object.keys(nested).length > 0) {
+      payload.evaluation = base;
+      return payload;
+    }
+    return base;
+  }
+
+  private static safeTruncate(value: any, maxLength: number): string {
+    const str = typeof value === "string" ? value : String(value ?? "");
+    if (str.length <= maxLength) return str;
+    return `${str.slice(0, maxLength)}...`;
+  }
+
+  private static compactQuestions(questions: any[], limit = 12) {
+    if (!Array.isArray(questions)) return [];
+    return questions.slice(0, limit).map((q: any, index: number) => ({
+      id: q?.id ?? index + 1,
+      question: AssessmentService.safeTruncate(
+        q?.question || q?.prompt || "",
+        300,
+      ),
+      options: Array.isArray(q?.options)
+        ? q.options
+            .slice(0, 8)
+            .map((opt: any) => AssessmentService.safeTruncate(opt, 120))
+        : [],
+      correct_answer: AssessmentService.safeTruncate(
+        q?.correct_answer || q?.correctAnswer || q?.answer || "",
+        120,
+      ),
+    }));
+  }
+
+  private static buildCompactBlueprintForEvaluation(blueprint: any) {
+    const data = blueprint?.data || blueprint || {};
+    const sections = data?.sections || {};
+
+    return {
+      test_id: blueprint?.test_id || data?.test_id,
+      exam_summary: {
+        type: data?.exam_summary?.type || "IELTS",
+        difficulty: data?.exam_summary?.difficulty || "Medium",
+      },
+      sections: {
+        reading: {
+          passage: AssessmentService.safeTruncate(
+            sections?.reading?.passage || "",
+            2800,
+          ),
+          questions: AssessmentService.compactQuestions(
+            sections?.reading?.questions || [],
+          ),
+        },
+        listening: {
+          script: AssessmentService.safeTruncate(
+            sections?.listening?.script || "",
+            2800,
+          ),
+          questions: AssessmentService.compactQuestions(
+            sections?.listening?.questions || [],
+          ),
+        },
+        writing: {
+          prompt: AssessmentService.safeTruncate(
+            sections?.writing?.prompt || "",
+            1200,
+          ),
+        },
+        speaking: {
+          prompt: AssessmentService.safeTruncate(
+            sections?.speaking?.prompt || "",
+            1200,
+          ),
+        },
+      },
+    };
+  }
+
+  private static buildCompactResponsesForEvaluation(responses: any) {
+    return {
+      reading: responses?.reading || {},
+      listening: responses?.listening || {},
+      writing: AssessmentService.safeTruncate(responses?.writing || "", 4000),
+      speaking: AssessmentService.safeTruncate(responses?.speaking || "", 4000),
+    };
+  }
+
+  private static isContextLengthExceededError(error: any): boolean {
     const message = String(error?.message || "").toLowerCase();
-    const status = Number(error?.status || 0);
     return (
-      status === 429 ||
-      status === 404 ||
-      message.includes("429") ||
-      message.includes("404") ||
-      message.includes("not found") ||
-      message.includes("quota exceeded") ||
-      message.includes("free_tier") ||
-      message.includes("limit: 0")
+      message.includes("context_length_exceeded") ||
+      message.includes("reduce the length") ||
+      message.includes("token")
     );
   }
 
-  private static async evaluateWithGroqFallback(
-    textPrompt: string,
-    hadAudio: boolean,
-  ): Promise<string> {
-    const fallbackPrompt = `${textPrompt}\n\nFallback execution mode:\n- Primary Gemini evaluation was unavailable due to quota limits.\n- You must still return valid JSON in the required schema.\n- If audio was provided, evaluate speaking conservatively from textual evidence only and state this limitation inside feedback_report.\n- Keep output concise but complete.`;
-
-    console.log(
-      `[AssessmentService] Falling back to Groq evaluation${hadAudio ? " (audio approximated from text)" : ""}...`,
-    );
-    const startTime = Date.now();
-    const chain = groqModel.pipe(new StringOutputParser());
-    const response = await chain.invoke(fallbackPrompt);
-    const duration = (Date.now() - startTime) / 1000;
-    console.log(
-      `[AssessmentService] Groq fallback evaluation received in ${duration}s. Parsing...`,
-    );
-    return response;
+  private static shouldUseQueue(): boolean {
+    return Boolean(configs.ASSESSMENT_USE_QUEUE && isRedisAvailable());
   }
+
+  private static runEvaluationInBackground(
+    testId: string,
+    blueprint: any,
+    responses: any,
+    studentId: number,
+    audioData?: { buffer: Buffer; mimetype: string },
+  ): void {
+    const activeState = { status: "active" };
+    evaluationCache.set(testId, activeState);
+    AssessmentService.cacheSet(`evaluation_status:${testId}`, activeState, 3600).catch(() => {});
+
+    AssessmentService.evaluateAssessment(
+      testId,
+      blueprint,
+      responses,
+      studentId,
+      audioData
+        ? {
+            base64: audioData.buffer.toString("base64"),
+            mimetype: audioData.mimetype,
+          }
+        : undefined,
+    )
+      .then((evalResult) => {
+        const successState = { status: "success", data: evalResult };
+        evaluationCache.set(testId, successState);
+        AssessmentService.cacheSet(`evaluation_status:${testId}`, successState, 3600).catch(() => {});
+      })
+      .catch((err) => {
+        console.error("❌ Evaluation failed:", err.message);
+        const errState = {
+          status: "failed",
+          reason: err.message,
+        };
+        evaluationCache.set(testId, errState);
+        AssessmentService.cacheSet(`evaluation_status:${testId}`, errState, 3600).catch(() => {});
+      });
+  }
+
+  private static async cacheSet(
+    key: string,
+    value: unknown,
+    ttlSeconds = 7200,
+  ): Promise<void> {
+    if (!isRedisAvailable()) return;
+    try {
+      await redisConnection.set(key, JSON.stringify(value), "EX", ttlSeconds);
+    } catch (error: any) {
+      console.warn(
+        `[AssessmentService] Redis set failed for ${key}. Continuing without Redis cache: ${error?.message || error}`,
+      );
+    }
+  }
+
+  private static async cacheGet<T = any>(key: string): Promise<T | null> {
+    if (!isRedisAvailable()) return null;
+    try {
+      const raw = await redisConnection.get(key);
+      if (!raw) return null;
+      return JSON.parse(raw) as T;
+    } catch (error: any) {
+      console.warn(
+        `[AssessmentService] Redis get failed for ${key}. Falling back to in-memory flow: ${error?.message || error}`,
+      );
+      return null;
+    }
+  }
+
 
   private static asObject(value: any): Record<string, any> {
     return value && typeof value === "object" && !Array.isArray(value)
@@ -382,10 +607,12 @@ export class AssessmentService {
         `);
 
     console.log(
-      `[AssessmentService] Generating ${examType} blueprint with Groq...`,
+      `[AssessmentService] Generating ${examType} blueprint with Gemini...`,
     );
-    const chain = prompt.pipe(groqModel).pipe(new StringOutputParser());
-    const response = await chain.invoke({ examType, difficulty, testId });
+    
+    const textPrompt = await prompt.format({ examType, difficulty, testId });
+    const result = await geminiModel.generateContent(textPrompt);
+    const response = result.response.text();
 
     let blueprint: any;
     let rawJson = "";
@@ -416,14 +643,7 @@ export class AssessmentService {
       }
     }
 
-    if (isRedisAvailable()) {
-      await redisConnection.set(
-        `test_id:${testId}`,
-        JSON.stringify(blueprint),
-        "EX",
-        7200,
-      );
-    }
+    await AssessmentService.cacheSet(`test_id:${testId}`, blueprint, 7200);
     blueprintCache.set(testId, blueprint);
 
     const sanitizedData = JSON.parse(JSON.stringify(blueprint));
@@ -450,56 +670,55 @@ export class AssessmentService {
     let blueprint;
     if (blueprintCache.has(testId)) {
       blueprint = blueprintCache.get(testId);
-    } else if (isRedisAvailable()) {
-      const blueprintData = await redisConnection.get(`test_id:${testId}`);
-      if (blueprintData) blueprint = JSON.parse(blueprintData);
+    } else {
+      blueprint = await AssessmentService.cacheGet(`test_id:${testId}`);
     }
 
     if (!blueprint) throw new Error("Assessment not found.");
 
-    if (!isRedisAvailable()) {
-      console.warn("⚠️ Redis unavailable, running evaluation synchronously...");
-      AssessmentService.evaluateAssessment(
+    if (!AssessmentService.shouldUseQueue()) {
+      AssessmentService.runEvaluationInBackground(
         testId,
         blueprint,
         responses,
         studentId,
-        audioData
-          ? {
-              base64: audioData.buffer.toString("base64"),
-              mimetype: audioData.mimetype,
-            }
-          : undefined,
-      )
-        .then((evalResult) => {
-          evaluationCache.set(testId, { status: "success", data: evalResult });
-        })
-        .catch((err) => {
-          console.error("❌ Evaluation failed:", err.message);
-          evaluationCache.set(testId, {
-            status: "failed",
-            reason: err.message,
-          });
-        });
+        audioData,
+      );
       return { status: "submitted", jobId: testId, testId, sync: true };
     }
 
-    const job = await assessmentQueue.add(
-      "assessment-queue",
-      {
+    let job;
+    try {
+      job = await assessmentQueue.add(
+        "assessment-queue",
+        {
+          testId,
+          blueprint,
+          responses,
+          studentId,
+          audioData: audioData
+            ? {
+                base64: audioData.buffer.toString("base64"),
+                mimetype: audioData.mimetype,
+              }
+            : null,
+        },
+        { jobId: testId, removeOnComplete: false },
+      );
+    } catch (error: any) {
+      console.warn(
+        `[AssessmentService] Queue add failed. Running sync fallback: ${error?.message || error}`,
+      );
+      AssessmentService.runEvaluationInBackground(
         testId,
         blueprint,
         responses,
         studentId,
-        audioData: audioData
-          ? {
-              base64: audioData.buffer.toString("base64"),
-              mimetype: audioData.mimetype,
-            }
-          : null,
-      },
-      { jobId: testId, removeOnComplete: false },
-    );
+        audioData,
+      );
+
+      return { status: "submitted", jobId: testId, testId, sync: true };
+    }
 
     return { status: "submitted", jobId: job.id, testId };
   }
@@ -511,6 +730,11 @@ export class AssessmentService {
     studentId: number,
     audioData?: { base64: string; mimetype: string },
   ) {
+    const compactBlueprint =
+      AssessmentService.buildCompactBlueprintForEvaluation(blueprint);
+    const compactResponses =
+      AssessmentService.buildCompactResponsesForEvaluation(responses);
+
     const promptTemplate = PromptTemplate.fromTemplate(`
             Role: English Proficiency Engine
             Task: Evaluate student responses based on the provided blueprint.
@@ -568,8 +792,8 @@ export class AssessmentService {
         `);
 
     const textPrompt = await promptTemplate.format({
-      blueprint: JSON.stringify(blueprint),
-      responses: JSON.stringify(responses),
+      blueprint: JSON.stringify(compactBlueprint),
+      responses: JSON.stringify(compactResponses),
       hasAudio: audioData ? "Yes" : "No",
     });
 
@@ -586,33 +810,29 @@ export class AssessmentService {
     let response = "";
     try {
       console.log(
-        `[AssessmentService] Evaluating with Gemini model ${configs.GEMINI_MODEL || "gemini-1.5-flash"} (Raw SDK)...`,
+        `[AssessmentService] Evaluating with Gemini model ${configs.GEMINI_MODEL || "gemini-2.0-flash"} (Raw SDK)...`,
       );
       const startTime = Date.now();
-      
+
       const result = await geminiModel.generateContent({
         contents: [{ role: "user", parts: messagesContent }],
         generationConfig: {
           temperature: 0.2,
           maxOutputTokens: 8192,
-        }
+        },
       });
-      
+
       response = result.response.text();
       const duration = (Date.now() - startTime) / 1000;
       console.log(
         `[AssessmentService] Evaluation received in ${duration}s. Parsing...`,
       );
     } catch (error: any) {
-      console.error(`[AssessmentService] Primary Gemini evaluation failed (${configs.GEMINI_MODEL || "gemini-1.5-flash"}):`, error.message);
-      if (AssessmentService.isModelUnavailableError(error)) {
-        response = await AssessmentService.evaluateWithGroqFallback(
-          textPrompt,
-          Boolean(audioData),
-        );
-      } else {
-        throw error;
-      }
+      console.error(
+        `[AssessmentService] Primary Gemini evaluation failed (${configs.GEMINI_MODEL || "gemini-2.0-flash"}):`,
+        error.message,
+      );
+      throw error;
     }
 
     let evaluation;
@@ -625,14 +845,13 @@ export class AssessmentService {
       throw error;
     }
 
-    if (isRedisAvailable()) {
-      await redisConnection.set(
-        `evaluation:${testId}`,
-        JSON.stringify(evaluation),
-        "EX",
-        7200,
-      );
-    }
+    evaluation = AssessmentService.mergeObjectiveScores(
+      evaluation,
+      blueprint,
+      responses,
+    );
+
+    await AssessmentService.cacheSet(`evaluation:${testId}`, evaluation, 7200);
     evaluationCache.set(testId, { status: "success", data: evaluation });
 
     try {
@@ -646,7 +865,11 @@ export class AssessmentService {
         overallBand,
       });
       const examType = (blueprint.data?.exam_summary?.type || "IELTS") as any;
-      await LearningPathService.generateForStudent(studentId, evaluation, examType);
+      await LearningPathService.generateForStudent(
+        studentId,
+        evaluation,
+        examType,
+      );
     } catch (dbError) {
       console.error("Persistence failed:", dbError);
     }
@@ -657,25 +880,47 @@ export class AssessmentService {
   static async getAssessmentResult(testId: string) {
     if (evaluationCache.has(testId)) return evaluationCache.get(testId);
 
+    // In non-queue mode, status is driven by in-memory + Redis cache only.
+    if (!AssessmentService.shouldUseQueue()) {
+      const storedResult = await AssessmentService.cacheGet(
+        `evaluation:${testId}`,
+      );
+      if (storedResult) return { status: "success", data: storedResult };
+
+      const explicitStatus = await AssessmentService.cacheGet(
+        `evaluation_status:${testId}`,
+      );
+      if (explicitStatus) return explicitStatus;
+
+      return { status: "active" };
+    }
+
     if (isRedisAvailable()) {
-      const storedResult = await redisConnection.get(`evaluation:${testId}`);
-      if (storedResult)
-        return { status: "success", data: JSON.parse(storedResult) };
+      const storedResult = await AssessmentService.cacheGet(
+        `evaluation:${testId}`,
+      );
+      if (storedResult) return { status: "success", data: storedResult };
 
-      const job = await assessmentQueue.getJob(testId);
-      if (!job) return { status: "not_found" };
+      try {
+        const job = await assessmentQueue.getJob(testId);
+        if (!job) return { status: "not_found" };
 
-      const state = await job.getState();
-      if (state === "completed")
-        return { status: "success", data: job.returnvalue };
-      if (state === "failed")
-        return {
-          status: "failed",
-          reason:
-            job.failedReason ||
-            "Evaluation job failed. Check worker logs for details.",
-        };
-      return { status: state };
+        const state = await job.getState();
+        if (state === "completed")
+          return { status: "success", data: job.returnvalue };
+        if (state === "failed")
+          return {
+            status: "failed",
+            reason:
+              job.failedReason ||
+              "Evaluation job failed. Check worker logs for details.",
+          };
+        return { status: state };
+      } catch (error: any) {
+        console.warn(
+          `[AssessmentService] Queue result lookup failed for ${testId}: ${error?.message || error}`,
+        );
+      }
     }
 
     return { status: "active" };
