@@ -16,4 +16,5 @@ export default {
     assessmentRouter,
     videoRouter,
     learningPathRouter,
+    notificationRouter
 };
