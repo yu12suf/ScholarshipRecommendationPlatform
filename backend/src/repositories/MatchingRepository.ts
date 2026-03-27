@@ -134,6 +134,35 @@ export class MatchingRepository {
         });
         return matches.map(mapResult);
     }
+
+    /**
+     * Gets a single scholarship with its calculated vector match score.
+     */
+    static async findMatchWithScore(student: Student, scholarshipId: number, vectorStr: string): Promise<MatchedScholarship | null> {
+        const hasVector = hasVectorExtension && vectorStr && vectorStr.length > 5;
+        
+        const scholarship = await Scholarship.findByPk(scholarshipId, {
+            attributes: {
+                include: hasVector ? [
+                    [
+                        Sequelize.literal(`(1 - (embedding <=> '${vectorStr}'::vector)) * 100`),
+                        'matchScore'
+                    ]
+                ] : [
+                    [Sequelize.literal('0'), 'matchScore']
+                ]
+            }
+        });
+
+        if (!scholarship) return null;
+
+        const data = scholarship.get({ plain: true });
+        return {
+            ...data,
+            matchScore: parseFloat((scholarship as any).getDataValue('matchScore')?.toString() || "0")
+        } as any;
+    }
+
     /**
      * Finds top students for a given scholarship.
      */

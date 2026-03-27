@@ -10,6 +10,8 @@ import { Footer } from '@/components/layout/Footer';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { CounselorNavbar } from '@/components/layout/CounselorNavbar';
 import { StudentSidebar } from '@/components/layout/StudentSidebar';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
+
 
 export default function DashboardLayout({
   children,
@@ -88,7 +90,9 @@ export default function DashboardLayout({
 
       {!isStudentOnboarding && <StudentSidebar />}
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen">
+
+        {!isStudentOnboarding && <DashboardHeader />}
 
         <main
           className={`flex-1 overflow-y-auto custom-scrollbar ${

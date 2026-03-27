@@ -60,9 +60,9 @@ export class MatchingService {
       return [];
     }
 
-    // Phase 2: AI Re-ranking (Limited to top 10 candidates to improve list-to-detail consistency)
-    const topCandidates = candidates.slice(0, 10); 
-    const remainingCandidates = candidates.slice(10);
+    // Phase 2: AI Re-ranking (Increased to 20 to cover ALL top candidates for consistency)
+    const topCandidates = candidates.slice(0, 20); 
+    const remainingCandidates = candidates.slice(20);
 
     try {
       const aiResults = await AIService.rankScholarships(
@@ -235,11 +235,26 @@ export class MatchingService {
     const student = await StudentRepository.findByUserId(userId);
     if (!student) throw new Error("Student not found");
 
-    const scholarship = await Scholarship.findByPk(scholarshipId);
-    if (!scholarship) return null;
+    // Refresh embedding for consistency
+    try {
+      await VectorService.generateStudentEmbedding(student);
+    } catch (err) {
+      console.warn("[MatchingService] Failed to refresh student embedding for detail view:", err);
+    }
 
-    // Simplified match for a single item - just wrap it as a candidate
-    const candidate = scholarship.get({ plain: true }) as any;
+    // Prepare the vector for calculation consistency
+    let vectorStr: string | null = null;
+    if (student.embedding) {
+      const embed = student.embedding;
+      if (Array.isArray(embed)) {
+        vectorStr = `[${embed.join(",")}]`;
+      } else if (typeof embed === "string") {
+        vectorStr = embed.startsWith("[") ? embed : `[${embed}]`;
+      }
+    }
+
+    const candidate = await MatchingRepository.findMatchWithScore(student, scholarshipId, vectorStr || "");
+    if (!candidate) return null;
 
     const vectorScore = candidate.matchScore || 0;
     const hScore = MatchingService.calculateHeuristicScore(student, candidate);
