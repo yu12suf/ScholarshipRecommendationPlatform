@@ -56,9 +56,9 @@ export function OnboardingFlow() {
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex flex-col items-center gap-2">
               <div
-                className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm transition-all shadow-lg ${
+                className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
                   step >= s
-                    ? "bg-primary text-white scale-110 shadow-primary/20"
+                    ? "bg-primary text-white scale-110"
                     : "bg-white text-gray-400 border border-gray-200"
                 }`}
               >
@@ -77,7 +77,7 @@ export function OnboardingFlow() {
           ))}
         </div>
 
-        <Card className="shadow-2xl border border-gray-100 min-h-125 flex flex-col">
+        <Card className="border border-border min-h-125 flex flex-col">
           <CardBody className="p-8 md:p-12 flex-1 flex flex-col">
             {step === 1 && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -92,24 +92,46 @@ export function OnboardingFlow() {
                   </p>
                 </div>
 
-                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center hover:border-primary/50 transition-colors group relative cursor-pointer">
+                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center hover:border-primary/50 transition-colors group relative cursor-pointer min-h-60 flex flex-col items-center justify-center bg-gray-50/10">
                   <input
                     type="file"
                     id="document-upload"
                     aria-label="Upload CV or Transcript"
-                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
                     onChange={(e) => handleFileChange(e, "document")}
                     accept="image/*,application/pdf"
                   />
-                  <Upload className="h-10 w-10 text-gray-300 group-hover:text-primary transition-colors mx-auto mb-4" />
-                  <p className="font-bold text-gray-600">
-                    {files.document
-                      ? files.document.name
-                      : "Click to upload CV or records"}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    PDF, JPG, or PNG (MAX. 5MB)
-                  </p>
+                  
+                  {files.document ? (
+                    <div className="animate-in fade-in zoom-in-95 duration-300">
+                      <div className="w-20 h-20 rounded-full border-4 border-success/20 bg-success/5 flex items-center justify-center mx-auto mb-4 overflow-hidden shadow-inner">
+                        {files.document.type.startsWith("image/") ? (
+                          <img 
+                            src={URL.createObjectURL(files.document)} 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <FileText className="h-10 w-10 text-success" />
+                        )}
+                      </div>
+                      <p className="font-bold text-foreground truncate max-w-[250px] mx-auto">
+                        {files.document.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Click to replace file
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in duration-300">
+                      <Upload className="h-12 w-12 text-gray-300 group-hover:text-primary transition-colors mx-auto mb-4" />
+                      <p className="font-bold text-gray-600">
+                        Click to upload CV or records
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        PDF, JPG, or PNG (MAX. 5MB)
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <Button
@@ -118,7 +140,7 @@ export function OnboardingFlow() {
                   isLoading={loading}
                   size="xl"
                   variant="scholarship"
-                  className="w-full font-bold shadow-lg shadow-primary/20"
+                  className="w-full font-bold"
                 >
                   Next <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>
@@ -138,33 +160,68 @@ export function OnboardingFlow() {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-accent/50 transition-colors relative cursor-pointer bg-gray-50/50">
+                  {/* ID Card Upload */}
+                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-accent/50 transition-colors relative cursor-pointer bg-gray-50/20 min-h-48 flex flex-col items-center justify-center">
                     <input
                       type="file"
                       id="id-card-upload"
                       aria-label="Upload ID Card"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
                       onChange={(e) => handleFileChange(e, "idCard")}
                       accept="image/*"
                     />
-                    <FileText className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm font-bold truncate">
-                      {files.idCard ? files.idCard.name : "Upload ID Card"}
-                    </p>
+
+                    {files.idCard ? (
+                      <div className="animate-in fade-in zoom-in-95 duration-300">
+                        <div className="w-16 h-16 rounded-full border-4 border-accent/20 bg-accent/5 flex items-center justify-center mx-auto mb-3 overflow-hidden shadow-inner">
+                          <img 
+                            src={URL.createObjectURL(files.idCard)} 
+                            className="w-full h-full object-cover" 
+                          />
+                        </div>
+                        <p className="text-sm font-bold text-foreground truncate max-w-[150px] mx-auto">
+                          {files.idCard.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1">Click to replace</p>
+                      </div>
+                    ) : (
+                      <div className="animate-in fade-in duration-300">
+                        <FileText className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                        <p className="text-sm font-bold text-gray-600">Upload ID Card</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-accent/50 transition-colors relative cursor-pointer bg-gray-50/50">
+
+                  {/* Selfie Upload */}
+                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-accent/50 transition-colors relative cursor-pointer bg-gray-50/20 min-h-48 flex flex-col items-center justify-center">
                     <input
                       type="file"
                       id="selfie-upload"
                       aria-label="Upload Selfie"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
                       onChange={(e) => handleFileChange(e, "selfie")}
                       accept="image/*"
                     />
-                    <UserCheck className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm font-bold truncate">
-                      {files.selfie ? files.selfie.name : "Upload Selfie"}
-                    </p>
+
+                    {files.selfie ? (
+                      <div className="animate-in fade-in zoom-in-95 duration-300">
+                        <div className="w-16 h-16 rounded-full border-4 border-accent/20 bg-accent/5 flex items-center justify-center mx-auto mb-3 overflow-hidden shadow-inner">
+                          <img 
+                            src={URL.createObjectURL(files.selfie)} 
+                            className="w-full h-full object-cover" 
+                          />
+                        </div>
+                        <p className="text-sm font-bold text-foreground truncate max-w-[150px] mx-auto">
+                          {files.selfie.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1">Click to replace</p>
+                      </div>
+                    ) : (
+                      <div className="animate-in fade-in duration-300">
+                        <UserCheck className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                        <p className="text-sm font-bold text-gray-600">Upload Selfie</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -179,7 +236,7 @@ export function OnboardingFlow() {
                   isLoading={loading}
                   variant="scholarship"
                   size="xl"
-                  className="w-full font-bold shadow-lg shadow-secondary/20"
+                  className="w-full font-bold"
                 >
                   Verify <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>

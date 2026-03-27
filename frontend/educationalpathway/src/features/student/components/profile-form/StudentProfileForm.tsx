@@ -42,7 +42,7 @@ const formatCountryOption = (option: any) => (
   <div className="flex items-center gap-2">
     {option.flag && (
       option.flag.endsWith(".svg") || option.flag.endsWith(".png") ? (
-        <img src={option.flag} alt={`${option.label} flag`} className="w-5 h-3 object-cover shadow-sm border border-border" />
+        <img src={option.flag} alt={`${option.label} flag`} className="w-5 h-3 object-cover border border-border" />
       ) : (
         <span>{option.flag}</span>
       )
@@ -596,11 +596,12 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Current Education Level */}
                     <div className="space-y-1">
-                      <label className="text-label">
+                      <label htmlFor="currentEducationLevel" className="text-label">
                         Current Education Level{" "}
                         <span className="text-destructive">*</span>
                       </label>
                       <select
+                        id="currentEducationLevel"
                         {...methods.register("currentEducationLevel")}
                         className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
@@ -614,10 +615,11 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
 
                     {/* Degree Seeking */}
                     <div className="space-y-1">
-                      <label className="text-label">
+                      <label htmlFor="degreeSeeking" className="text-label">
                         Degree Seeking <span className="text-destructive">*</span>
                       </label>
                       <select
+                        id="degreeSeeking"
                         {...methods.register("degreeSeeking")}
                         className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
@@ -723,10 +725,11 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
 
                     {/* Language Test Type */}
                     <div className="space-y-1">
-                      <label className="text-label">
+                      <label htmlFor="languageTestType" className="text-label">
                         Language Test
                       </label>
                       <select
+                        id="languageTestType"
                         {...methods.register("languageTestType")}
                         className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
@@ -763,10 +766,11 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
 
                     {/* Proposed Research Topic */}
                     <div className="space-y-1 md:col-span-2">
-                      <label className="text-label">
+                      <label htmlFor="proposedResearchTopic" className="text-label">
                         Proposed Research Topic (Optional)
                       </label>
                       <textarea
+                        id="proposedResearchTopic"
                         {...methods.register("proposedResearchTopic")}
                         rows={3}
                         className="w-full px-3 py-2 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
@@ -824,10 +828,11 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
 
                       {/* Funding Type */}
                       <div className="space-y-1">
-                        <label className="text-label">
+                        <label htmlFor="preferredFundingType" className="text-label">
                           Funding Type
                         </label>
                         <select
+                          id="preferredFundingType"
                           {...methods.register("preferredFundingType")}
                           className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                         >
@@ -841,10 +846,11 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
 
                       {/* Study Mode */}
                       <div className="space-y-1">
-                        <label className="text-label">
+                        <label htmlFor="studyMode" className="text-label">
                           Study Mode
                         </label>
                         <select
+                          id="studyMode"
                           {...methods.register("studyMode")}
                           className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                         >
@@ -1071,10 +1077,11 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1">
-                        <label className="text-label">
+                        <label htmlFor="familyIncomeRange" className="text-label">
                           Family Income Range
                         </label>
                         <select
+                          id="familyIncomeRange"
                           {...methods.register("familyIncomeRange")}
                           className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                         >
@@ -1127,22 +1134,17 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                           name: "degreeCertificate",
                           accept: ".pdf",
                         },
-                        {
-                          label: "Language Certificate",
-                          name: "languageCertificate",
-                          accept: ".pdf",
-                        },
                       ].map((doc) => (
                         <div
                           key={doc.name}
-                          className="relative border-2 border-dashed border-input rounded-sm p-4 hover:border-primary transition-colors group bg-muted/50"
+                          className="relative border-2 border-dashed border-input rounded-sm p-4 hover:border-primary transition-colors group bg-muted/20 min-h-[140px] flex flex-col items-center justify-center overflow-hidden"
                         >
                           <input
                             type="file"
                             id={doc.name}
                             aria-label={doc.label}
-                            accept={doc.accept}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            accept={doc.accept + ",image/*"}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
@@ -1150,32 +1152,56 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                               }
                             }}
                           />
-                          <div className="text-center">
-                            <Upload className="mx-auto h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                            <p className="mt-2 text-sm font-medium text-foreground">
-                              {doc.label}
-                            </p>
-                            {watch(`documents.${doc.name}` as any) && typeof watch(`documents.${doc.name}` as any) === 'string' ? (
-                              <div className="mt-1 flex flex-col items-center gap-1">
-                                <span className="text-xs text-primary font-medium">File uploaded</span>
-                                <a 
-                                  href={watch(`documents.${doc.name}` as any)} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-[10px] text-muted-foreground hover:text-primary underline pointer-events-auto relative z-10"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  View current file
-                                </a>
+                          
+                          {watch(`documents.${doc.name}` as any) ? (
+                            <div className="text-center animate-in fade-in zoom-in-95 duration-300">
+                              {/* Standardized Circular Preview */}
+                              <div className="w-14 h-14 rounded-full border-4 border-primary/20 bg-primary/5 flex items-center justify-center mx-auto mb-3 overflow-hidden shadow-inner">
+                                {((watch(`documents.${doc.name}` as any) instanceof File && (watch(`documents.${doc.name}` as any) as File).type.startsWith("image/")) ||
+                                 (typeof watch(`documents.${doc.name}` as any) === 'string' && (watch(`documents.${doc.name}` as any) as string).match(/\.(jpg|jpeg|png|gif|webp)$|^data:image/i))) ? (
+                                  <img 
+                                    src={watch(`documents.${doc.name}` as any) instanceof File 
+                                      ? URL.createObjectURL(watch(`documents.${doc.name}` as any) as File) 
+                                      : watch(`documents.${doc.name}` as any) as string
+                                    } 
+                                    alt="Thumbnail" 
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <FileText className="w-7 h-7 text-primary" />
+                                )}
                               </div>
-                            ) : (
-                              <p className="text-xs text-muted-foreground">
+                              
+                              <p className="text-xs font-bold text-foreground truncate max-w-[150px] mx-auto">
                                 {watch(`documents.${doc.name}` as any) instanceof File 
                                   ? (watch(`documents.${doc.name}` as any) as File).name 
-                                  : "Click to upload"}
+                                  : doc.label}
                               </p>
-                            )}
-                          </div>
+                              
+                              <div className="mt-1 flex items-center justify-center gap-2">
+                                <span className="text-[10px] text-muted-foreground">Click to replace</span>
+                                {typeof watch(`documents.${doc.name}` as any) === 'string' && (
+                                  <a 
+                                    href={watch(`documents.${doc.name}` as any) as string} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-[10px] text-primary hover:underline pointer-events-auto relative z-20"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    View
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center animate-in fade-in duration-300">
+                              <Upload className="mx-auto h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
+                              <p className="mt-2 text-sm font-bold text-gray-600">
+                                {doc.label}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground mt-1">Click to upload</p>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1195,16 +1221,6 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         />
                         <span className="text-sm text-foreground">
                           Email notifications
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          {...methods.register("notifications.sms")}
-                          className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
-                        />
-                        <span className="text-sm text-foreground">
-                          SMS notifications
                         </span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
@@ -1243,13 +1259,13 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
           )}
 
           {/* Navigation Buttons */}
-          <div className="mt-8 flex items-center justify-between pt-6 border-t border-border">
+          <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-6 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={handlePrevious}
               disabled={currentStep === 1}
-              className="px-6"
+              className="w-full sm:w-auto px-6 shadow-none"
             >
               <ChevronLeft size={16} className="mr-2" />
               Previous
@@ -1261,7 +1277,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                 type="submit"
                 variant="primary"
                 isLoading={isSubmitting}
-                className="px-6"
+                className="w-full sm:w-auto px-6 shadow-none"
               >
                 Submit Profile
                 <CheckCircle2 size={16} className="ml-2" />
@@ -1272,7 +1288,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                 type="button"
                 variant="primary"
                 onClick={handleNext}
-                className="px-6"
+                className="w-full sm:w-auto px-6 shadow-none"
               >
                 Next
                 <ChevronRight size={16} className="ml-2" />

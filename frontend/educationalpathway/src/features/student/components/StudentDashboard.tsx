@@ -80,7 +80,6 @@ export const StudentDashboard = () => {
       user.cvUrl,
       user.transcriptUrl,
       user.degreeCertificateUrl,
-      user.languageCertificateUrl,
     ];
 
     const arrayFields = [

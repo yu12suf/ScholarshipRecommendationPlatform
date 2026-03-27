@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import configs from "../config/configs.js";
 
 const genAI = new GoogleGenerativeAI(configs.GEMINI_API_KEY!);
-const geminiModelName = configs.GEMINI_MODEL || "gemini-2.0-flash";
+const geminiModelName = configs.GEMINI_MODEL || "gemini-2.5-flash";
 
 export class AIService {
   static async extractOnboardingData(
@@ -130,13 +130,13 @@ export class AIService {
                - 50: Partial match; correct degree level but field/country is only tangentially related.
                - 20: Weak match; significant degree or field mismatch.
                - IMPORTANT: If a scholarship is open to "ALL FIELDS" or "ANY MAJOR", do NOT penalize it for lacking a specific major name match. Give it a high score if other criteria fit.
-            3. Return the results as a JSON object with a 'matches' key containing an array of ALL processed scholarship IDs.
+            3. Return the results as a JSON object with a 'matches' key containing an array of ALL processed scholarship IDs. Preserve the exact numerical format of the IDs.
             
-            IMPORTANT: Return ONLY a valid JSON object.
+            IMPORTANT: Return ONLY a valid JSON object. Do not include markdown formatting or explanations.
             Format:
             {
               "matches": [
-                { "id": number, "match_score": number, "match_reason": string }
+                { "id": number, "match_score": number, "match_reason": "String explaining match" }
               ]
             }
         `;

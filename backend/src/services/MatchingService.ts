@@ -60,10 +60,9 @@ export class MatchingService {
       return [];
     }
 
-    // Phase 2: AI Re-ranking (Limited to top 5 candidates to conserve quota)
-    // We send the student's dense profile and candidates to LLM for a refined score
-    const topCandidates = candidates.slice(0, 5); // Limit to 5 for free tier safety
-    const remainingCandidates = candidates.slice(5);
+    // Phase 2: AI Re-ranking (Limited to top 10 candidates to improve list-to-detail consistency)
+    const topCandidates = candidates.slice(0, 10); 
+    const remainingCandidates = candidates.slice(10);
 
     try {
       const aiResults = await AIService.rankScholarships(
@@ -183,7 +182,8 @@ export class MatchingService {
       (scholarship as any).degree_levels || scholarship.degreeLevels;
 
     if (schLevels) {
-      const schLevelsStr = JSON.stringify(schLevels).toLowerCase();
+      // Use standard JSON string comparison or include in text search
+      const schLevelsStr = Array.isArray(schLevels) ? schLevels.join(',').toLowerCase() : String(schLevels).toLowerCase();
       if (sLevels.some((l) => schLevelsStr.includes(l!))) {
         score += 20;
       }
@@ -258,13 +258,11 @@ export class MatchingService {
       );
 
       if (aiMatch) {
-        score = aiMatch.match_score;
-        reason = aiMatch.match_reason;
-        console.log(`[MatchingService] AI successfully ranked scholarship ${candidate.id}: ${score}`);
-      } else if (aiResults && aiResults.length > 0) {
-        // Safe fallback for single item - if AI returned anything, use it as best guess if ID mismatch 
-        score = aiResults[0].match_score ?? score;
-        reason = aiResults[0].match_reason ?? reason;
+        score = aiMatch.match_score || score;
+        reason = aiMatch.match_reason || reason;
+        console.log(`[MatchingService] AI successfully ranked scholarship ${candidate.id}: ${score}%`);
+      } else {
+        console.warn(`[MatchingService] AI Response missing ID ${candidate.id}. Using heuristic.`);
       }
     } catch (err: any) {
       if (err.status === 429 || err.message?.includes("429")) {

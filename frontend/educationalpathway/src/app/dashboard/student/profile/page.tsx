@@ -53,7 +53,6 @@ const mapUserToFormValues = (userData: any): Partial<ProfileFormValues> => {
       cv: userData.cvUrl || null,
       transcript: userData.transcriptUrl || null,
       degreeCertificate: userData.certificateUrl || userData.degreeCertificateUrl || null,
-      languageCertificate: userData.languageCertificateUrl || null,
     },
   } as any;
 };
