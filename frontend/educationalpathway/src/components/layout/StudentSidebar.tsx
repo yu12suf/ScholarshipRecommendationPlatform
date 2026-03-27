@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+
 
 export function StudentSidebar() {
   const pathname = usePathname();
@@ -47,6 +49,7 @@ export function StudentSidebar() {
             <span className="text-sm font-semibold text-foreground">Admas</span>
           </div>
         )}
+        
         {mobile ? (
           <button
             onClick={() => setMobileOpen(false)}

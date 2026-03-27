@@ -122,7 +122,7 @@ export class AIService {
             ${JSON.stringify(prunedScholarships, null, 2)}
             
             Task:
-            1. Evaluate how well each scholarship matches the student's background, interests, and goals.
+            1. Evaluate each scholarship independently based on how well it matches the student's background, interests, and goals.
             2. Assign a 'match_score' (0-100) and provide a detailed 'match_reason' (max 300 chars). 
                - Be CRITICAL but FAIR. 
                - 100: Perfect match (same major/field, exact degree level).
@@ -146,7 +146,7 @@ export class AIService {
         model: geminiModelName,
         generationConfig: {
           responseMimeType: "application/json",
-          temperature: 0.6,
+          temperature: 0.0,
         },
       });
 
