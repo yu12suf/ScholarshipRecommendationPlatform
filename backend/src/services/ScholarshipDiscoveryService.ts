@@ -11,6 +11,9 @@ import { StrategyManager } from "./scraping/StrategyManager.js";
 import { AntiDetectionService } from "./common/AntiDetectionService.js";
 import { IngestionMetrics } from "./common/IngestionMetrics.js";
 import { VectorService } from "./VectorService.js";
+import { MatchingRepository } from "../repositories/MatchingRepository.js";
+import { NotificationService } from "./NotificationService.js";
+import { User } from "../models/User.js";
 
 export class ScholarshipDiscoveryService {
     private static isRunning = false;
@@ -156,12 +159,45 @@ export class ScholarshipDiscoveryService {
                 scholarshipData.id = existingScholarship.id;
             }
 
-            await ScholarshipRepository.upsert(scholarshipData);
+            const [upsertedScholarship, isCreated] = await ScholarshipRepository.upsert(scholarshipData);
 
             IngestionMetrics.logIngestion(url, result.strategy, 'SUCCESS');
-            // Find the source name for metrics
             const source = await ScholarshipSource.findByPk(sourceId);
             if (source) IngestionMetrics.increment(source.domainName, 'successfulIngestions');
+            
+            // Notification Logic: Notify ALL Students for New or Updated Scholarships
+            // Change: Trigger also on content changes if the user wants, for now sticking to isCreated (brand new)
+            if (isCreated || !existingScholarship) {
+                console.log(`[BROADCAST] Triggered! New scholarship detected: "${title}" (${url}). Notifying students...`);
+                try {
+                    // Fetch all students
+                    const students = await User.findAll({
+                        where: { role: 'student' as any },
+                        attributes: ['id', 'fcmToken']
+                    });
+
+                    if (students.length === 0) {
+                        console.log("[BROADCAST] No students found to notify.");
+                    } else {
+                        console.log(`[BROADCAST] Sending notifications to ${students.length} students...`);
+                        
+                        for (const student of students) {
+                            await NotificationService.createNotification(
+                                student.id,
+                                "New Scholarship Ingested!",
+                                `A brand new scholarship opportunity "${title}" has been found. Click here to view: ${url}`,
+                                "SCHOLARSHIP_MATCH",
+                                upsertedScholarship.id
+                            );
+                        }
+                        console.log(`[BROADCAST] All ${students.length} notifications created successfully.`);
+                    }
+                } catch (notifyError) {
+                    console.error("[BROADCAST] Error during student notification:", notifyError);
+                }
+            } else {
+                console.log(`[BROADCAST] Skipping: Scholarship already exists and no major change detected for: ${title}`);
+            }
 
         } catch (error: any) {
             console.error(`ingestScholarshipPage error (${url}):`, error.message);

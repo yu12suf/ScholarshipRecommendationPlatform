@@ -85,6 +85,13 @@ export class User extends Model {
     })
     declare updatedAt: Date;
 
+    @Column({
+        type: DataType.STRING(255),
+        allowNull: true,
+        field: 'fcm_token'
+    })
+    declare fcmToken?: string;
+
 
 
     // Associations
