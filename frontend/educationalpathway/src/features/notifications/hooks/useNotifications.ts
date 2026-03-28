@@ -3,6 +3,7 @@ import {
   getNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  markNotificationAsClicked,
 } from "../api";
 import { Notification } from "../types";
 
@@ -44,6 +45,19 @@ export function useNotifications() {
     }
   };
 
+  const markAsClicked = async (id: number) => {
+    try {
+      await markNotificationAsClicked(id);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === id ? { ...n, isClicked: true, isRead: true } : n,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to mark notification as clicked:", err);
+    }
+  };
+
   const markAllAsRead = async () => {
     try {
       await markAllNotificationsAsRead();
@@ -62,6 +76,7 @@ export function useNotifications() {
     error,
     refresh: fetchNotifications,
     markAsRead,
+    markAsClicked,
     markAllAsRead,
   };
 }

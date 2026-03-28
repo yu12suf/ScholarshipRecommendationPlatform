@@ -8,26 +8,21 @@ import {
   LayoutDashboard,
   GraduationCap,
   Users,
-  LogOut,
-  Settings,
   PanelLeftClose,
   PanelLeftOpen,
   Compass,
   ClipboardList,
   Menu,
   X,
+  Settings,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { NotificationBell } from '@/features/notifications/components/NotificationBell';
-
 
 export function StudentSidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const menuItems = [
     { name: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
@@ -38,7 +33,7 @@ export function StudentSidebar() {
   ];
 
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-card">
       {/* HEADER */}
       <div className={`h-16 flex items-center border-b border-border relative ${collapsed && !mobile ? 'justify-center px-3' : 'px-5'}`}>
         {(!collapsed || mobile) && (
@@ -46,7 +41,7 @@ export function StudentSidebar() {
             <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
               <Image src="/admas.png" alt="Logo" width={36} height={36} className="h-full w-full object-cover" />
             </div>
-            <span className="text-sm font-semibold text-foreground">Admas</span>
+            <span className="text-sm font-semibold text-foreground tracking-tight">Admas</span>
           </div>
         )}
         
@@ -92,52 +87,17 @@ export function StudentSidebar() {
         })}
       </nav>
 
-      {/* FOOTER */}
-      <div className="p-3 border-t border-border relative">
-        <AnimatePresence>
-          {showUserMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-full mb-2 left-3 right-3 bg-card border border-border rounded-sm shadow-lg py-1 flex flex-col overflow-hidden z-50"
-            >
-              <Link
-                href="/dashboard/settings"
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                onClick={() => setShowUserMenu(false)}
-              >
-                <Settings size={16} />
-                <span>Settings</span>
-              </Link>
-              <button
-                onClick={() => { setShowUserMenu(false); logout(); }}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer w-full text-left"
-              >
-                <LogOut size={16} />
-                <span>Logout</span>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <button
-          onClick={() => setShowUserMenu(!showUserMenu)}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-sm hover:bg-muted transition-colors cursor-pointer ${collapsed && !mobile ? 'justify-center' : ''}`}
+      {/* FOOTER — Quick Settings */}
+      <div className="p-3 border-t border-border">
+        <Link
+          href="/dashboard/settings"
+          onClick={() => setMobileOpen(false)}
+          title={collapsed && !mobile ? 'Settings' : undefined}
+          className={`group flex items-center gap-3 px-3 py-2.5 rounded-sm transition focus:outline-none text-muted-foreground hover:bg-muted hover:text-foreground font-medium ${collapsed && !mobile ? 'justify-center' : ''}`}
         >
-          <div className="h-8 w-8 rounded-full primary-gradient flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground text-sm font-bold">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-            </span>
-          </div>
-          {(!collapsed || mobile) && (
-            <div className="flex-1 flex flex-col items-start overflow-hidden">
-              <span className="text-sm font-medium text-foreground truncate w-full">{user?.name || 'User'}</span>
-              <span className="text-xs text-muted-foreground truncate w-full">Student</span>
-            </div>
-          )}
-        </button>
+          <Settings size={18} />
+          {(!collapsed || mobile) && <span className="text-sm font-medium">Settings</span>}
+        </Link>
       </div>
     </div>
   );
@@ -169,7 +129,7 @@ export function StudentSidebar() {
               animate={{ x: 0 }}
               exit={{ x: -288 }}
               transition={{ type: 'tween', duration: 0.25 }}
-              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 overflow-hidden"
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 overflow-hidden shadow-2xl"
             >
               <SidebarContent mobile />
             </motion.div>

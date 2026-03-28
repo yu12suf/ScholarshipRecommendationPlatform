@@ -9,6 +9,8 @@ export class NotificationRepository {
     message: string;
     type: string;
     relatedId?: number | undefined;
+    isDelivered?: boolean;
+    isClicked?: boolean;
   }) {
     return await Notification.create(data);
   }

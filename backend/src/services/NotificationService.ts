@@ -16,6 +16,7 @@ export class NotificationService {
         message,
         type,
         relatedId,
+        isDelivered: true, // Mark as delivered upon successful creation
       });
 
       // Find user effectively via repository to get FCM token
@@ -35,6 +36,22 @@ export class NotificationService {
     }
   }
 
+  static async markAsClicked(notificationId: number, userId: number) {
+    const notification = await NotificationRepository.findByIdAndUser(
+      notificationId,
+      userId,
+    );
+
+    if (notification) {
+      notification.isClicked = true;
+      // When clicked, it should also be implicitly read
+      notification.isRead = true; 
+      await notification.save();
+      return true;
+    }
+    return false;
+  }
+
   static async getUserNotifications(
     userId: number,
     unreadOnly: boolean = false,
@@ -50,6 +67,8 @@ export class NotificationService {
 
     if (notification) {
       notification.isRead = true;
+      // If read, it was definitely delivered
+      notification.isDelivered = true;
       await notification.save();
       return true;
     }

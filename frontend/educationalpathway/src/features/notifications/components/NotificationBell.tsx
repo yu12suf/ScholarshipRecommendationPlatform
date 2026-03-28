@@ -16,7 +16,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
 export function NotificationBell() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+  const { notifications, unreadCount, markAsRead, markAsClicked, markAllAsRead } =
     useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -36,6 +36,10 @@ export function NotificationBell() {
 
   const handleMarkAsRead = async (id: number) => {
     await markAsRead(id);
+  };
+
+  const handleMarkAsClicked = async (id: number) => {
+    await markAsClicked(id);
   };
 
   const getIconForType = (type: NotificationType) => {
@@ -135,6 +139,7 @@ export function NotificationBell() {
                           notification.relatedId && (
                             <Link
                               href={`/dashboard/student/scholarships/${notification.relatedId}`}
+                              onClick={() => handleMarkAsClicked(notification.id)}
                               className="text-[10px] font-bold text-primary hover:underline inline-block mt-1"
                             >
                               View Scholarship →
