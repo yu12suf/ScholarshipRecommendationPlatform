@@ -80,4 +80,74 @@ export class EmailService {
 
     await this.transporter.sendMail(mailOptions);
   }
+  static async sendScholarshipMatchEmail(
+    to: string,
+    name: string,
+    scholarship: {
+      title: string;
+      description: string;
+      deadline: string | Date | null;
+      id: number;
+    },
+    matchReason?: string | null
+  ): Promise<void> {
+    const applyLink = `${configs.FRONTEND_URL}/dashboard/student/scholarships/${scholarship.id}`;
+    const deadlineStr = scholarship.deadline 
+      ? new Date(scholarship.deadline).toLocaleDateString() 
+      : "Not specified";
+
+    const mailOptions = {
+      from: configs.SMTP_FROM,
+      to,
+      subject: `Scholarship Match: ${scholarship.title}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+          <div style="background-color: #064e3b; padding: 24px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px;">New Match Found!</h1>
+          </div>
+          <div style="padding: 24px;">
+            <p>Dear <strong>${name}</strong>,</p>
+            <p>Great news! We've found a scholarship that matches your profile perfectly:</p>
+            
+            <div style="background-color: #f8fafc; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0;">
+              <h3 style="margin: 0 0 10px 0; color: #0f172a;">${scholarship.title}</h3>
+              <p style="margin: 0 0 10px 0; font-size: 14px; color: #475569;">${scholarship.description.substring(0, 200)}...</p>
+              <p style="margin: 0; font-size: 14px;"><strong>Deadline:</strong> ${deadlineStr}</p>
+            </div>
+
+            ${matchReason ? `
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin: 0 0 8px 0; color: #334155;">Why you're a match:</h4>
+              <p style="margin: 0; font-size: 14px; color: #64748b; font-style: italic;">${matchReason}</p>
+            </div>
+            ` : ''}
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${applyLink}" style="
+                display: inline-block;
+                padding: 12px 30px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                text-decoration: none;
+                font-weight: bold;
+                border-radius: 6px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+              ">
+                Apply Now
+              </a>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+            
+            <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+              You received this email because of your notification preferences on Pathway.
+              You can manage these settings in your dashboard.
+            </p>
+          </div>
+        </div>
+      `,
+    };
+
+    await this.transporter.sendMail(mailOptions);
+  }
 }

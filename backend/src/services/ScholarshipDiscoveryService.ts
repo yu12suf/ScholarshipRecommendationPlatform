@@ -14,6 +14,8 @@ import { VectorService } from "./VectorService.js";
 import { MatchingRepository } from "../repositories/MatchingRepository.js";
 import { NotificationService } from "./NotificationService.js";
 import { User } from "../models/User.js";
+import { Student } from "../models/Student.js";
+import { ScholarshipNotificationService } from "./ScholarshipNotificationService.js";
 
 export class ScholarshipDiscoveryService {
     private static isRunning = false;
@@ -164,36 +166,52 @@ export class ScholarshipDiscoveryService {
             IngestionMetrics.logIngestion(url, result.strategy, 'SUCCESS');
             const source = await ScholarshipSource.findByPk(sourceId);
             if (source) IngestionMetrics.increment(source.domainName, 'successfulIngestions');
-            
-            // Notification Logic: Notify ALL Students for New or Updated Scholarships
-            // Change: Trigger also on content changes if the user wants, for now sticking to isCreated (brand new)
+            // Notification Logic: Targeted Match Notifications
             if (isCreated || !existingScholarship) {
-                console.log(`[BROADCAST] Triggered! New scholarship detected: "${title}" (${url}). Notifying students...`);
+                console.log(`[MATCHING] Triggered! Checking matches for new scholarship: "${title}"...`);
                 try {
-                    // Fetch all students
-                    const students = await User.findAll({
-                        where: { role: 'student' as any },
-                        attributes: ['id', 'fcmToken']
-                    });
-
-                    if (students.length === 0) {
-                        console.log("[BROADCAST] No students found to notify.");
+                    // 1. Convert current scholarship embedding to vector string for query
+                    let vectorStr = "";
+                    if (Array.isArray(scholarshipData.embedding)) {
+                        vectorStr = `[${scholarshipData.embedding.join(",")}]`;
                     } else {
-                        console.log(`[BROADCAST] Sending notifications to ${students.length} students...`);
+                        vectorStr = String(scholarshipData.embedding);
+                    }
+
+                    // 2. Find students who match this scholarship above a threshold (75%)
+                    const matchingResults = await MatchingRepository.findStudentsExceedingThreshold(vectorStr, 75);
+
+                    if (matchingResults.length === 0) {
+                        console.log("[MATCHING] No highly matching students found for this scholarship.");
+                    } else {
+                        console.log(`[MATCHING] Sending personalized notifications to ${matchingResults.length} matching students...`);
                         
-                        for (const student of students) {
-                            await NotificationService.createNotification(
-                                student.id,
-                                "New Scholarship Ingested!",
-                                `A brand new scholarship opportunity "${title}" has been found. Click here to view: ${url}`,
-                                "SCHOLARSHIP_MATCH",
-                                upsertedScholarship.id
-                            );
+                        for (const res of matchingResults) {
+                            // res is { id, userId, match_score, User: { name, email, fcmToken } }
+                            const user = res.User as any;
+                            const student = { ...res, notificationPreferences: (res as any).notification_preferences } as any; 
+                            
+                            // We need full student model to parse preferences correctly, 
+                            // but findStudentsExceedingThreshold returns joined data.
+                            // Let's adjust matchingResults to include notification_preferences if needed,
+                            // or fetch the student model inside notifyMatch.
+                            
+                            // For efficiency, we'll fetch basic student data once
+                            const fullStudent = await Student.findByPk(res.id);
+                            const fullUser = await User.findByPk(res.userId);
+
+                            if (fullStudent && fullUser) {
+                                await ScholarshipNotificationService.notifyMatch(fullUser, fullStudent, {
+                                    ...upsertedScholarship.get({ plain: true }),
+                                    matchScore: res.match_score,
+                                    matchReason: "Our AI detected a high degree of compatibility between your academic profile and this opportunity's requirements."
+                                } as any);
+                            }
                         }
-                        console.log(`[BROADCAST] All ${students.length} notifications created successfully.`);
+                        console.log(`[MATCHING] Personalized notifications sent successfully.`);
                     }
                 } catch (notifyError) {
-                    console.error("[BROADCAST] Error during student notification:", notifyError);
+                    console.error("[MATCHING] Error during student notification matching:", notifyError);
                 }
             } else {
                 console.log(`[BROADCAST] Skipping: Scholarship already exists and no major change detected for: ${title}`);

@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="w-full py-12 bg-background border-t border-border">
+    <footer className="w-full py-12 border-t border-gray-900 bg-slate-950">
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
 
         {/* Logo */}
@@ -15,13 +15,13 @@ export function Footer() {
             height={24} 
             className="h-6 w-6 object-contain"
           />
-          <span className="text-lg font-semibold text-foreground">
+          <span className="text-lg font-semibold text-white">
             አድማስ
           </span>
         </div>
 
         {/* Copyright */}
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-300">
           © 2024 አድማስ Platform. All rights reserved.
         </p>
 
@@ -30,21 +30,21 @@ export function Footer() {
 
           <Link
             href="#"
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition"
+            className="text-sm font-medium text-gray-200 hover:text-primary transition"
           >
             Terms
           </Link>
 
           <Link
             href="#"
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition"
+            className="text-sm font-medium text-gray-200 hover:text-primary transition"
           >
             Privacy
           </Link>
 
           <Link
             href="#"
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition"
+            className="text-sm font-medium text-gray-200 hover:text-primary transition"
           >
             Support
           </Link>

@@ -38,6 +38,26 @@ export class NotificationController {
     }
   }
 
+  static async markAsClicked(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user.id;
+      const notificationId = parseInt(req.params.id as string);
+
+      const success = await NotificationService.markAsClicked(
+        notificationId,
+        userId,
+      );
+      if (success) {
+        res.status(200).json({ message: "Notification marked as clicked" });
+      } else {
+        res.status(404).json({ error: "Notification not found" });
+      }
+    } catch (error) {
+      console.error("[NotificationController] markAsClicked error:", error);
+      res.status(500).json({ error: "Failed to update notification" });
+    }
+  }
+
   static async updateToken(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;

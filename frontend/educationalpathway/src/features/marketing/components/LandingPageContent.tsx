@@ -28,7 +28,7 @@ const features = [
     title: "Smart Scholarship Match",
     description:
       "Our AI engine analyzes your academic profile, goals, and background to surface the scholarships most aligned with your potential — not just your grades.",
-    color: "bg-emerald-500/10 text-emerald-600",
+    color: "bg-emerald-500/20 text-emerald-400",
     border: "hover:border-emerald-400/50",
   },
   {
@@ -36,7 +36,7 @@ const features = [
     title: "Expert Counselor Network",
     description:
       "Connect with verified counselors who have guided hundreds of students to scholarship success. Get personalized advice, CV reviews, and interview prep.",
-    color: "bg-teal-500/10 text-teal-600",
+    color: "bg-teal-500/20 text-teal-400",
     border: "hover:border-teal-400/50",
   },
   {
@@ -44,7 +44,7 @@ const features = [
     title: "Academic Path Planning",
     description:
       "Map out your academic journey from where you are today to where you want to be. Visualize deadlines, requirements, and milestones in one place.",
-    color: "bg-green-500/10 text-green-600",
+    color: "bg-green-500/20 text-green-400",
     border: "hover:border-green-400/50",
   },
   {
@@ -52,7 +52,7 @@ const features = [
     title: "AI-Powered Assessments",
     description:
       "Take mock IELTS and TOEFL exams powered by AI. Get instant scoring, personalized feedback reports, and adaptive learning tags to target your weak points.",
-    color: "bg-emerald-600/10 text-emerald-700",
+    color: "bg-emerald-400/20 text-emerald-400",
     border: "hover:border-emerald-500/50",
   },
 ];
@@ -87,10 +87,10 @@ const steps = [
 
 export const LandingPageContent = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-slate-950">
 
       {/* ─── NAVBAR ─── */}
-      <header className="px-6 lg:px-12 h-16 flex items-center border-b border-emerald-100 sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
+      <header className="px-6 lg:px-12 h-16 flex items-center border-b border-emerald-900/50 sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md shadow-sm">
         <Link className="flex items-center gap-2.5" href="/">
           <div className="relative">
             <div className="absolute inset-0 bg-emerald-500 rounded-sm blur opacity-20" />
@@ -104,16 +104,16 @@ export const LandingPageContent = () => {
               />
             </div>
           </div>
-          <span className="text-xl font-bold text-emerald-900 tracking-tight">
+          <span className="text-xl font-bold text-emerald-500 tracking-tight">
             አድማስ
           </span>
         </Link>
 
         <nav className="ml-auto flex items-center gap-8">
-          <Link className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors hidden md:block" href="/#features">
+          <Link className="text-sm font-medium text-slate-300 hover:text-emerald-400 transition-colors hidden md:block" href="/#features">
             Features
           </Link>
-          <Link className="text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors hidden md:block" href="/#how">
+          <Link className="text-sm font-medium text-slate-300 hover:text-emerald-400 transition-colors hidden md:block" href="/#how">
             How it Works
           </Link>
           <Link href="/login">
@@ -150,9 +150,9 @@ export const LandingPageContent = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-sm font-semibold mb-8"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-sm bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-sm font-serif mb-8"
             >
-              <Sparkles className="h-4 w-4" />
+              <Sparkles className="h-4 w-4 font-serif" />
               AI-Powered Scholarship Discovery Platform
             </motion.div>
 
@@ -161,7 +161,7 @@ export const LandingPageContent = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight mb-6"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight mb-6 font-serif"
             >
               Your Path to a{" "}
               <span
@@ -195,42 +195,29 @@ export const LandingPageContent = () => {
                 </Button>
               </Link>
               <Link href="/#how">
-                <Button size="xl" variant="outline" className="border-slate-700 text-slate-100 hover:bg-slate-800/50 hover:border-slate-600 px-10">
+                <Button size="xl" variant="outline" className="border-slate-700 text-slate-100 hover:bg-slate-800/50 hover:border-slate-600 px-10 bg-slate-800">
                   See How It Works
                 </Button>
               </Link>
             </motion.div>
 
-            {/* Trust badges */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-wrap justify-center items-center gap-6 text-slate-400 text-sm"
-            >
-              {["No credit card required", "100% Free for students"].map((t) => (
-                <span key={t} className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  {t}
-                </span>
-              ))}
-            </motion.div>
+            {/* Removed: No credit card / 100% free badges */}
           </div>
         </section>
 
         {/* ─── FEATURES ─── */}
-        <section id="features" className="py-24 md:py-32 bg-white">
+        <section id="features" className="py-24 md:py-32 bg-slate-950">
           <div className="container px-4 md:px-6 mx-auto max-w-6xl">
 
             <div className="text-center mb-16">
-              <span className="inline-block px-4 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-widest mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-sm bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
                 Platform Features
               </span>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
                 Everything you need for your{" "}
-                <span className="text-emerald-600">academic breakthrough</span>
+                <span className="text-emerald-400">academic breakthrough</span>
               </h2>
-              <p className="text-slate-600 max-w-2xl mx-auto text-lg">
+              <p className="text-slate-400 max-w-2xl mx-auto text-lg">
                 From discovery to acceptance — አድማስ supports every step of your scholarship journey with intelligent tools and human expertise.
               </p>
             </div>
@@ -245,15 +232,15 @@ export const LandingPageContent = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className={`group flex gap-5 p-7 bg-white rounded-sm border border-emerald-100 ${f.border} transition-all duration-300 hover:shadow-lg hover:shadow-emerald-100`}
+                    className={`group flex gap-5 p-7 bg-slate-900/50 rounded-sm border border-slate-800 ${f.border} transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10`}
                   >
                     <div
                      className={`shrink-0 p-3 rounded-sm ${f.color} h-fit group-hover:scale-110 transition-transform`}>
                       <Icon className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900 mb-2">{f.title}</h3>
-                      <p className="text-slate-600 leading-relaxed text-sm">{f.description}</p>
+                      <h3 className="text-lg font-bold text-white mb-2">{f.title}</h3>
+                      <p className="text-slate-400 leading-relaxed text-sm">{f.description}</p>
                     </div>
                   </motion.div>
                 );
@@ -263,15 +250,15 @@ export const LandingPageContent = () => {
         </section>
 
         {/* ─── HOW IT WORKS ─── */}
-        <section id="how" className="py-24 md:py-32 bg-slate-900">
+        <section id="how" className="py-24 md:py-32 bg-slate-950">
           <div className="container px-4 md:px-6 mx-auto max-w-6xl">
 
             <div className="text-center mb-16">
-              <span className="inline-block px-4 py-1.5 rounded-full bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-sm bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
                 Simple Process
               </span>
               <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-                From profile to scholarship — in 4 steps
+                From profile to scholarship — in few steps
               </h2>
               <p className="text-slate-400 max-w-2xl mx-auto text-lg">
                 We've made the process clear, guided, and stress-free.
@@ -336,7 +323,7 @@ export const LandingPageContent = () => {
                 </Button>
               </Link>
               <Link href="/login">
-                <Button size="xl" variant="outline" className="border-slate-700 text-slate-100 hover:bg-slate-800/50 px-10">
+                <Button size="xl" variant="outline" className="border-slate-700 text-slate-100 hover:bg-slate-800/50 px-10 bg-slate-800">
                   I already have an account
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>

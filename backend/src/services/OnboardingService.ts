@@ -8,6 +8,7 @@ import { FileService } from "./FileService.js";
 import { VectorService } from "./VectorService.js";
 import { MatchingService } from "./MatchingService.js";
 import { sendEmail } from "../utils/emailService.js";
+import { ScholarshipNotificationService } from "./ScholarshipNotificationService.js";
 
 export class OnboardingService {
     /**
@@ -159,11 +160,7 @@ export class OnboardingService {
                     try {
                         const matches = await MatchingService.getTopMatches(userId);
                         if (matches.length > 0) {
-                            await sendEmail({
-                                to: user.email,
-                                subject: "Scholarship Matches Found!",
-                                text: `Hello ${user.name},\n\nWe've found ${matches.length} scholarships that match your profile. Check your dashboard to view them.\n\nBest,\nPathway Team`
-                            });
+                            await ScholarshipNotificationService.notifyMultipleMatches(user, updatedStudent, matches);
                         }
                     } catch (err) {
                         console.error("Background match notification failed:", err);

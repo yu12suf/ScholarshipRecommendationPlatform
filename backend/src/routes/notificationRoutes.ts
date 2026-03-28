@@ -10,6 +10,9 @@ router.get("/", authenticate, NotificationController.getNotifications);
 // PATCH /api/notifications/:id/read
 router.patch("/:id/read", authenticate, NotificationController.markAsRead);
 
+// PATCH /api/notifications/:id/click
+router.patch("/:id/click", authenticate, NotificationController.markAsClicked);
+
 // PATCH /api/notifications/read-all
 router.patch("/read-all", authenticate, NotificationController.markAllAsRead);
 

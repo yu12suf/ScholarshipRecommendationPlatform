@@ -11,6 +11,10 @@ export const markNotificationAsRead = async (id: number): Promise<void> => {
   await api.patch(`/notifications/${id}/read`);
 };
 
+export const markNotificationAsClicked = async (id: number): Promise<void> => {
+  await api.patch(`/notifications/${id}/click`);
+};
+
 export const markAllNotificationsAsRead = async (): Promise<void> => {
   await api.patch("/notifications/read-all");
 };

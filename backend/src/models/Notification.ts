@@ -64,6 +64,22 @@ export class Notification extends Model {
     })
     declare isRead: boolean;
 
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'is_delivered'
+    })
+    declare isDelivered: boolean;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'is_clicked'
+    })
+    declare isClicked: boolean;
+
     @CreatedAt
     @Column({
         type: DataType.DATE,
