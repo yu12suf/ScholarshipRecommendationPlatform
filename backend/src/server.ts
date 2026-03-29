@@ -1,8 +1,7 @@
 import app from "./app.js";
 import { connectSequelize } from "./config/sequelize.js";
 import configs from "./config/configs.js";
-import { createServer } from "http";
-import { SocketService } from "./services/SocketService.js";
+// import { createTables, seedAdminUser } from "./utils/databaseMigration.js"; // Migration is now handled by Sequelize sync or manual scripts
 
 import { startScholarshipCron } from "./automation/scholarshipCron.js";
 import { assessmentWorker } from "./workers/AssessmentWorker.js";
@@ -12,20 +11,32 @@ import { seedTestData } from "./scripts/seedsampleactuallscholarship.js";
 async function start() {
   console.log("Initializing server...");
 
+  // PRIORITY: Use configs.PORT
   const finalPort = configs.PORT;
-  const httpServer = createServer(app);
 
-  // Initialize Socket.IO
-  SocketService.initialize(httpServer);
-
-  httpServer.listen(Number(finalPort), () => {
+  // Start server immediately for health checks
+  app.listen(Number(finalPort), () => {
     console.log(`Server listening on port ${finalPort}`);
-    console.log(`Health check available at: http://0.0.0.0:${finalPort}/health`);
+    console.log(
+      `Health check available at: http://0.0.0.0:${finalPort}/health`,
+    );
   });
 
+  // Load configurations and connect to DB asynchronously
   try {
     await connectSequelize();
-    console.log(`🧠 Assessment worker initialized: ${assessmentWorker.name}`);
+
+    // Ensure the assessment worker is running (explicit reference prevents tree-shaking)
+    if (assessmentWorker) {
+        console.log(`🧠 Assessment worker started: ${assessmentWorker.name}`);
+    } else {
+        console.warn("⚠️ Assessment worker skipped (Redis not connected)");
+    }
+
+    // // Initialize Scholarship Ingestion System
+    // await seedScholarshipSources();
+    // await startScholarshipCron();
+    // await seedTestData();
   } catch (err) {
     console.error("Failed to connect to database:", err);
   }
