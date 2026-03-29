@@ -19,7 +19,12 @@ export const assessmentWorker = new Worker(
             throw error;
         }
     },
-    { connection: redisOptions }
+    { 
+        connection: redisOptions,
+        lockDuration: 120000, // 2 minutes (Gives Gemini and TTS enough time to finish)
+        maxStalledCount: 3,   // Allow for more retries if a task is slow
+        stalledInterval: 30000 // Check for stalls every 30 seconds
+    }
 );
 
 assessmentWorker.on("completed", (job) => {

@@ -31,7 +31,7 @@ async function start() {
 
     // Initialize Scholarship Ingestion System
     // await seedScholarshipSources();
-    // startScholarshipCron();
+    startScholarshipCron();
     // seedTestData();
 
   } catch (err) {
