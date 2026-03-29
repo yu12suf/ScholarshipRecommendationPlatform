@@ -7,6 +7,7 @@ import assessmentRouter from "./assessmentRouter.js";
 import notificationRouter from "./notificationRoutes.js";
 import videoRouter from "./videoRoutes.js";
 import learningPathRouter from "./learningPathRoutes.js";
+import chatRouter from "./chatRoutes.js";
 
 export default {
     userRouter,
@@ -16,5 +17,6 @@ export default {
     assessmentRouter,
     videoRouter,
     learningPathRouter,
-    notificationRouter
+    notificationRouter,
+    chatRouter
 };

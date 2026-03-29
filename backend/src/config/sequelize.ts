@@ -1,17 +1,22 @@
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
-import { User } from "../models/User.js";
-import { RefreshToken } from "../models/RefreshToken.js";
-import { PasswordResetToken } from "../models/PasswordResetToken.js";
-import { Student } from "../models/Student.js";
-import { Counselor } from "../models/Counselor.js";
-import { ScholarshipSource } from "../models/ScholarshipSource.js";
-import { Scholarship } from "../models/Scholarship.js";
-import { AssessmentResult } from "../models/AssessmentResult.js";
-import { Consultation } from "../models/Consultation.js";
-import { Notification } from "../models/Notification.js";
-import { Video } from "../models/Video.js";
-import { LearningPath } from "../models/LearningPath.js";
-import { LearningPathProgress } from "../models/LearningPathProgress.js";
+import {
+  User,
+  RefreshToken,
+  PasswordResetToken,
+  Student,
+  Counselor,
+  ScholarshipSource,
+  Scholarship,
+  AssessmentResult,
+  Consultation,
+  Notification,
+  Video,
+  LearningPath,
+  LearningPathProgress,
+  Conversation,
+  ConversationParticipant,
+  ChatMessage,
+} from "../models/index.js";
 import configs from "./configs.js";
 
 // Determine connection options based on environment
@@ -53,6 +58,9 @@ export const sequelize = new Sequelize({
     Video,
     LearningPath,
     LearningPathProgress,
+    Conversation,
+    ConversationParticipant,
+    ChatMessage
   ], // Add all models here
 });
 

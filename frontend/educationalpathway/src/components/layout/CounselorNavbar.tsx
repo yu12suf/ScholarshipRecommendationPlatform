@@ -54,7 +54,7 @@ export function CounselorNavbar() {
             <span className="text-sm font-bold text-slate-500 group-hover:text-indigo-600">Appointments</span>
             <div className="h-1 w-1 rounded-full bg-indigo-600 scale-0 group-hover:scale-100 transition-transform" />
           </Link>
-          <Link href="/dashboard/messages" className="group flex flex-col items-center gap-1 transition-all">
+          <Link href="/dashboard/counselor/chat" className="group flex flex-col items-center gap-1 transition-all">
             <span className="text-sm font-bold text-slate-500 group-hover:text-indigo-600">Messages</span>
             <div className="h-1 w-1 rounded-full bg-indigo-600 scale-0 group-hover:scale-100 transition-transform" />
           </Link>

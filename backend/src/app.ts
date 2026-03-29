@@ -45,7 +45,7 @@ app.use("/api/assessment", routes.assessmentRouter);
 app.use("/api/notifications", routes.notificationRouter);
 app.use("/api/videos", routes.videoRouter);
 app.use("/api/learning-path", routes.learningPathRouter);
-
+app.use("/api/chat", routes.chatRouter);
 // Health Check
 app.get("/health", (req, res) => {
     res.status(200).send("OK");
