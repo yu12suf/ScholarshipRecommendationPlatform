@@ -33,10 +33,10 @@ export const assessmentWorker = new Worker(
         studentId,
         audioData,
       );
-      console.log(`Evaluation complete for test_id: ${testId}`);
+      console.log(`✅ Evaluation complete for test_id: ${testId}`);
       return evaluation;
     } catch (error) {
-      console.error(` Evaluation failed for test_id: ${testId}:`, error);
+      console.error(`❌ Evaluation failed for test_id: ${testId}:`, error);
       throw error;
     } finally {
       clearInterval(heartbeat);
@@ -45,9 +45,9 @@ export const assessmentWorker = new Worker(
   {
     connection: redisOptions,
     concurrency: 1,
-    lockDuration: 10 * 60 * 1000,
-    stalledInterval: 60 * 1000,
+    lockDuration: 600000, // 10 minutes (Gives Gemini and TTS enough time to finish)
     maxStalledCount: 3,
+    stalledInterval: 30000 // Check for stalls every 30 seconds
   },
 );
 

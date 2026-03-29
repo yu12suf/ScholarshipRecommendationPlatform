@@ -16,6 +16,8 @@ import {
   Conversation,
   ConversationParticipant,
   ChatMessage,
+  TrackedScholarship,
+  ScholarshipMilestone,
 } from "../models/index.js";
 import configs from "./configs.js";
 
@@ -60,7 +62,9 @@ export const sequelize = new Sequelize({
     LearningPathProgress,
     Conversation,
     ConversationParticipant,
-    ChatMessage
+    ChatMessage,
+    TrackedScholarship,
+    ScholarshipMilestone
   ], // Add all models here
 });
 

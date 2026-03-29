@@ -54,6 +54,44 @@ export class AssessmentService {
         return result.replace(/,\s*([\]}])/g, '$1');
     }
 
+    /**
+     * Reduces the size of the blueprint for evaluation to save tokens.
+     * It removes the heavy passage and script texts while keeping the essential "Grading Key."
+     */
+    private static stripBlueprintForEvaluation(blueprint: any): any {
+        // Deep clone the blueprint so we don't modify the one in memory/Redis
+        const mini = JSON.parse(JSON.stringify(blueprint));
+        const sections = mini.data?.sections;
+
+        if (sections) {
+            // 1. Strip Reading: Remove 500+ word passage
+            if (sections.reading) {
+                delete sections.reading.passage;
+                if (Array.isArray(sections.reading.questions)) {
+                    sections.reading.questions = sections.reading.questions.map((q: any) => ({
+                        id: q.id,
+                        text: q.text,
+                        correct_answer: q.correct_answer
+                    }));
+                }
+            }
+
+            // 2. Strip Listening: Remove 300+ word script and base64 audio
+            if (sections.listening) {
+                delete sections.listening.script;
+                delete sections.listening.audio_base64;
+                if (Array.isArray(sections.listening.questions)) {
+                    sections.listening.questions = sections.listening.questions.map((q: any) => ({
+                        id: q.id,
+                        text: q.text,
+                        correct_answer: q.correct_answer
+                    }));
+                }
+            }
+        }
+        return mini;
+    }
+
     static async generateExam(examType: "IELTS" | "TOEFL", difficulty: "Easy" | "Medium" | "Hard") {
         const testId = uuidv4();
 
@@ -180,7 +218,7 @@ s.
             Role: English Proficiency Engine
             Task: Evaluate student responses based on the provided blueprint.
             
-            Original Blueprint: {blueprint}
+            Original Blueprint (Stripped for tokens): {blueprint}
             Student Responses: {responses}
             Audio Provided: {hasAudio}
             
@@ -211,8 +249,8 @@ E MAPPING:
                 "subscores": {{ "reading": 0, "listening": 0, "writing": 0, "speaking": 0 }},
                 "feedback_report": "Overall feedback summary",
                 "section_notes": {{ 
-                  "reading": "Detailed 1000+ char note with examples for reading", 
-                  "listening": "Detailed 1000+ char note with examples for listening", 
+                 "reading": "Detailed 1000+ char note with examples for reading", 
+                 "listening": "Detailed 1000+ char note with examples for listening", 
                   "writing": "Detailed 1000+ char note with examples for writing", 
                   "speaking": "Detailed 1000+ char note with examples for speaking" 
                 }},
@@ -235,8 +273,11 @@ E MAPPING:
             - Do NOT add trailing commas at the end of lists or objects.
         `);
 
+        // OPTIMIZATION: Stripping blueprint text to save input tokens (~90% reduction)
+        const strippedBlueprint = AssessmentService.stripBlueprintForEvaluation(blueprint);
+
         const textPrompt = await promptTemplate.format({
-            blueprint: JSON.stringify(blueprint),
+            blueprint: JSON.stringify(strippedBlueprint),
             responses: JSON.stringify(responses),
             hasAudio: audioData ? "Yes" : "No"
         });

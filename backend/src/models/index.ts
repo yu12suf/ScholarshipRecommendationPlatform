@@ -14,3 +14,5 @@ export * from "./LearningPathProgress.js";
 export * from "./Conversation.js";
 export * from "./ConversationParticipant.js";
 export * from "./ChatMessage.js";
+export * from "./TrackedScholarship.js";
+export * from "./ScholarshipMilestone.js";
