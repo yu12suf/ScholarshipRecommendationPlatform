@@ -43,6 +43,9 @@ app.use("/api/onboarding", routes.onboardingRouter);
 app.use("/api/counselors", routes.counselorRouter);
 app.use("/api/scholarships", routes.scholarshipRouter);
 app.use("/api/assessment", routes.assessmentRouter);
+app.use("/api/notifications", routes.notificationRouter);
+app.use("/api/videos", routes.videoRouter);
+app.use("/api/learning-path", routes.learningPathRouter);
 
 // Health Check
 app.get("/health", (req, res) => {

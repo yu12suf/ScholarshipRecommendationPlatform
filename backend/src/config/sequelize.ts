@@ -10,6 +10,12 @@ import { CounselorReview } from "../models/CounselorReview.js";
 import { ScholarshipSource } from "../models/ScholarshipSource.js";
 import { Scholarship } from "../models/Scholarship.js";
 import { AssessmentResult } from "../models/AssessmentResult.js";
+import { Notification } from "../models/Notification.js";
+import { Video } from "../models/Video.js";
+import { LearningPath } from "../models/LearningPath.js";
+import { LearningPathProgress } from "../models/LearningPathProgress.js";
+import { TrackedScholarship } from "../models/TrackedScholarship.js";
+import { ScholarshipMilestone } from "../models/ScholarshipMilestone.js";
 import configs from "./configs.js";
 
 console.log('DB_PASSWORD from env:', process.env.DB_PASSWORD ? '****' : 'NOT SET');
@@ -51,7 +57,13 @@ export const sequelize = new Sequelize({
         CounselorReview,
         ScholarshipSource,
         Scholarship,
-        AssessmentResult
+        AssessmentResult,
+        Notification,
+        Video,
+        LearningPath,
+        LearningPathProgress,
+        TrackedScholarship,
+        ScholarshipMilestone
     ],
 } as SequelizeOptions);
 
