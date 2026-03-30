@@ -5,7 +5,7 @@ import configs from "./config/configs.js";
 
 // Scholarship automation imports
 import { startScholarshipCron } from "./automation/scholarshipCron.js";
- import { assessmentWorker } from "./workers/AssessmentWorker.js";
+import { assessmentWorker } from "./workers/AssessmentWorker.js";
 import { seedScholarshipSources } from "./scripts/seedScholarships.js";
 import { seedTestData } from "./scripts/seedsampleactuallscholarship.js";
 
@@ -37,7 +37,7 @@ async function start() {
 
     // Initialize Scholarship Ingestion System
     // await seedScholarshipSources();
-    // startScholarshipCron();
+    startScholarshipCron();
     // seedTestData();
 
   } catch (err) {
