@@ -5,6 +5,11 @@ import {
   PasswordResetToken,
   Student,
   Counselor,
+  AvailabilitySlot,
+  Booking,
+  CounselorReview,
+  Document,
+  CounselorMessage,
   ScholarshipSource,
   Scholarship,
   AssessmentResult,
@@ -21,14 +26,15 @@ import {
 } from "../models/index.js";
 import configs from "./configs.js";
 
-// Determine connection options based on environment
+console.log('DB_PASSWORD from env:', process.env.DB_PASSWORD ? '****' : 'NOT SET');
+
 const dbOptions: SequelizeOptions = {
   host: configs.DB_HOST,
   port: configs.DB_PORT,
   username: configs.DB_USER,
   password: configs.DB_PASSWORD,
   database: configs.DB_NAME,
-  logging: false, // Set to console.log to see SQL queries
+  logging: console.log, // Set to false to silence SQL queries
 
   // Handle SSL for production
   dialectOptions:
@@ -52,6 +58,11 @@ export const sequelize = new Sequelize({
     PasswordResetToken,
     Student,
     Counselor,
+    AvailabilitySlot,
+    Booking,
+    CounselorReview,
+    Document,
+    CounselorMessage,
     ScholarshipSource,
     Scholarship,
     AssessmentResult,
@@ -66,7 +77,7 @@ export const sequelize = new Sequelize({
     TrackedScholarship,
     ScholarshipMilestone
   ], // Add all models here
-});
+} as SequelizeOptions);
 
 export let hasVectorExtension = false;
 

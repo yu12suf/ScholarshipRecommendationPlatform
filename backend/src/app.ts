@@ -40,6 +40,7 @@ app.use(
 app.use("/api/auth", routes.authRouter);
 app.use("/api/user", routes.userRouter);
 app.use("/api/onboarding", routes.onboardingRouter);
+app.use("/api/counselors", routes.counselorRouter);
 app.use("/api/scholarships", routes.scholarshipRouter);
 app.use("/api/assessment", routes.assessmentRouter);
 app.use("/api/notifications", routes.notificationRouter);

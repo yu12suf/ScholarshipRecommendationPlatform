@@ -351,6 +351,20 @@ export class Student extends Model {
     })
     declare selfieUrl: string;
 
+    // Embedding fields for vector search (added from dev branch)
+    @Column({
+        type: 'HALFVEC(3072)',
+        allowNull: true,
+    })
+    declare embedding: any;
+
+    @Column({
+        type: DataType.STRING(32),
+        allowNull: true,
+        field: 'profile_hash'
+    })
+    declare profileHash: string | null;
+
     @CreatedAt
     @Column({
         type: DataType.DATE,
@@ -365,19 +379,7 @@ export class Student extends Model {
     })
     declare updatedAt: Date;
 
-    @Column({
-        type: 'VECTOR(3072)',
-        allowNull: true,
-    })
-    declare embedding: any;
-
-    @Column({
-        type: DataType.STRING(32),
-        allowNull: true,
-        field: 'profile_hash'
-    })
-    declare profileHash: string | null;
-
-    @BelongsTo(() => User)
+    // Association with explicit alias to match service queries
+    @BelongsTo(() => User, { as: 'user' })
     user!: User;
 }
