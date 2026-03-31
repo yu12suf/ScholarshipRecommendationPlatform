@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body, query, param, validationResult } from 'express-validator';
 import { UserRole } from '../types/userTypes.js';
 
 // Shared validation constants
@@ -224,4 +224,60 @@ export const updateCounselorProfileValidation = [
     .optional()
     .isInt({ min: 0 }).withMessage('Years of experience must be a non-negative integer')
     .toInt()
+];
+
+export const counselorDirectoryValidation = [
+  query("specialization").optional().isString(),
+  query("language").optional().isString(),
+  query("mode").optional().isIn(["chat", "audio", "video"]),
+  query("minRating").optional().isFloat({ min: 0, max: 5 }).toFloat(),
+  query("fromDate").optional().isISO8601().withMessage("fromDate must be a valid ISO date"),
+  query("toDate").optional().isISO8601().withMessage("toDate must be a valid ISO date")
+    .custom((value, { req }) => {
+      const fromDate = req.query?.fromDate as string | undefined;
+      if (fromDate && new Date(value) < new Date(fromDate)) {
+        throw new Error("toDate must be greater than or equal to fromDate");
+      }
+      return true;
+    }),
+  query("availableOnly").optional().isBoolean().toBoolean(),
+  query("page").optional().isInt({ min: 1 }).toInt(),
+  query("limit").optional().isInt({ min: 1, max: 100 }).toInt(),
+];
+
+export const createBookingValidation = [
+  body("slotId").isInt({ min: 1 }).withMessage("slotId is required").toInt(),
+  body("notes").optional().isString().isLength({ max: 2000 }),
+];
+
+export const rescheduleBookingValidation = [
+  body("slotId").isInt({ min: 1 }).withMessage("slotId is required").toInt(),
+];
+
+export const adminVerificationValidation = [
+  body("verificationStatus")
+    .isIn(["verified", "rejected"])
+    .withMessage("verificationStatus must be verified or rejected"),
+];
+
+export const adminVisibilityValidation = [
+  body("isActive").isBoolean().withMessage("isActive must be boolean"),
+];
+
+export const shareDocumentValidation = [
+  body("studentId").isInt({ min: 1 }).withMessage("studentId is required").toInt(),
+  body("documentType")
+    .isIn(["sop", "cv", "lor", "transcript", "other"])
+    .withMessage("Invalid document type"),
+  body("fileUrl").optional().isString().isLength({ max: 500 }),
+  body("counselorFeedback").optional().isString(),
+];
+
+export const sendMessageValidation = [
+  body("recipientUserId").isInt({ min: 1 }).withMessage("recipientUserId is required").toInt(),
+  body("body").isString().isLength({ min: 1, max: 5000 }),
+];
+
+export const idParamValidation = [
+  param("id").isInt({ min: 1 }).withMessage("id must be a positive integer").toInt(),
 ];

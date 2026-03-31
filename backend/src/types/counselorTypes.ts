@@ -4,6 +4,13 @@ export interface CreateCounselorDto {
     hourlyRate?: number;
     yearsOfExperience?: number;
     credentials?: CredentialDto[];
+    qualifications?: string[];
+    specializations?: string[];
+    supportedLanguages?: string[];
+    consultationModes?: ConsultationMode[];
+    currentUniversity?: string;
+    currentDegreeLevel?: "bachelors" | "masters";
+    availabilitySummary?: string;
 }
 
 export interface UpdateCounselorDto {
@@ -11,16 +18,16 @@ export interface UpdateCounselorDto {
     areasOfExpertise?: string;
     hourlyRate?: number;
     yearsOfExperience?: number;
+    qualifications?: string[];
+    specializations?: string[];
+    supportedLanguages?: string[];
+    consultationModes?: ConsultationMode[];
+    currentUniversity?: string;
+    currentDegreeLevel?: "bachelors" | "masters";
+    availabilitySummary?: string;
 }
 
-// DTO for creating a review
-export interface CreateReviewDto {
-    bookingId: number;
-    studentId: number;
-    counselorId: number;
-    rating: number;
-    comment?: string;
-}
+export type ConsultationMode = "chat" | "audio" | "video";
 
 export interface CredentialDto {
     credentialType: string;
@@ -55,6 +62,13 @@ export interface CounselorResponse {
     isActive: boolean;
     rating: number;
     totalSessions: number;
+    qualifications: string[];
+    specializations: string[];
+    supportedLanguages: string[];
+    consultationModes: ConsultationMode[];
+    currentUniversity: string | null;
+    currentDegreeLevel: "bachelors" | "masters" | null;
+    availabilitySummary: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -81,6 +95,67 @@ export interface BookingResponse {
     createdAt: Date;
 }
 
+export interface CounselorDirectoryQuery {
+    specialization?: string;
+    language?: string;
+    mode?: ConsultationMode;
+    minRating?: number;
+    fromDate?: string;
+    toDate?: string;
+    availableOnly?: boolean;
+    page?: number;
+    limit?: number;
+}
+
+export interface CounselorRecommendationResponse extends CounselorResponse {
+    recommendationScore: number;
+    matchReasons?: string[];
+}
+
+export interface CreateBookingDto {
+    slotId: number;
+    notes?: string;
+}
+
+export interface RescheduleBookingDto {
+    slotId: number;
+}
+
+export interface AdminVerificationDto {
+    verificationStatus: "verified" | "rejected";
+}
+
+export interface AdminVisibilityDto {
+    isActive: boolean;
+}
+
+export interface DashboardOverviewResponse {
+    assignedStudents: number;
+    upcomingBookings: number;
+    completedSessions: number;
+    pendingBookings: number;
+}
+
+export interface ShareDocumentDto {
+    studentId: number;
+    documentType: "sop" | "cv" | "lor" | "transcript" | "other";
+    fileUrl?: string;
+    counselorFeedback?: string;
+}
+
+export interface SendMessageDto {
+    recipientUserId: number;
+    body: string;
+}
+
+export interface CounselorMessageResponse {
+    id: number;
+    senderUserId: number;
+    recipientUserId: number;
+    body: string;
+    createdAt: Date;
+}
+
 export interface StudentProgressResponse {
     studentId: number;
     name: string;
@@ -88,7 +163,7 @@ export interface StudentProgressResponse {
     learningPath?: {
         id: number;
         currentProgress: number;
-        targetLevel: string;
+        targetLevel: string | null;
     } | null;
     recentAssessments?: Array<{
         id: number;
@@ -100,6 +175,10 @@ export interface StudentProgressResponse {
         id: number;
         title: string;
         matchScore: number;
+        status?: string;
+        deadline?: Date | null;
+        completedMilestones?: number;
+        totalMilestones?: number;
     }>;
 }
 

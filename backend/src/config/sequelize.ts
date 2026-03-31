@@ -7,6 +7,8 @@ import { Counselor } from "../models/Counselor.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
 import { Booking } from "../models/Booking.js";
 import { CounselorReview } from "../models/CounselorReview.js";
+import { Document } from "../models/Document.js";
+import { CounselorMessage } from "../models/CounselorMessage.js";
 import { ScholarshipSource } from "../models/ScholarshipSource.js";
 import { Scholarship } from "../models/Scholarship.js";
 import { AssessmentResult } from "../models/AssessmentResult.js";
@@ -55,6 +57,8 @@ export const sequelize = new Sequelize({
         AvailabilitySlot,
         Booking,
         CounselorReview,
+        Document,
+        CounselorMessage,
         ScholarshipSource,
         Scholarship,
         AssessmentResult,
