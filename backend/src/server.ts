@@ -1,6 +1,8 @@
 import app from "./app.js";
+import http from "http";
 import { connectSequelize } from "./config/sequelize.js";
 import configs from "./config/configs.js";
+import { SocketService } from "./services/SocketService.js";
 // import { createTables, seedAdminUser } from "./utils/databaseMigration.js"; // Migration is now handled by Sequelize sync or manual scripts
 
 import { startScholarshipCron } from "./automation/scholarshipCron.js";
@@ -15,7 +17,12 @@ async function start() {
   const finalPort = configs.PORT;
 
   // Start server immediately for health checks
-  app.listen(Number(finalPort), () => {
+  const server = http.createServer(app);
+  
+  // Initialize Socket.io
+  SocketService.initialize(server);
+
+  server.listen(Number(finalPort), () => {
     console.log(`Server listening on port ${finalPort}`);
     console.log(
       `Health check available at: http://0.0.0.0:${finalPort}/health`,

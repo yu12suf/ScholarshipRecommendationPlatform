@@ -77,7 +77,7 @@ export function SignupForm({
         className="w-full max-w-md"
       >
 
-        <Card className="bg-card border border-border rounded-sm shadow-sm">
+        <Card className="bg-card border border-border rounded-lg">
 
           <CardHeader className="text-center pt-10 pb-4">
 
@@ -171,7 +171,7 @@ export function SignupForm({
               </div>
 
               {error && (
-                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-sm border border-destructive/20 animate-in fade-in slide-in-from-top-1">
+                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-lg border border-destructive/20 animate-in fade-in slide-in-from-top-1">
                   {error}
                 </div>
               )}

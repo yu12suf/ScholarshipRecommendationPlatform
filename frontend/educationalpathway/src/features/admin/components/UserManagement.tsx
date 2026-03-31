@@ -58,7 +58,7 @@ export const UserManagement = () => {
   }
 
   return (
-    <Card className="border-border bg-background rounded-sm">
+    <Card className="border-border bg-background rounded-lg">
 
       <CardBody className="p-0">
 

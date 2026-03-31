@@ -229,7 +229,7 @@ export function AssessmentResultView({
           <Card className="border border-success/30 bg-success/5">
             <CardBody className="p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-success/15 rounded-sm">
+                <div className="p-2 bg-success/15 rounded-lg">
                   <Award className="size-6 text-success" />
                 </div>
                 <div>
@@ -251,7 +251,7 @@ export function AssessmentResultView({
       <Card className="border border-border">
         <CardBody className="p-6">
           <h3 className="h4 mb-4">AI Feedback Report</h3>
-          <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-sm border border-border/50">
+          <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-lg border border-border/50">
             <p className="whitespace-pre-wrap leading-relaxed text-sm">
               {evaluation.feedback_report || "No detailed feedback available."}
             </p>

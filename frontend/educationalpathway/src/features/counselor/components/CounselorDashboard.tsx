@@ -52,7 +52,7 @@ export const CounselorDashboard = () => {
       <motion.section 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 md:p-12 shadow-2xl shadow-slate-900/20"
+        className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 md:p-12 shadow-slate-900/20"
       >
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-6">
@@ -70,10 +70,10 @@ export const CounselorDashboard = () => {
             You are currently managing <span className="text-white font-bold">{studentCount || 0} students</span>. Check their progress and provide guidance below.
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 h-14 rounded-2xl shadow-lg shadow-blue-600/20 transition-all hover:scale-105">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 h-14 rounded-lg shadow-blue-600/20 transition-all hover:scale-105">
               <UserPlus className="mr-2 h-5 w-5" /> All Students
             </Button>
-            <Button size="lg" variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10 font-bold px-8 h-14 rounded-2xl backdrop-blur-md">
+            <Button size="lg" variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10 font-bold px-8 h-14 rounded-lg backdrop-blur-md">
               <Calendar className="mr-2 h-5 w-5" /> My Schedule
             </Button>
           </div>
@@ -93,9 +93,9 @@ export const CounselorDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="group bg-white/70 backdrop-blur-xl p-6 rounded-[2rem] shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-default"
+            className="group bg-white/70 backdrop-blur-xl p-6 rounded-[2rem] border border-slate-200 hover:border-blue-300 hover: hover:shadow-blue-500/5 transition-all cursor-default"
           >
-            <div className={`w-14 h-14 rounded-2xl ${stat.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+            <div className={`w-14 h-14 rounded-lg ${stat.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
               <stat.icon className={`h-7 w-7 ${stat.color}`} />
             </div>
             <div>
@@ -125,16 +125,16 @@ export const CounselorDashboard = () => {
               <p className="text-sm text-slate-500 font-medium">Manage your assigned students and their progress</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="rounded-sm border-slate-200">
+              <Button variant="outline" size="sm" className="rounded-lg border-slate-200">
                 <Filter className="h-4 w-4 mr-2" /> Filter
               </Button>
-              <Button variant="outline" size="sm" className="rounded-sm border-slate-200">
+              <Button variant="outline" size="sm" className="rounded-lg border-slate-200">
                 <Search className="h-4 w-4 mr-2" /> Search
               </Button>
             </div>
           </div>
 
-          <div className="bg-white/50 backdrop-blur-md rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
+          <div className="bg-white/50 backdrop-blur-md rounded-[2.5rem] border border-slate-200 overflow-hidden">
             <StudentList />
           </div>
         </motion.div>
@@ -151,7 +151,7 @@ export const CounselorDashboard = () => {
             <p className="text-sm text-slate-500 font-medium">Your schedule for the next 24h</p>
           </div>
 
-          <Card className="rounded-[2rem] border-slate-200 shadow-sm overflow-hidden bg-gradient-to-br from-white to-slate-50">
+          <Card className="rounded-[2rem] border-slate-200 overflow-hidden bg-gradient-to-br from-white to-slate-50">
             <CardBody className="p-8 text-center">
               <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Calendar className="h-10 w-10 text-slate-300" />
@@ -160,16 +160,16 @@ export const CounselorDashboard = () => {
               <p className="text-slate-500 text-sm font-medium mb-8">
                 No sessions scheduled for the rest of today. Take some time to review student applications!
               </p>
-              <Button className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-lg shadow-slate-900/10">
+              <Button className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg shadow-slate-900/10">
                 Update Availability
               </Button>
             </CardBody>
           </Card>
 
           {/* Quick Tips or Insights */}
-          <div className="p-6 rounded-[2rem] bg-indigo-600 text-white shadow-xl shadow-indigo-600/20">
+          <div className="p-6 rounded-[2rem] bg-indigo-600 text-white shadow-indigo-600/20">
             <div className="flex items-start justify-between mb-4">
-              <div className="p-2 bg-white/20 rounded-sm">
+              <div className="p-2 bg-white/20 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">Pro Tip</span>

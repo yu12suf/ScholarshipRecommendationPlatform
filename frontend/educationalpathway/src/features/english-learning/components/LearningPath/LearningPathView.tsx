@@ -16,7 +16,8 @@ import {
   ArrowRight,
   TrendingUp,
   Clock,
-  Youtube
+  Youtube,
+  User
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -40,6 +41,8 @@ interface LearningPathData {
   proficiencyLevel: 'easy' | 'medium' | 'hard';
   skills: Record<string, SkillData>;
   learningMode?: any;
+  competencyGapAnalysis?: any;
+  curriculumMap?: any;
 }
 
 const levelConfig: Record<string, { label: string; color: string; border: string }> = {
@@ -162,7 +165,7 @@ export function LearningPathView() {
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
       {/* Sidebar Navigation */}
       <div className="xl:col-span-1 space-y-4">
-        <div className="bg-card border border-border rounded-sm p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <h4 className="text-label mb-4 px-2">Skill Domains</h4>
           <nav className="space-y-1">
             {Object.keys(data.skills).map((skill) => {
@@ -176,9 +179,9 @@ export function LearningPathView() {
                 <button
                   key={skill}
                   onClick={() => setActiveTab(skill)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-sm transition-all group font-serif ${
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all group font-serif ${
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-md"
+                      ? "bg-primary text-primary-foreground "
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
@@ -197,7 +200,7 @@ export function LearningPathView() {
           </nav>
         </div>
 
-        <div className="bg-primary/5 border border-primary/10 rounded-sm p-6 space-y-4">
+        <div className="bg-primary/5 border border-primary/10 rounded-lg p-6 space-y-4">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles size={18} />
             <h5 className="font-bold text-sm">AI Tutor Tip</h5>
@@ -221,7 +224,7 @@ export function LearningPathView() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest">
                 {activeTab && skillIcons[activeTab] && (
-                    <div className="p-1 px-1.5 bg-primary/10 rounded-sm">
+                    <div className="p-1 px-1.5 bg-primary/10 rounded-lg">
                       {(() => {
                         const Icon = skillIcons[activeTab];
                         return <Icon size={12} />;
@@ -256,18 +259,44 @@ export function LearningPathView() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Learning Content */}
             <div className="lg:col-span-2 space-y-8">
-              {/* AI Strategy Note */}
+              {/* AI Strategy & Gap Analysis */}
               <div className="relative group">
-                <div className="absolute -inset-1 bg-linear-to-r from-primary/20 to-info/20 rounded-md blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                <div className="relative bg-card border border-border p-6 rounded-sm space-y-4">
+                <div className="absolute -inset-1 bg-linear-to-r from-primary/20 to-info/20 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                <div className="relative bg-card border border-border p-6 rounded-lg space-y-4">
                   <h4 className="font-bold flex items-center gap-2 text-foreground">
-                    <div className="p-1.5 bg-primary/10 rounded-sm text-primary">
+                    <div className="p-1.5 bg-primary/10 rounded-lg text-primary">
                       <Sparkles size={14} />
                     </div>
-                    Strategy & Recommendations
+                    Strategy & Gap Analysis
                   </h4>
-                  <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
-                    {currentSkill?.notes || "We're analyzing your assessment to provide specific strategies. For now, focus on the curated lessons below."}
+                  
+                  {data.competencyGapAnalysis && (
+                    <div className="mb-4 p-4 bg-muted/30 rounded-lg border border-border">
+                      <h5 className="text-xs font-bold uppercase text-muted-foreground mb-2 flex items-center gap-2">
+                        <User size={12} className="text-primary"/> Proficiency Profile
+                      </h5>
+                      <p className="text-sm text-foreground leading-relaxed italic">{data.competencyGapAnalysis.proficiency_profile}</p>
+                      
+                      {data.competencyGapAnalysis.weaknesses && data.competencyGapAnalysis.weaknesses.length > 0 && (
+                        <div className="mt-4">
+                          <h5 className="text-xs font-bold uppercase text-muted-foreground mb-2 flex items-center gap-2">
+                            <TrendingUp size={12} className="text-destructive"/> Targeted Weaknesses
+                          </h5>
+                          <div className="flex flex-wrap gap-2">
+                            {data.competencyGapAnalysis.weaknesses.map((w: string, i: number) => (
+                              <span key={i} className="px-2.5 py-1 bg-red-500/10 text-red-600 border border-red-500/20 rounded-full text-[10px] font-bold">
+                                {w}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap mt-4 border-t border-border pt-4">
+                    <h5 className="text-xs font-bold uppercase text-muted-foreground mb-2">Section Deep-Dive</h5>
+                    {data.competencyGapAnalysis?.section_analysis?.[activeTab] || currentSkill?.notes || "We're analyzing your assessment to provide specific strategies. For now, focus on the curated lessons below."}
                   </div>
                 </div>
               </div>
@@ -290,7 +319,7 @@ export function LearningPathView() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className={`group relative bg-card border transition-all rounded-sm hover:shadow-md ${
+                        className={`group relative bg-card border transition-all rounded-lg hover: ${
                           v.isCompleted ? "border-primary/30 bg-primary/5" : "border-border hover:border-primary/50"
                         }`}
                       >
@@ -306,7 +335,7 @@ export function LearningPathView() {
                           </button>
 
                           {/* Thumbnail */}
-                          <div className="relative h-16 w-24 shrink-0 rounded-sm overflow-hidden bg-muted">
+                          <div className="relative h-16 w-24 shrink-0 rounded-lg overflow-hidden bg-muted">
                             <img
                               src={v.thubnail || "/video-placeholder.png"}
                               alt="Thumbnail"
@@ -368,10 +397,28 @@ export function LearningPathView() {
                 </CardBody>
               </Card>
 
-               <div className="bg-slate-50 border border-slate-100 rounded-sm p-6 space-y-4">
-                  <h4 className="text-label">Your Next Steps</h4>
+               <div className="bg-slate-50 border border-slate-100 rounded-lg p-6 space-y-4">
+                  <h4 className="text-label">{data.curriculumMap ? "Adaptive Sprint Goals" : "Your Next Steps"}</h4>
                   <div className="space-y-4">
-                     <div className="flex items-start gap-2">
+                     {data.curriculumMap?.sprints?.length ? (
+                       <div className="space-y-3">
+                         {data.curriculumMap.sprints.map((sprint: any, i: number) => (
+                           <div key={i} className="p-3 bg-white border border-border rounded-lg">
+                             <div className="flex items-center gap-1 text-primary font-bold text-[10px] uppercase mb-1">
+                               <Clock size={12} /> Week {sprint.week} {sprint.is_remedial ? "(Deep Dive) " : ""}
+                             </div>
+                             <p className="text-[11px] font-bold text-foreground mb-1">{sprint.goal}</p>
+                             {sprint.tasks && (
+                               <ul className="text-[10px] text-muted-foreground space-y-1 ml-3 list-disc">
+                                 {sprint.tasks.map((task: string, j: number) => <li key={j}>{task}</li>)}
+                               </ul>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     ) : null}
+
+                     <div className="flex items-start gap-2 pt-2 border-t border-border/50">
                          <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${totalCount > 0 && completedCount === totalCount ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-primary"}`} />
                          <span className="text-xs font-medium">Watch all {totalCount} curated {activeTab} lessons</span>
                      </div>
@@ -380,7 +427,7 @@ export function LearningPathView() {
                        <motion.div 
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="p-3 bg-primary/10 border border-primary/20 rounded-sm space-y-3"
+                        className="p-3 bg-primary/10 border border-primary/20 rounded-lg space-y-3"
                        >
                          <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase">
                            <TrendingUp size={12} />

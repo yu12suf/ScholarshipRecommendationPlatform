@@ -4,6 +4,7 @@ import { ConversationParticipant } from "../models/ConversationParticipant.js";
 import { User } from "../models/User.js";
 import { Op } from "sequelize";
 import { Consultation } from "../models/Consultation.js";
+import { sequelize } from "../config/sequelize.js";
 
 export class ChatService {
     /**
@@ -12,18 +13,20 @@ export class ChatService {
      */
     static async getOrCreateConversation(userId1: number, userId2: number) {
         // Find existing conversation with these two exact participants
-        const existingConversation = await Conversation.findOne({
-            include: [
-                {
-                    model: ConversationParticipant,
-                    where: { user_id: { [Op.in]: [userId1, userId2] } },
-                }
-            ],
-            group: ['Conversation.id'],
-            having: `COUNT(DISTINCT "participants"."user_id") = 2`
-        } as any);
+        const participantInfo: any = await ConversationParticipant.findAll({
+            where: {
+                userId: { [Op.in]: [userId1, userId2] }
+            },
+            attributes: ['conversationId'],
+            group: ['conversationId'],
+            having: sequelize.literal(`COUNT(DISTINCT "user_id") = 2`)
+        });
 
-        if (existingConversation) return existingConversation;
+        if (participantInfo.length > 0) {
+            const conversationId = participantInfo[0].conversationId;
+            const existing = await Conversation.findByPk(conversationId);
+            if (existing) return existing;
+        }
 
         // No conversation exists. Validate if they are allowed to chat.
         // Rule: Only allowed if there's a booking between them.
@@ -36,30 +39,6 @@ export class ChatService {
 
         const studentId = user1.role === 'student' ? user1.id : (user2.role === 'student' ? user2.id : null);
         const counselorId = user1.role === 'counselor' ? user1.id : (user2.role === 'counselor' ? user2.id : null);
-
-        if (!studentId || !counselorId) {
-             // Admin can chat with anyone? Or maybe just student/counselor logic for now.
-             if (user1.role !== 'admin' && user2.role !== 'admin') {
-                throw new Error("Chat is only allowed between students and counselors.");
-             }
-        }
-
-        if (studentId && counselorId) {
-            const hasBooking = await Consultation.findOne({
-                where: {
-                    student_id: studentId,
-                    counselor_id: counselorId,
-                    status: { [Op.in]: ['PENDING', 'APPROVED', 'COMPLETED'] } // Standard bookings
-                }
-            });
-
-            if (!hasBooking) {
-                // throw new Error("You must have a booked session to start a conversation.");
-                // For development/demo, we might let it slide or keep it strict. 
-                // Strict per requirements.
-                console.warn(`[Chat] Unauthorized chat attempt between student ${studentId} and counselor ${counselorId}`);
-            }
-        }
 
         // Create new
         const conversation = await Conversation.create();
@@ -84,6 +63,20 @@ export class ChatService {
 
     static async getConversations(userId: number) {
         return Conversation.findAll({
+            attributes: {
+                include: [
+                    [
+                        sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM "chat_messages" AS "msg"
+                            WHERE "msg"."conversation_id" = "Conversation"."id"
+                            AND "msg"."sender_id" != ${userId}
+                            AND "msg"."is_read" = false
+                        )`),
+                        'unreadCount'
+                    ]
+                ]
+            },
             include: [
                 {
                     model: ConversationParticipant,
@@ -99,10 +92,19 @@ export class ChatService {
                     model: ChatMessage,
                     limit: 1,
                     order: [['created_at', 'DESC']],
-                    attributes: ['content', 'created_at']
+                    attributes: ['content', 'createdAt']
                 }
             ],
             order: [['updatedAt', 'DESC']]
+        });
+    }
+
+    static async getAvailableUsersToChat(userId: number) {
+        return User.findAll({
+            where: {
+                id: { [Op.ne]: userId }
+            },
+            attributes: ['id', 'name', 'role', 'email']
         });
     }
 

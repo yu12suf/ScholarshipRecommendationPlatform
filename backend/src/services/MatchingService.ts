@@ -5,6 +5,7 @@ import { StudentRepository } from "../repositories/StudentRepository.js";
 import { MatchingRepository } from "../repositories/MatchingRepository.js";
 import { AIService } from "./AIService.js";
 import { Scholarship } from "../models/Scholarship.js";
+import { redisConnection } from "../config/redis.js";
 
 export class MatchingService {
   /**
@@ -69,6 +70,16 @@ export class MatchingService {
         student.toJSON(),
         topCandidates,
       );
+
+      // Cache the results for consistency in getMatchById
+      if (aiResults && Array.isArray(aiResults)) {
+        for (const res of aiResults) {
+          if (res && res.id && res.match_score != null) {
+            const cacheKey = `ai_match:${userId}:${res.id}`;
+            await redisConnection.set(cacheKey, JSON.stringify(res), "EX", 3600 * 24); // 24 hours
+          }
+        }
+      }
 
       // Map AI scores back to top candidates
       const rankedMatches = topCandidates.map((c) => {
@@ -262,20 +273,34 @@ export class MatchingService {
     let reason = null;
 
     try {
-      // Re-rank this single candidate via AI for precise details
-      const aiResults = await AIService.rankScholarships(student.toJSON(), [
-        candidate,
-      ]);
+      const cacheKey = `ai_match:${userId}:${scholarshipId}`;
+      const cachedAiMatch = await redisConnection.get(cacheKey);
 
-      // Use robust ID matching for single candidate too
-      const aiMatch = aiResults.find(
-        (r: any) => String(r.id) === String(candidate.id),
-      );
+      let aiMatch = null;
+      if (cachedAiMatch) {
+        aiMatch = JSON.parse(cachedAiMatch);
+        console.log(`[MatchingService] Using CACHED AI matching score for scholarship ${candidate.id}`);
+      } else {
+        // Re-rank this single candidate via AI for precise details
+        const aiResults = await AIService.rankScholarships(student.toJSON(), [
+          candidate,
+        ]);
+
+        // Use robust ID matching for single candidate too
+        aiMatch = aiResults.find(
+          (r: any) => String(r.id) === String(candidate.id),
+        );
+
+        if (aiMatch) {
+          // Cache it for next time
+          await redisConnection.set(cacheKey, JSON.stringify(aiMatch), "EX", 3600 * 24);
+        }
+      }
 
       if (aiMatch) {
         score = aiMatch.match_score || score;
         reason = aiMatch.match_reason || reason;
-        console.log(`[MatchingService] AI successfully ranked scholarship ${candidate.id}: ${score}%`);
+        console.log(`[MatchingService] AI ranked scholarship ${candidate.id}: ${score}%`);
       } else {
         console.warn(`[MatchingService] AI Response missing ID ${candidate.id}. Using heuristic.`);
       }

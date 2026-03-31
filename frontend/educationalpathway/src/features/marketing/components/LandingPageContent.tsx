@@ -90,11 +90,11 @@ export const LandingPageContent = () => {
     <div className="flex flex-col min-h-screen bg-slate-950">
 
       {/* ─── NAVBAR ─── */}
-      <header className="px-6 lg:px-12 h-16 flex items-center border-b border-emerald-900/50 sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md shadow-sm">
+      <header className="px-6 lg:px-12 h-16 flex items-center border-b border-emerald-900/50 sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md">
         <Link className="flex items-center gap-2.5" href="/">
           <div className="relative">
-            <div className="absolute inset-0 bg-emerald-500 rounded-sm blur opacity-20" />
-            <div className="relative overflow-hidden rounded-sm">
+            <div className="absolute inset-0 bg-emerald-500 rounded-lg blur opacity-20" />
+            <div className="relative overflow-hidden rounded-lg">
               <Image
                 src="/admas.png"
                 alt="አድማስ Logo"
@@ -122,7 +122,7 @@ export const LandingPageContent = () => {
             </Button>
           </Link>
           <Link href="/role-selection">
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-200">
+            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200">
               Get Started
             </Button>
           </Link>
@@ -150,7 +150,7 @@ export const LandingPageContent = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-sm bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-sm font-serif mb-8"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-sm font-serif mb-8"
             >
               <Sparkles className="h-4 w-4 font-serif" />
               AI-Powered Scholarship Discovery Platform
@@ -189,7 +189,7 @@ export const LandingPageContent = () => {
               className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
             >
               <Link href="/role-selection">
-                <Button size="xl" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold shadow-xl shadow-emerald-500/20 px-10 group">
+                <Button size="xl" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold shadow-emerald-500/20 px-10 group">
                   Find Your Scholarship
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -210,7 +210,7 @@ export const LandingPageContent = () => {
           <div className="container px-4 md:px-6 mx-auto max-w-6xl">
 
             <div className="text-center mb-16">
-              <span className="inline-block px-4 py-1.5 rounded-sm bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
                 Platform Features
               </span>
               <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
@@ -232,10 +232,10 @@ export const LandingPageContent = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className={`group flex gap-5 p-7 bg-slate-900/50 rounded-sm border border-slate-800 ${f.border} transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10`}
+                    className={`group flex gap-5 p-7 bg-slate-900/50 rounded-lg border border-slate-800 ${f.border} transition-all duration-300 hover: hover:shadow-emerald-500/10`}
                   >
                     <div
-                     className={`shrink-0 p-3 rounded-sm ${f.color} h-fit group-hover:scale-110 transition-transform`}>
+                     className={`shrink-0 p-3 rounded-lg ${f.color} h-fit group-hover:scale-110 transition-transform`}>
                       <Icon className="h-6 w-6" />
                     </div>
                     <div>
@@ -254,7 +254,7 @@ export const LandingPageContent = () => {
           <div className="container px-4 md:px-6 mx-auto max-w-6xl">
 
             <div className="text-center mb-16">
-              <span className="inline-block px-4 py-1.5 rounded-sm bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
                 Simple Process
               </span>
               <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
@@ -275,12 +275,12 @@ export const LandingPageContent = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.15 }}
-                    className="relative flex flex-col gap-4 p-7 bg-slate-800/50 border border-slate-700/50 rounded-sm hover:bg-slate-800 transition-all"
+                    className="relative flex flex-col gap-4 p-7 bg-slate-800/50 border border-slate-700/50 rounded-lg hover:bg-slate-800 transition-all"
                   >
                     <span className="text-5xl font-black text-slate-700 absolute top-5 right-6 leading-none opacity-20">
                       {s.step}
                     </span>
-                    <div className="p-3 bg-emerald-500/20 rounded-sm text-emerald-400 w-fit">
+                    <div className="p-3 bg-emerald-500/20 rounded-lg text-emerald-400 w-fit">
                       <Icon size={22} />
                     </div>
                     <h3 className="text-lg font-bold text-white">{s.title}</h3>
@@ -292,7 +292,7 @@ export const LandingPageContent = () => {
 
             <div className="text-center mt-12">
               <Link href="/role-selection">
-                <Button size="lg" className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold px-10 shadow-lg group">
+                <Button size="lg" className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold px-10 group">
                   Start Your Journey
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -317,7 +317,7 @@ export const LandingPageContent = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/role-selection">
-                <Button size="xl" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-12 shadow-xl shadow-emerald-500/20 group">
+                <Button size="xl" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-12 shadow-emerald-500/20 group">
                   Create Free Account
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>

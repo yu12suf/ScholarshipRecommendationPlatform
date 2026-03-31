@@ -60,7 +60,7 @@ export const StudentManagement = () => {
   }
 
   return (
-    <Card className="bg-card border-border rounded-sm">
+    <Card className="bg-card border-border rounded-lg">
       <CardBody className="p-0">
 
         <div className="overflow-x-auto">

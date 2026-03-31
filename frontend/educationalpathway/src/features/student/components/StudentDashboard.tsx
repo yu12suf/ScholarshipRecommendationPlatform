@@ -140,7 +140,7 @@ export const StudentDashboard = () => {
       <motion.section
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-sm border border-border bg-card p-10 shadow-sm relative overflow-hidden"
+        className="rounded-lg border border-border bg-card p-10 relative overflow-hidden"
       >
         <div className="relative z-10 max-w-3xl">
           <h1 className="h1 mb-4">
@@ -178,7 +178,7 @@ export const StudentDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
         {stats.map((stat, idx) => (
-          <Card key={idx} className="border border-border bg-card hover:shadow-md transition">
+          <Card key={idx} className="border border-border bg-card hover: transition">
 
             <CardBody className="p-8">
 
@@ -274,7 +274,7 @@ export const StudentDashboard = () => {
 
               {!user?.isOnboarded && (
                 <div className="flex gap-4">
-                  <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-sm">
+                  <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-lg">
                     <FileText className="h-5 w-5 text-warning" />
                   </div>
                   <div>
@@ -290,7 +290,7 @@ export const StudentDashboard = () => {
 
               {user?.isOnboarded && matches.length > 0 && (
                 <div className="flex gap-4">
-                  <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-sm">
+                  <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-lg">
                     <Award className="h-5 w-5 text-success" />
                   </div>
                   <div>
@@ -307,7 +307,7 @@ export const StudentDashboard = () => {
 
               <div className="flex gap-4">
 
-                <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-sm">
+                <div className="h-10 w-10 bg-muted flex items-center justify-center rounded-lg">
                   <MessageSquare className="h-5 w-5 text-info" />
                 </div>
 
@@ -333,7 +333,7 @@ export const StudentDashboard = () => {
                   </span>
                 </div>
 
-                <div className="w-full bg-muted h-1.5 rounded">
+                <div className="w-full bg-muted h-1.5 rounded-lg">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${completionRate}%` }}

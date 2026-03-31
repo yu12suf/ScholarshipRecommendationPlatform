@@ -23,4 +23,5 @@ export interface Conversation {
   chatMessages?: Message[];
   messages?: Message[];
   ChatMessages?: Message[];
+  unreadCount?: number;
 }

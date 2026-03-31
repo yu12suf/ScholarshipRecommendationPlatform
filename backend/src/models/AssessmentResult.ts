@@ -58,6 +58,13 @@ export class AssessmentResult extends Model {
     declare evaluation: any;
 
     @Column({
+        type: DataType.JSONB,
+        allowNull: true,
+        field: 'score_breakdown'
+    })
+    declare scoreBreakdown: any;
+
+    @Column({
         type: DataType.DECIMAL(5, 2),
         allowNull: false,
         field: 'overall_band'

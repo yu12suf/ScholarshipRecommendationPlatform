@@ -7,10 +7,11 @@ const standardRedisOptions: RedisOptions = {
   host: configs.REDIS_HOST,
   port: configs.REDIS_PORT,
   password: configs.REDIS_PASSWORD || undefined,
+  family: 4, // Enforce IPv4 to avoid IPv6 timeout bugs on Node 18+ with cloud redis
   // Keep API calls resilient during short Redis reconnect windows.
   // BullMQ still uses a separate connection config below.
   maxRetriesPerRequest: 3,
-  connectTimeout: 5000,
+  connectTimeout: 10000,
   retryStrategy(times) {
     if (times > 3) {
       console.warn(

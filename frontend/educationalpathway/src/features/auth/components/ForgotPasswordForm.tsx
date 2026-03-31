@@ -55,7 +55,7 @@ export function ForgotPasswordForm() {
         className="w-full max-w-md"
       >
 
-        <Card className="bg-card border border-border rounded-sm relative overflow-hidden">
+        <Card className="bg-card border border-border rounded-lg relative overflow-hidden">
 
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50" />
 
@@ -129,7 +129,7 @@ export function ForgotPasswordForm() {
                   </div>
 
                   {error && (
-                    <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-sm border border-destructive/20 animate-in fade-in slide-in-from-top-1">
+                    <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-lg border border-destructive/20 animate-in fade-in slide-in-from-top-1">
                       {error}
                     </div>
                   )}

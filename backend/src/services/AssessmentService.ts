@@ -12,46 +12,26 @@ import { TTSService } from "./TTSService.js";
 const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.5-flash",
     apiKey: configs.GEMINI_API_KEY as string,
+    temperature: 0.0,
+    maxOutputTokens: 8192,
 });
 
 export class AssessmentService {
     public static sanitizeJSONString(str: string): string {
-        let isInsideString = false;
-        let isEscaped = false;
-        let result = "";
-        for (let i = 0; i < str.length; i++) {
-            const char = str[i];
-            
-            if (isInsideString) {
-                if (char === '"' && !isEscaped) {
-                    isInsideString = false;
-                    result += char; 
-                } else if (char === '\\') {
-                    isEscaped = !isEscaped;
-                    result += char;
-                } else {
-                    isEscaped = false;
-                    if (char === '\n') {
-                        result += '\\n';
-                    } else if (char === '\r') {
-                        result += '\\r';
-                    } else if (char === '\t') {
-                        result += '\\t';
-                    } else if (char && char.charCodeAt(0) < 32) {
-                        // ignore other control characters to be safe
-                    } else {
-                        result += char;
-                    }
-                }
-            } else {
-                if (char === '"') {
-                    isInsideString = true;
-                }
-                result += char;
-            }
+        let cleaned = str.trim();
+        if (cleaned.startsWith("```json")) {
+            cleaned = cleaned.substring(7);
+        } else if (cleaned.startsWith("```")) {
+            cleaned = cleaned.substring(3);
         }
-        // Remove trailing commas to prevent parsing errors
-        return result.replace(/,\s*([\]}])/g, '$1');
+        if (cleaned.endsWith("```")) {
+            cleaned = cleaned.substring(0, cleaned.length - 3);
+        }
+        
+        // Replace unescaped control characters EXCEPT newlines and carriage returns
+        cleaned = cleaned.replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F]/g, "");
+
+        return cleaned.trim();
     }
 
     /**
@@ -127,16 +107,7 @@ export class AssessmentService {
 
             CRITICAL JSON FORMATTING RULES:
             - Ensure output is strictly VALID JSON.
-            - Do NOT include literal newline characters (\\n), carriage returns (\\r), or tabs (\\t) unescaped inside JSON string
-
-Naol, [3/27/2026 9:40 PM]
-val
-
-Naol, [3/27/2026 9:40 PM]
-ue
-
-Naol, [3/27/2026 9:40 PM]
-s.
+            - Do NOT include literal newline characters (\\n), carriage returns (\\r), or tabs (\\t) unescaped inside JSON string values.
             - If you need a line break inside a string, use the escaped sequence "\\n" instead of a real line break.
             - NEVER use single quotes for keys or values. ONLY use double quotes ("key": "value").
             - Do NOT add trailing commas at the end of JSON objects or arrays.
@@ -215,44 +186,55 @@ s.
     static async evaluateAssessment(testId: string, blueprint: any, responses: any, studentId: number, audioData?: { base64: string; mimetype: string }) {
         // ... (existing code omitted for brevity but actually kept in full
         const promptTemplate = PromptTemplate.fromTemplate(`
-            Role: English Proficiency Engine
-            Task: Evaluate student responses based on the provided blueprint.
+            Role: Lead Adaptive Curriculum Architect
+            Task: Evaluate student responses, perform a Competency Gap Analysis, and create an Adaptive Curriculum Map for an Ethiopian student preparing for an international exam.
             
             Original Blueprint (Stripped for tokens): {blueprint}
             Student Responses: {responses}
             Audio Provided: {hasAudio}
             
-            1. GRADING:
+            1. DIAGNOSTIC ASSESSMENT (GRADING):
                - Reading/Listening: Match against the blueprint key.
-               - Writing: Evaluate based on Task Achievement, Cohesion, Lexical Resource, and Grammar.
-               - Speaking: (If audio) Analyze Fluency, Pronunciation, and Content.
-            2. ADAPTIV
-
-Naol, [3/27/2026 9:40 PM]
-E MAPPING:
-               - Identify "Weakness Tags" (e.g., "Present_Perfect", "Lexical_Diversity").
-            3. INSTRUCTIONAL NOTES:
-               - For EACH skill (Reading, Listening, Writing, Speaking), generate a highly detailed "Actionable Study Note" (minimum 1000 characters each).
-               - The note MUST include:
-                 a) A clear explanation of the weakness identified.
-                 b) Specific examples of where the student made mistakes in THIS assessment.
-                 c) Step-by-step strategies to improve.
-                 d) Recommended exercise types.
-            4. LEARNING MODE PRACTICE:
-               - For EACH skill, generate 3-5 original practice questions based on the identified weaknesses.
-               - Each question must include the text/prompt, options (if applicable), the correct answer, and a clear explanation of WHY it is correct.
+               - Writing: Provide real-time AI feedback focusing on coherence, task achievement, and grammatical accuracy. Use official exam rubrics (IELTS/TOEFL). Ensure you don't just "fix" grammar but provide "qualitative feedback" comments similar to a human counselor.
+               - Speaking: (If audio) Conduct AI mock-interview style analysis evaluating pronunciation, fluency, and coherence.
+            
+            2. COMPETENCY GAP ANALYSIS:
+               - Formulate a detailed 'Proficiency Profile' highlighting precise linguistic weaknesses (e.g., 'Lexical Resource', 'Grammatical Range').
+               - Provide section-wise results linking to CEFR standards.
+            
+            3. ADAPTIVE CURRICULUM MAP:
+               - Generate structured Daily/Weekly Goals (sprints).
+               - Decision Logic: If overall_band is > 80% mastery (e.g., > 7.0 IELTS or > 95 TOEFL), escalate sprint difficulty to the next CEFR level. If < 60%, generate remedial "Deep Dive" modules targeting specific gaps identified.
+               - Include targeted vocabulary packs.
+            
+            4. INSTRUCTIONAL NOTES & FEEDBACK:
+               - For EACH skill (Reading, Listening, Writing, Speaking), generate a highly detailed "Actionable Study Note" (min 1000 characters).
+               - Tone: Professional and analytical.
+               - ETHIOPIAN CONTEXT: Incorporate Ethiopian analogies, real-world scenarios, or culturally relevant content to increase engagement without losing international testing rigor.
+            
+            5. LEARNING MODE PRACTICE:
+               - For EACH skill, generate 3-5 original practice questions based on weaknesses.
             
             Return JSON in the following schema:
             {{
               "evaluation": {{
                 "overall_band": 0.0,
-                "subscores": {{ "reading": 0, "listening": 0, "writing": 0, "speaking": 0 }},
+                "score_breakdown": {{ "reading": 0.0, "listening": 0.0, "writing": 0.0, "speaking": 0.0 }},
+                "competency_gap_analysis": {{
+                  "proficiency_profile": "string",
+                  "weaknesses": ["string"],
+                  "section_analysis": {{ "reading": "string", "listening": "string", "writing": "string", "speaking": "string" }}
+                }},
+                "adaptive_curriculum_map": {{
+                  "sprints": [{{ "week": 1, "goal": "string", "tasks": ["string"], "is_remedial": false }}],
+                  "vocabulary_packs": [{{ "topic": "string", "words": [{{ "word": "string", "meaning": "string", "example": "string" }}] }}]
+                }},
                 "feedback_report": "Overall feedback summary",
                 "section_notes": {{ 
-                 "reading": "Detailed 1000+ char note with examples for reading", 
-                 "listening": "Detailed 1000+ char note with examples for listening", 
-                  "writing": "Detailed 1000+ char note with examples for writing", 
-                  "speaking": "Detailed 1000+ char note with examples for speaking" 
+                 "reading": "Detailed 1000+ char note with examples for reading in Ethiopian context", 
+                 "listening": "Detailed 1000+ char note with examples for listening in Ethiopian context", 
+                  "writing": "Detailed 1000+ char note with examples for writing in Ethiopian context", 
+                  "speaking": "Detailed 1000+ char note with examples for speaking in Ethiopian context" 
                 }},
                 "learning_mode": {{
                   "reading": [{{ "question": "string", "options": [], "answer": "string", "explanation": "string" }}],
@@ -260,7 +242,7 @@ E MAPPING:
                   "writing": [{{ "prompt": "string", "sample_answer": "string", "explanation": "string" }}],
                   "speaking": [{{ "prompt": "string", "tips": "string", "sample_response": "string" }}]
                 }},
-                "adaptive_learning_tags": []
+                "adaptive_learning_tags": ["string"]
               }}
             }}
 
@@ -342,6 +324,7 @@ console.error("Sanitized JSON that failed parsing:", AssessmentService.sanitizeJ
                 examType,
                 difficulty,
                 evaluation,
+                scoreBreakdown: evaluation.evaluation?.score_breakdown || null,
                 overallBand
             });
 

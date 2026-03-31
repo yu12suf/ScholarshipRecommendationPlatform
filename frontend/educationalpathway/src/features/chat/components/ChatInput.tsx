@@ -93,7 +93,7 @@ export const ChatInput = ({ onSend, onTyping, disabled }: ChatInputProps) => {
   return (
     <div className="p-4 bg-card border-t border-border flex items-center gap-3 relative">
       {showEmoji && (
-        <div ref={emojiRef} className="absolute bottom-20 left-4 z-50 shadow-2xl rounded-2xl overflow-hidden border border-border">
+        <div ref={emojiRef} className="absolute bottom-20 left-4 z-50 rounded-lg overflow-hidden border border-border">
           <EmojiPicker onEmojiClick={onEmojiClick} theme={Theme.AUTO} lazyLoadEmojis={true} />
         </div>
       )}
@@ -138,7 +138,7 @@ export const ChatInput = ({ onSend, onTyping, disabled }: ChatInputProps) => {
         <button
           type="submit"
           disabled={!content.trim() || disabled}
-          className={`h-11 w-11 rounded-full flex items-center justify-center transition-all ${!content.trim() || disabled ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'primary-gradient text-white shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 cursor-pointer'}`}
+          className={`h-11 w-11 rounded-full flex items-center justify-center transition-all ${!content.trim() || disabled ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'primary-gradient text-white  shadow-primary/20 hover:scale-105 active:scale-95 cursor-pointer'}`}
         >
           <Send className="h-5 w-5" />
         </button>

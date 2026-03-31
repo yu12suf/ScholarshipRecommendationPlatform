@@ -40,6 +40,12 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
   useEffect(() => {
     const fetchMessages = async () => {
       if (!activeConversation) return;
+
+      // Update conversations list locally to reset unread count
+      setConversations(prev => prev.map(c => 
+          c.id === activeConversation.id ? { ...c, unreadCount: 0 } : c
+      ));
+
       setLoading(true);
       try {
         const res = await axios.get(`${API_BASE_URL}/chat/${activeConversation.id}`, {
@@ -47,6 +53,11 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
         });
         setMessages(res.data.data);
         
+        // Mark as read on server
+        axios.patch(`${API_BASE_URL}/chat/read/${activeConversation.id}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
         // Join socket room
         if (socket) {
           socket.emit("join_conversation", activeConversation.id);
@@ -75,16 +86,29 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
 
       // Update conversations list for snippet
       setConversations((prev) => {
-        return prev.map((conv) => {
-          if (conv.id === message.conversationId) {
-            return {
-              ...conv,
-              chatMessages: [message, ...(conv.chatMessages || conv.messages || conv.ChatMessages || [])],
-              updatedAt: new Date().toISOString()
-            };
-          }
-          return conv;
-        }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        const index = prev.findIndex((conv) => conv.id === message.conversationId);
+        
+        if (index === -1) {
+          // If conversation isn't in sidebar yet (e.g. brand new), we can't update it easily
+          // unless we trigger a refresh of conversations from API.
+          // For now, let's just make it possible to fetch them or assume usual case.
+          return prev;
+        }
+
+        const newConversations = [...prev];
+        const conv = newConversations[index];
+        const isCurrentlyViewed = activeConversation?.id === conv.id;
+        
+        const currentCount = typeof conv.unreadCount === 'string' ? parseInt(conv.unreadCount, 10) : (conv.unreadCount || 0);
+
+        newConversations[index] = {
+          ...conv,
+          chatMessages: [message, ...(conv.chatMessages || conv.messages || conv.ChatMessages || [])],
+          updatedAt: new Date().toISOString(),
+          unreadCount: isCurrentlyViewed ? 0 : currentCount + 1
+        };
+
+        return newConversations.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       });
     });
 
@@ -130,8 +154,42 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
 
   const otherUser = activeConversation?.users?.find(u => u.id !== currentUser.id) || null;
 
+  const [availableUsers, setAvailableUsers] = useState<ChatUser[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenNewChat = async () => {
+    setIsModalOpen(true);
+    try {
+        const res = await axios.get(`${API_BASE_URL}/chat/available-users`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setAvailableUsers(res.data.data);
+    } catch (err) {
+        console.error("Failed to fetch available users", err);
+    }
+  };
+
+  const handleStartChat = async (userId: number) => {
+    try {
+        const res = await axios.post(`${API_BASE_URL}/chat/start`, { receiverId: userId }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const newConv = res.data.data;
+        setConversations(prev => {
+            const exists = prev.find(c => c.id === newConv.id);
+            if (exists) return prev;
+            return [newConv, ...prev];
+        });
+        setActiveConversation(newConv);
+        setIsModalOpen(false);
+    } catch (err) {
+        console.error("Failed to start chat", err);
+        toast.error("Failed to start chat");
+    }
+  };
+
   return (
-    <div className="flex h-[calc(100vh-140px)] w-full overflow-hidden bg-background rounded-sm shadow-2xl border border-border mt-4">
+    <div className="flex h-[calc(100vh-140px)] w-full overflow-hidden bg-background rounded-lg border border-border mt-4 relative">
       {/* Sidebar */}
       <div className="w-80 h-full border-r border-border shrink-0">
         <ChatList
@@ -139,25 +197,62 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
           activeConversationId={activeConversation?.id || null}
           onSelect={setActiveConversation}
           currentUserId={currentUser.id}
+          onNewChat={handleOpenNewChat}
         />
       </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <ChatWindow
-          messages={messages}
-          currentUserId={currentUser.id}
-          otherUser={otherUser}
-          loading={loading}
-          typingUser={typingStatus}
-        />
-        
-        <ChatInput 
-          onSend={handleSendMessage}
-          onTyping={handleTyping}
-          disabled={!activeConversation}
-        />
+        {activeConversation ? (
+          <>
+            <ChatWindow
+              messages={messages}
+              currentUserId={currentUser.id}
+              otherUser={otherUser}
+              loading={loading}
+              typingUser={typingStatus}
+            />
+            
+            <ChatInput 
+              onSend={handleSendMessage}
+              onTyping={handleTyping}
+              disabled={!activeConversation}
+            />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            Select a conversation or start a new chat.
+          </div>
+        )}
       </div>
+
+      {isModalOpen && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-card w-full max-w-md rounded-lg p-6 flex flex-col max-h-[80vh]">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold">New Chat</h2>
+                    <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                        ✕
+                    </button>
+                </div>
+                <div className="flex-1 overflow-y-auto pr-2 space-y-2">
+                    {availableUsers.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">No users available.</p>
+                    ) : (
+                        availableUsers.map(user => (
+                            <div key={user.id} className="flex items-center justify-between p-3 rounded-md border border-border hover:bg-muted transition-colors cursor-pointer" onClick={() => handleStartChat(user.id)}>
+                                <div>
+                                    <div className="font-semibold">{user.name}</div>
+                                    <div className="text-xs text-muted-foreground uppercase">{user.role}</div>
+                                </div>
+                                <button className="text-primary text-sm font-medium">Chat</button>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

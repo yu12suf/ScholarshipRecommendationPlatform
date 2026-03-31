@@ -202,15 +202,15 @@ export function Navbar({ simplified = false }: NavbarProps) {
   };
 
   return (
-    <nav className={`sticky top-0 z-40 w-full bg-white border-b border-gray-200 shadow-sm ${simplified ? 'h-16' : ''}`}>
+    <nav className={`sticky top-0 z-40 w-full bg-white border-b border-gray-200  ${simplified ? 'h-16' : ''}`}>
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo Section */}
           <div className="flex items-center gap-2">
             <Link href="/dashboard" className="flex items-center gap-2.5 group">
               <div className="relative">
-                <div className="absolute inset-0 bg-blue-600 rounded-sm blur opacity-20 group-hover:opacity-40 transition-opacity" />
-                <div className="relative overflow-hidden rounded-sm">
+                <div className="absolute inset-0 bg-blue-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition-opacity" />
+                <div className="relative overflow-hidden rounded-lg">
                   <Image 
                     src="/admas.png" 
                     alt="አድማስ Logo" 
@@ -272,7 +272,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => setIsSearchOpen(true)}
-                    className="w-64 h-9 pl-9 pr-4 text-sm bg-gray-50 border-gray-200 rounded-sm focus:bg-white focus:border-blue-500 transition-all"
+                    className="w-64 h-9 pl-9 pr-4 text-sm bg-gray-50 border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 transition-all"
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 </div>
@@ -284,10 +284,10 @@ export function Navbar({ simplified = false }: NavbarProps) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-sm border border-gray-200 shadow-lg overflow-hidden"
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 overflow-hidden"
                   >
                     <div className="p-2">
-                      <div className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 rounded cursor-pointer">
+                      <div className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 rounded-lg cursor-pointer">
                         Search results for &quot;{searchQuery}&quot;
                       </div>
                     </div>
@@ -331,9 +331,9 @@ export function Navbar({ simplified = false }: NavbarProps) {
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 p-1.5 rounded-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                <div className="h-9 w-9 rounded-sm bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm">
+                <div className="h-9 w-9 rounded-lg bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
                   {getInitials(user?.name)}
                 </div>
                 {!simplified && (
@@ -363,11 +363,11 @@ export function Navbar({ simplified = false }: NavbarProps) {
                       transition={{ duration: 0.1 }}
                       className="absolute right-0 mt-2 w-72 origin-top-right"
                     >
-                      <div className="bg-white rounded-sm border border-gray-200 shadow-xl overflow-hidden">
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                         {/* User Info */}
                         <div className="p-4 bg-linear-to-br from-blue-50 to-indigo-50 border-b border-gray-200">
                           <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-sm bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-lg font-semibold shadow-md">
+                            <div className="h-12 w-12 rounded-lg bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-lg font-semibold">
                               {getInitials(user?.name)}
                             </div>
                             <div>
@@ -388,7 +388,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                         <div className="p-2 border-b border-gray-100">
                           <Link
                             href="/dashboard/profile"
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-sm transition-colors"
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                             onClick={() => setIsProfileOpen(false)}
                           >
                             <UserCircle className="h-5 w-5 text-gray-400" />
@@ -401,7 +401,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                           </Link>
                           <Link
                             href="/dashboard/settings"
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-sm transition-colors"
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                             onClick={() => setIsProfileOpen(false)}
                           >
                             <Settings className="h-5 w-5 text-gray-400" />
@@ -414,7 +414,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                           </Link>
                           <Link
                             href="/help"
-                            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-sm transition-colors"
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                             onClick={() => setIsProfileOpen(false)}
                           >
                             <HelpCircle className="h-5 w-5 text-gray-400" />
@@ -434,7 +434,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                               logout();
                               setIsProfileOpen(false);
                             }}
-                            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-sm transition-colors"
+                            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <LogOut className="h-5 w-5" />
                             <div className="text-left">
@@ -458,7 +458,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden h-9 w-9 p-0 rounded-sm hover:bg-gray-100"
+                className="lg:hidden h-9 w-9 p-0 rounded-lg hover:bg-gray-100"
               >
                 {isMenuOpen ? (
                   <X className="h-5 w-5 text-gray-600" />
@@ -505,7 +505,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                     <Link
                       key={link.name}
                       href={link.href}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-sm transition-colors ${
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                         isActive
                           ? "bg-blue-50 text-blue-700"
                           : "text-gray-700 hover:bg-gray-50"
@@ -543,7 +543,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                     logout();
                     setIsMenuOpen(false);
                   }}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-sm transition-colors"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <LogOut className="h-5 w-5" />
                   <span className="font-medium">Sign Out</span>

@@ -34,21 +34,21 @@ export const Button = <T extends React.ElementType = "button">({
   const Component = as || "button";
 
   const variants = {
-    primary: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm",
-    secondary: "bg-emerald-900 text-white hover:bg-emerald-800 shadow-sm",
+    primary: "bg-emerald-600 text-white hover:bg-emerald-700 ",
+    secondary: "bg-emerald-900 text-white hover:bg-emerald-800 ",
     outline: "border border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50",
     ghost: "bg-transparent text-emerald-700 hover:bg-emerald-50",
-    destructive: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
-    gold: "bg-yellow-500 text-white hover:bg-yellow-600 shadow-sm",
-    scholarship: "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 shadow-sm",
+    destructive: "bg-red-600 text-white hover:bg-red-700 ",
+    gold: "bg-yellow-500 text-white hover:bg-yellow-600 ",
+    scholarship: "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 ",
   };
 
   const sizes = {
-    sm: "px-3 py-1.5 text-xs rounded-sm",
-    md: "px-4 py-2 text-sm rounded-sm",
-    lg: "px-6 py-2.5 text-base rounded-sm",
-    xl: "px-8 py-3 text-lg rounded-sm",
-    icon: "h-9 w-9 p-0 rounded-sm",
+    sm: "px-3 py-1.5 text-xs rounded-lg",
+    md: "px-4 py-2 text-sm rounded-lg",
+    lg: "px-6 py-2.5 text-base rounded-lg",
+    xl: "px-8 py-3 text-lg rounded-lg",
+    icon: "h-9 w-9 p-0 rounded-lg",
   };
 
   return (

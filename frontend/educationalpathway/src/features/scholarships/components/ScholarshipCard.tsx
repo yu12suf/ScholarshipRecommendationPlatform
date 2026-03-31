@@ -17,7 +17,7 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
   const degreeLevels = scholarship.degreeLevels;
 
   return (
-    <Card className="rounded-sm border-border bg-card hover:shadow-md transition-all duration-200 overflow-hidden">
+    <Card className="rounded-lg border-border bg-card hover: transition-all duration-200 overflow-hidden">
       <CardBody className="p-6 space-y-6">
 
         {/* Header */}
@@ -55,7 +55,7 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
 
         {/* AI Reason Preview */}
         {matchReason && (
-          <div className="bg-primary/5 rounded-sm p-3 border border-primary/10">
+          <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
             <p className="text-[11px] text-primary leading-relaxed italic line-clamp-2">
               "AI: {matchReason}"
             </p>
@@ -84,7 +84,7 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
           <div className="grid grid-cols-2 gap-3">
             <Link 
               href={`/dashboard/student/scholarships/${scholarship.id}`}
-              className="flex-1 h-11 flex items-center justify-center gap-2 rounded-sm bg-muted hover:bg-muted/80 text-foreground text-sm font-medium transition-colors"
+              className="flex-1 h-11 flex items-center justify-center gap-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-sm font-medium transition-colors"
             >
               <Info className="h-4 w-4" />
               Details
@@ -94,7 +94,7 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
                href={scholarship.originalUrl}
                target="_blank"
                rel="noopener noreferrer"
-               className="flex-1 h-11 primary-gradient text-primary-foreground rounded-sm flex items-center justify-center gap-2 text-sm font-medium"
+               className="flex-1 h-11 primary-gradient text-primary-foreground rounded-lg flex items-center justify-center gap-2 text-sm font-medium"
             >
               Apply Now
               <ExternalLink className="h-4 w-4" />

@@ -61,7 +61,7 @@ export const ChatWindow = ({ messages, currentUserId, otherUser, loading, typing
                     </div>
                   )}
                   <div 
-                    className={`p-3.5 rounded-[1.2rem] text-sm shadow-sm ${isMe ? 'primary-gradient text-primary-foreground rounded-tr-none' : 'bg-card border border-border text-foreground rounded-tl-none'}`}
+                    className={`p-3.5 rounded-[1.2rem] text-sm  ${isMe ? 'primary-gradient text-primary-foreground rounded-tr-none' : 'bg-card border border-border text-foreground rounded-tl-none'}`}
                   >
                     {m.content.match(/^\[Attached File\]\((.*?)\)$/) ? (
                       <a 
@@ -97,7 +97,7 @@ export const ChatWindow = ({ messages, currentUserId, otherUser, loading, typing
 
       {/* Typing Indicator */}
       {typingUser && typingUser.isTyping && typingUser.userId !== currentUserId && (
-          <div className="absolute bottom-20 left-6 flex items-center gap-2 text-[11px] text-muted-foreground bg-card/80 border border-border px-3 py-1.5 rounded-full backdrop-blur-sm shadow-sm">
+          <div className="absolute bottom-20 left-6 flex items-center gap-2 text-[11px] text-muted-foreground bg-card/80 border border-border px-3 py-1.5 rounded-full backdrop-blur-sm">
              <div className="flex gap-1">
                 <span className="h-1 w-1 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
                 <span className="h-1 w-1 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />

@@ -56,14 +56,14 @@ export const Modal = ({
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className={`relative w-full ${sizeClasses[size]} bg-card border border-border shadow-xl rounded-sm overflow-hidden z-10`}
+            className={`relative w-full ${sizeClasses[size]} bg-card border border-border  rounded-lg overflow-hidden z-10`}
           >
             {title && (
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <h3 className="text-lg font-semibold text-foreground">{title}</h3>
                 <button
                   onClick={onClose}
-                  className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
                   <X size={20} />
                 </button>

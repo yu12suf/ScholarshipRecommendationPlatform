@@ -338,7 +338,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
         {/* Form */}
         <form
           onSubmit={handleSubmit(handleFormSubmit)}
-          className="bg-card rounded-sm border border-border p-6"
+          className="bg-card rounded-lg border border-border p-6"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -445,7 +445,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       </label>
                       <select
                         {...methods.register("gender")}
-                        className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                        className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
                         <option value="">Select gender</option>
                         <option value="Male">Male</option>
@@ -603,7 +603,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       <select
                         id="currentEducationLevel"
                         {...methods.register("currentEducationLevel")}
-                        className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                        className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
                         <option value="">Select level</option>
                         <option value="High School">High School</option>
@@ -621,7 +621,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       <select
                         id="degreeSeeking"
                         {...methods.register("degreeSeeking")}
-                        className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                        className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
                         <option value="">Select degree</option>
                         <option value="Bachelor's">Bachelor&apos;s</option>
@@ -731,7 +731,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       <select
                         id="languageTestType"
                         {...methods.register("languageTestType")}
-                        className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                        className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                       >
                         <option value="None">None</option>
                         <option value="IELTS">IELTS</option>
@@ -773,7 +773,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         id="proposedResearchTopic"
                         {...methods.register("proposedResearchTopic")}
                         rows={3}
-                        className="w-full px-3 py-2 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                        className="w-full px-3 py-2 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
                         placeholder="Describe your intended research topic or interests..."
                       />
                     </div>
@@ -834,7 +834,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         <select
                           id="preferredFundingType"
                           {...methods.register("preferredFundingType")}
-                          className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                          className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                         >
                           <option value="Fully Funded">Fully Funded</option>
                           <option value="Partially Funded">
@@ -852,7 +852,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         <select
                           id="studyMode"
                           {...methods.register("studyMode")}
-                          className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
+                          className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground"
                         >
                           <option value="On-Campus">On-Campus</option>
                           <option value="Online">Online</option>
@@ -942,7 +942,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       </div>                      {uniFields.map((field, index) => (
                         <div
                           key={field.id}
-                          className="flex items-start gap-3 p-4 bg-muted rounded-sm border border-border"
+                          className="flex items-start gap-3 p-4 bg-muted rounded-lg border border-border"
                         >
                           <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                             <div className="col-span-2">
@@ -965,7 +965,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                                   `preferredUniversities.${index}.preferenceLevel`,
                                 )}
                                 aria-label="Preference level"
-                                className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                                className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
                               >
                                 <option value="High">High Priority</option>
                                 <option value="Medium">Medium Priority</option>
@@ -1023,7 +1023,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                     {workFields.map((field, index) => (
                       <div
                         key={field.id}
-                        className="flex items-start gap-3 p-4 bg-muted rounded-sm border border-border"
+                        className="flex items-start gap-3 p-4 bg-muted rounded-lg border border-border"
                       >
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                           <Input
@@ -1048,7 +1048,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                               { valueAsNumber: true },
                             )}
                             aria-label="Years of experience"
-                            className="bg-background border border-input rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="bg-background border border-input rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             <option value="0">Less than 1 year</option>
                             <option value="1">1 year</option>
@@ -1083,7 +1083,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         <select
                           id="familyIncomeRange"
                           {...methods.register("familyIncomeRange")}
-                          className="w-full h-10 px-3 bg-muted border border-input rounded-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+                          className="w-full h-10 px-3 bg-muted border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                         >
                           <option value="">Select range</option>
                           <option value="< $10,000">Below $10,000</option>
@@ -1102,7 +1102,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                           <input
                             type="checkbox"
                             {...methods.register("needsFinancialSupport")}
-                            className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
+                            className="w-4 h-4 text-primary rounded-lg border-input focus:ring-ring"
                           />
                           <span className="text-sm font-medium text-foreground">
                             I require financial support
@@ -1137,7 +1137,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                       ].map((doc) => (
                         <div
                           key={doc.name}
-                          className="relative border-2 border-dashed border-input rounded-sm p-4 hover:border-primary transition-colors group bg-muted/20 min-h-[140px] flex flex-col items-center justify-center overflow-hidden"
+                          className="relative border-2 border-dashed border-input rounded-lg p-4 hover:border-primary transition-colors group bg-muted/20 min-h-[140px] flex flex-col items-center justify-center overflow-hidden"
                         >
                           <input
                             type="file"
@@ -1156,7 +1156,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                           {watch(`documents.${doc.name}` as any) ? (
                             <div className="text-center animate-in fade-in zoom-in-95 duration-300">
                               {/* Standardized Circular Preview */}
-                              <div className="w-14 h-14 rounded-full border-4 border-primary/20 bg-primary/5 flex items-center justify-center mx-auto mb-3 overflow-hidden shadow-inner">
+                              <div className="w-14 h-14 rounded-full border-4 border-primary/20 bg-primary/5 flex items-center justify-center mx-auto mb-3 overflow-hidden">
                                 {((watch(`documents.${doc.name}` as any) instanceof File && (watch(`documents.${doc.name}` as any) as File).type.startsWith("image/")) ||
                                  (typeof watch(`documents.${doc.name}` as any) === 'string' && (watch(`documents.${doc.name}` as any) as string).match(/\.(jpg|jpeg|png|gif|webp)$|^data:image/i))) ? (
                                   <img 
@@ -1217,7 +1217,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         <input
                           type="checkbox"
                           {...methods.register("notifications.email")}
-                          className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
+                          className="w-4 h-4 text-primary rounded-lg border-input focus:ring-ring"
                         />
                         <span className="text-sm text-foreground">
                           Email notifications
@@ -1227,7 +1227,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         <input
                           type="checkbox"
                           {...methods.register("notifications.inSystem")}
-                          className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
+                          className="w-4 h-4 text-primary rounded-lg border-input focus:ring-ring"
                         />
                         <span className="text-sm text-foreground">
                           In-app notifications
@@ -1245,7 +1245,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`p-4 rounded-sm border flex items-center gap-3 mb-6 ${
+              className={`p-4 rounded-lg border flex items-center gap-3 mb-6 ${
                 submitStatus.type === 'success' 
                 ? 'bg-success/10 border-success/20 text-success' 
                 : 'bg-destructive/10 border-destructive/20 text-destructive'
@@ -1265,7 +1265,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
               variant="outline"
               onClick={handlePrevious}
               disabled={currentStep === 1}
-              className="w-full sm:w-auto px-6 shadow-none"
+              className="w-full sm:w-auto px-6"
             >
               <ChevronLeft size={16} className="mr-2" />
               Previous
@@ -1277,7 +1277,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                 type="submit"
                 variant="primary"
                 isLoading={isSubmitting}
-                className="w-full sm:w-auto px-6 shadow-none"
+                className="w-full sm:w-auto px-6"
               >
                 Submit Profile
                 <CheckCircle2 size={16} className="ml-2" />
@@ -1288,7 +1288,7 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                 type="button"
                 variant="primary"
                 onClick={handleNext}
-                className="w-full sm:w-auto px-6 shadow-none"
+                className="w-full sm:w-auto px-6"
               >
                 Next
                 <ChevronRight size={16} className="ml-2" />

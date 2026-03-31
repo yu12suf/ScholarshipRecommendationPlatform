@@ -70,7 +70,7 @@ export function ResetPasswordForm() {
         className="w-full max-w-md"
       >
 
-        <Card className="bg-card border border-border rounded-sm relative overflow-hidden">
+        <Card className="bg-card border border-border rounded-lg relative overflow-hidden">
 
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50" />
 
@@ -148,7 +148,7 @@ export function ResetPasswordForm() {
 
               {isSuccess ? (
                 <div className="space-y-4">
-                  <div className="p-4 bg-success/10 border border-success/20 text-success rounded-sm text-sm text-center">
+                  <div className="p-4 bg-success/10 border border-success/20 text-success rounded-lg text-sm text-center">
                     You can now login with your new password.
                   </div>
                   <Link href="/login" className="block w-full">
@@ -171,7 +171,7 @@ export function ResetPasswordForm() {
               )}
 
               {error && (
-                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-sm border border-destructive/20 animate-in fade-in slide-in-from-top-1">
+                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-lg border border-destructive/20 animate-in fade-in slide-in-from-top-1">
                   {error}
                 </div>
               )}
@@ -179,7 +179,7 @@ export function ResetPasswordForm() {
             </form>
 
             {!token && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-4 rounded-sm">
+              <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-4 rounded-lg">
                 Invalid reset link. Please request a new one.
               </div>
             )}

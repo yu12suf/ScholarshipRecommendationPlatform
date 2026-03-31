@@ -76,7 +76,7 @@ export const CounselorManagement = () => {
 
         </div>
 
-        <Button className="primary-gradient text-primary-foreground h-12 px-6 rounded-sm font-semibold">
+        <Button className="primary-gradient text-primary-foreground h-12 px-6 rounded-lg font-semibold">
 
           <UserPlus className="mr-2 h-4 w-4" />
 
@@ -88,7 +88,7 @@ export const CounselorManagement = () => {
 
       {/* Table */}
 
-      <Card className="border-border bg-card shadow-sm rounded-sm">
+      <Card className="border-border bg-card rounded-lg">
 
         <CardBody className="p-0">
 

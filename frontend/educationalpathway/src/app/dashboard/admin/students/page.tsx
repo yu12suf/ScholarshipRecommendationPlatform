@@ -20,7 +20,7 @@ export default function AdminStudentsPage() {
 
       {/* Content Card */}
 
-      <div className="bg-card   rounded-sm  overflow-hidden">
+      <div className="bg-card rounded-lg overflow-hidden">
 
         <StudentManagement />
 

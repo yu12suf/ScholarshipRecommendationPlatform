@@ -13,7 +13,7 @@ export const ScholarshipExplorer = () => {
     <div className="space-y-12">
 
       {/* Header */}
-      <div className="bg-card border border-border rounded-sm p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+      <div className="bg-card border border-border rounded-lg p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
 
         <div className="space-y-2">
           <h1 className="h2">

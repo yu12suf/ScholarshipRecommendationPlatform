@@ -50,14 +50,14 @@ export function StudentSidebar() {
         {mobile ? (
           <button
             onClick={() => setMobileOpen(false)}
-            className="ml-auto p-2 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+            className="ml-auto p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <X size={20} />
           </button>
         ) : (
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className={`p-2 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground cursor-pointer shrink-0 ${collapsed ? 'mx-auto' : 'ml-auto'}`}
+            className={`p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground cursor-pointer shrink-0 ${collapsed ? 'mx-auto' : 'ml-auto'}`}
             title={collapsed ? 'Open sidebar' : 'Close sidebar'}
           >
             {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
@@ -76,7 +76,7 @@ export function StudentSidebar() {
               href={item.href}
               onClick={() => setMobileOpen(false)}
               title={collapsed && !mobile ? item.name : undefined}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-sm transition focus:outline-none ${
+              className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition focus:outline-none ${
                 active
                   ? 'text-primary font-bold bg-primary/10'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground font-medium'
@@ -95,7 +95,7 @@ export function StudentSidebar() {
           href="/dashboard/settings"
           onClick={() => setMobileOpen(false)}
           title={collapsed && !mobile ? 'Settings' : undefined}
-          className={`group flex items-center gap-3 px-3 py-2.5 rounded-sm transition focus:outline-none text-muted-foreground hover:bg-muted hover:text-foreground font-medium ${collapsed && !mobile ? 'justify-center' : ''}`}
+          className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition focus:outline-none text-muted-foreground hover:bg-muted hover:text-foreground font-medium ${collapsed && !mobile ? 'justify-center' : ''}`}
         >
           <Settings size={18} />
           {(!collapsed || mobile) && <span className="text-sm font-medium">Settings</span>}
@@ -109,7 +109,7 @@ export function StudentSidebar() {
       {/* Mobile hamburger — shown only on small screens */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-card border border-border rounded-sm shadow-sm text-foreground"
+        className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-card border border-border rounded-lg text-foreground"
         title="Open menu"
       >
         <Menu size={20} />
@@ -131,7 +131,7 @@ export function StudentSidebar() {
               animate={{ x: 0 }}
               exit={{ x: -288 }}
               transition={{ type: 'tween', duration: 0.25 }}
-              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 overflow-hidden shadow-2xl"
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-50 overflow-hidden"
             >
               <SidebarContent mobile />
             </motion.div>

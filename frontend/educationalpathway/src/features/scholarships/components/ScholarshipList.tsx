@@ -80,7 +80,7 @@ export const ScholarshipList = () => {
 
         </div>
       ) : error ? (
-        <div className="text-center py-20 bg-destructive/5 rounded-sm border border-destructive/20">
+        <div className="text-center py-20 bg-destructive/5 rounded-lg border border-destructive/20">
           <p className="text-destructive font-medium mb-4">{error}</p>
           {error.includes("onboarded") && (
             <Button 
@@ -108,7 +108,7 @@ export const ScholarshipList = () => {
       ) : (
 
         /* Empty State */
-        <div className="text-center py-20 bg-muted rounded-sm border-2 border-dashed border-border">
+        <div className="text-center py-20 bg-muted rounded-lg border-2 border-dashed border-border">
 
           <p className="text-muted-foreground font-medium">
             No scholarships found. Try adjusting your search or filters.

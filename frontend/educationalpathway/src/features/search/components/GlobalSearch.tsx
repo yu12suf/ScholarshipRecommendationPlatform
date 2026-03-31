@@ -77,7 +77,7 @@ export function GlobalSearch() {
           }}
           onFocus={() => setIsOpen(true)}
           placeholder="Search scholarships by name, country, or keyword..."
-          className="w-full h-10 pl-10 pr-10 bg-muted/50 border border-transparent focus:border-primary/20 focus:bg-background rounded-sm text-sm transition-all focus:outline-none"
+          className="w-full h-10 pl-10 pr-10 bg-muted/50 border border-transparent focus:border-primary/20 focus:bg-background rounded-lg text-sm transition-all focus:outline-none"
         />
 
         {query && (
@@ -96,7 +96,7 @@ export function GlobalSearch() {
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-sm shadow-xl z-50 overflow-hidden"
+            className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg z-50 overflow-hidden"
           >
             {results.length > 0 ? (
               <div className="py-2">
@@ -109,7 +109,7 @@ export function GlobalSearch() {
                     onClick={() => handleSelect(scholarship.id)}
                     className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 text-left transition-colors group"
                   >
-                    <div className="h-8 w-8 rounded-sm bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                       <GraduationCap className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">

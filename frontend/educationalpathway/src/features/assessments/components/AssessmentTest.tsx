@@ -371,7 +371,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
         <Card className="border border-border">
           <CardBody className="p-6">
             <h3 className="h4 mb-4">AI Feedback Report</h3>
-            <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-sm border border-border/50">
+            <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-lg border border-border/50">
               <p className="whitespace-pre-wrap leading-relaxed text-sm">
                 {evaluation.feedback_report ||
                   "No detailed feedback generated."}
@@ -406,7 +406,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           <Button
             onClick={onComplete}
             variant="outline"
-            className="px-8 font-bold border-border shadow-sm"
+            className="px-8 font-bold border-border"
           >
             Back to Dashboard
           </Button>
@@ -477,7 +477,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
         <div className="flex items-center gap-3 flex-wrap">
           {/* Timer */}
           <div
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-sm border font-mono text-sm font-bold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono text-sm font-bold transition-colors ${
               isTimeLow
                 ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse"
                 : "bg-muted text-foreground border-border"
@@ -489,7 +489,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           <Button
             onClick={handleSubmit}
             variant="scholarship"
-            className="font-bold px-6 shadow-md shadow-primary/20"
+            className="font-bold px-6 shadow-primary/20"
           >
             Submit Exam <CheckCircle2 className="ml-2 size-4" />
           </Button>
@@ -521,7 +521,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
               onClick={() => handleSectionChange(sec)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold capitalize transition-all shrink-0 border ${
                 isActive
-                  ? "bg-primary text-white border-primary shadow-md"
+                  ? "bg-primary text-white border-primary "
                   : isDone
                     ? "bg-success/10 text-success border-success/30"
                     : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
@@ -560,7 +560,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                 {sections.reading?.questions?.map((q: any, i: number) => (
                   <Card
                     key={q.id || i}
-                    className="border border-border shadow-sm"
+                    className="border border-border"
                   >
                     <CardBody className="p-5">
                       <p className="font-semibold text-sm mb-4">
@@ -570,7 +570,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                         {q.options?.map((opt: string, j: number) => (
                           <label
                             key={j}
-                            className={`flex items-start p-3 rounded-sm border cursor-pointer transition-colors ${
+                            className={`flex items-start p-3 rounded-lg border cursor-pointer transition-colors ${
                               responses.reading[q.id ?? i] === opt
                                 ? "bg-primary/5 border-primary"
                                 : "border-border hover:bg-muted/50"
@@ -604,13 +604,13 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                 <CardBody className="p-6 h-140 overflow-y-auto custom-scrollbar">
                   <h3 className="h4 mb-4 flex items-center gap-2">
                     Listening Task{" "}
-                    <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-sm">
+                    <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-1 rounded-lg">
                       Audio Only
                     </span>
                   </h3>
 
                   {sections.listening?.audio_base64 ? (
-                    <div className="mt-8 mb-6 p-8 bg-linear-to-br from-primary/5 to-accent/5 rounded-sm border border-border flex flex-col items-center justify-center space-y-6 text-center shadow-inner">
+                    <div className="mt-8 mb-6 p-8 bg-linear-to-br from-primary/5 to-accent/5 rounded-lg border border-border flex flex-col items-center justify-center space-y-6 text-center">
                       <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center">
                         <Headphones className="size-10 text-primary animate-pulse" />
                       </div>
@@ -633,7 +633,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                       </audio>
                     </div>
                   ) : (
-                    <div className="mt-8 p-6 bg-destructive/5 rounded-sm border border-destructive/20 flex flex-col items-center gap-4 text-center">
+                    <div className="mt-8 p-6 bg-destructive/5 rounded-lg border border-destructive/20 flex flex-col items-center gap-4 text-center">
                       <AlertCircle className="size-10 text-destructive" />
                       <div>
                         <p className="font-bold text-destructive">
@@ -652,7 +652,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                 {sections.listening?.questions?.map((q: any, i: number) => (
                   <Card
                     key={q.id || i}
-                    className="border border-border shadow-sm"
+                    className="border border-border"
                   >
                     <CardBody className="p-5">
                       <p className="font-semibold text-sm mb-4">
@@ -662,7 +662,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                         {q.options?.map((opt: string, j: number) => (
                           <label
                             key={j}
-                            className={`flex items-start p-3 rounded-sm border cursor-pointer transition-colors ${
+                            className={`flex items-start p-3 rounded-lg border cursor-pointer transition-colors ${
                               responses.listening[q.id ?? i] === opt
                                 ? "bg-primary/5 border-primary"
                                 : "border-border hover:bg-muted/50"
@@ -709,7 +709,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                     setResponses({ ...responses, writing: e.target.value })
                   }
                   placeholder="Type your essay here... Minimum 250 words recommended."
-                  className="w-full h-80 p-5 rounded-sm border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 shadow-inner text-sm"
+                  className="w-full h-80 p-5 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 text-sm"
                 />
               </div>
               <div className="flex justify-between text-sm text-muted-foreground font-medium">
@@ -740,10 +740,10 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           {/* ---- SPEAKING ---- */}
           {currentSection === "speaking" && (
             <div className="space-y-6 max-w-2xl mx-auto">
-              <Card className="border border-border shadow-sm">
+              <Card className="border border-border">
                 <CardBody className="p-8 text-center">
                   <h3 className="font-bold text-lg mb-4">Speaking Task</h3>
-                  <div className="bg-muted p-6 rounded-sm border border-border text-left mb-8">
+                  <div className="bg-muted p-6 rounded-lg border border-border text-left mb-8">
                     <p className="text-foreground whitespace-pre-wrap text-sm">
                       {sections.speaking?.prompt || "No prompt provided."}
                     </p>
@@ -754,7 +754,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                       <>
                         <motion.button
                           onClick={stopRecording}
-                          className="size-24 rounded-full bg-destructive flex items-center justify-center text-white shadow-lg shadow-destructive/30 hover:scale-105 transition-all"
+                          className="size-24 rounded-full bg-destructive flex items-center justify-center text-white shadow-destructive/30 hover:scale-105 transition-all"
                           animate={{ scale: [1, 1.05, 1] }}
                           transition={{ duration: 1.2, repeat: Infinity }}
                         >
@@ -773,7 +773,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                       <>
                         <button
                           onClick={startRecording}
-                          className="size-24 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30 hover:scale-105 transition-all"
+                          className="size-24 rounded-full bg-primary flex items-center justify-center text-white shadow-primary/30 hover:scale-105 transition-all"
                         >
                           <Mic className="size-9" />
                         </button>
@@ -789,7 +789,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                     )}
 
                     {audioBlob && !isRecording && (
-                      <div className="w-full max-w-sm bg-success/10 text-success p-3.5 rounded-sm border border-success/25 flex items-center justify-center gap-2">
+                      <div className="w-full max-w-sm bg-success/10 text-success p-3.5 rounded-lg border border-success/25 flex items-center justify-center gap-2">
                         <CheckCircle2 size={18} />
                         <span className="font-semibold text-sm">
                           Audio recorded ({formatTime(recordingSeconds)})
@@ -815,7 +815,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
                   setResponses({ ...responses, speaking: e.target.value })
                 }
                 placeholder="If you cannot record audio, type what you would say here..."
-                className="w-full h-32 p-4 rounded-sm border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 shadow-inner text-sm"
+                className="w-full h-32 p-4 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/50 text-sm"
               />
             </div>
           )}
@@ -829,7 +829,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           variant="outline"
           disabled={currentIdx === 0}
           onClick={() => handleSectionChange(SECTION_ORDER[currentIdx - 1])}
-          className="font-semibold border-border shadow-sm px-6"
+          className="font-semibold border-border px-6"
         >
           <ArrowLeft className="mr-2 size-4" /> Previous
         </Button>
@@ -858,7 +858,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
         {/* Right: Next / Submit */}
         {currentIdx < SECTION_ORDER.length - 1 ? (
           <Button
-            className="primary-gradient font-bold shadow-md shadow-primary/20 px-8 text-white"
+            className="primary-gradient font-bold shadow-primary/20 px-8 text-white"
             onClick={() => handleSectionChange(SECTION_ORDER[currentIdx + 1])}
           >
             Next Section <ArrowRight className="ml-2 size-4" />
@@ -867,7 +867,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
           <Button
             onClick={handleSubmit}
             variant="scholarship"
-            className="font-bold px-8 shadow-md shadow-secondary/20"
+            className="font-bold px-8 shadow-secondary/20"
           >
             Submit Exam <CheckCircle2 className="ml-2 size-4" />
           </Button>

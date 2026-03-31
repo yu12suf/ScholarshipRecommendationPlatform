@@ -82,7 +82,7 @@ export function OnboardingFlow() {
             {step === 1 && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center">
-                  <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className="h-16 w-16 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                     <Scan className="h-8 w-8 text-primary" />
                   </div>
                   <h2 className="text-2xl font-bold">Scan Documents</h2>
@@ -92,7 +92,7 @@ export function OnboardingFlow() {
                   </p>
                 </div>
 
-                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center hover:border-primary/50 transition-colors group relative cursor-pointer min-h-60 flex flex-col items-center justify-center bg-gray-50/10">
+                <div className="border-2 border-dashed border-gray-200 rounded-lg p-10 text-center hover:border-primary/50 transition-colors group relative cursor-pointer min-h-60 flex flex-col items-center justify-center bg-gray-50/10">
                   <input
                     type="file"
                     id="document-upload"
@@ -104,7 +104,7 @@ export function OnboardingFlow() {
                   
                   {files.document ? (
                     <div className="animate-in fade-in zoom-in-95 duration-300">
-                      <div className="w-20 h-20 rounded-full border-4 border-success/20 bg-success/5 flex items-center justify-center mx-auto mb-4 overflow-hidden shadow-inner">
+                      <div className="w-20 h-20 rounded-full border-4 border-success/20 bg-success/5 flex items-center justify-center mx-auto mb-4 overflow-hidden">
                         {files.document.type.startsWith("image/") ? (
                           <img 
                             src={URL.createObjectURL(files.document)} 
@@ -150,7 +150,7 @@ export function OnboardingFlow() {
             {step === 2 && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center">
-                  <div className="h-16 w-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className="h-16 w-16 bg-accent/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                     <ShieldCheck className="h-8 w-8 text-accent" />
                   </div>
                   <h2 className="text-2xl font-bold">Verify Identity</h2>
@@ -161,7 +161,7 @@ export function OnboardingFlow() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* ID Card Upload */}
-                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-accent/50 transition-colors relative cursor-pointer bg-gray-50/20 min-h-48 flex flex-col items-center justify-center">
+                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-accent/50 transition-colors relative cursor-pointer bg-gray-50/20 min-h-48 flex flex-col items-center justify-center">
                     <input
                       type="file"
                       id="id-card-upload"
@@ -173,7 +173,7 @@ export function OnboardingFlow() {
 
                     {files.idCard ? (
                       <div className="animate-in fade-in zoom-in-95 duration-300">
-                        <div className="w-16 h-16 rounded-full border-4 border-accent/20 bg-accent/5 flex items-center justify-center mx-auto mb-3 overflow-hidden shadow-inner">
+                        <div className="w-16 h-16 rounded-full border-4 border-accent/20 bg-accent/5 flex items-center justify-center mx-auto mb-3 overflow-hidden">
                           <img 
                             src={URL.createObjectURL(files.idCard)} 
                             className="w-full h-full object-cover" 
@@ -193,7 +193,7 @@ export function OnboardingFlow() {
                   </div>
 
                   {/* Selfie Upload */}
-                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-accent/50 transition-colors relative cursor-pointer bg-gray-50/20 min-h-48 flex flex-col items-center justify-center">
+                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-accent/50 transition-colors relative cursor-pointer bg-gray-50/20 min-h-48 flex flex-col items-center justify-center">
                     <input
                       type="file"
                       id="selfie-upload"
@@ -205,7 +205,7 @@ export function OnboardingFlow() {
 
                     {files.selfie ? (
                       <div className="animate-in fade-in zoom-in-95 duration-300">
-                        <div className="w-16 h-16 rounded-full border-4 border-accent/20 bg-accent/5 flex items-center justify-center mx-auto mb-3 overflow-hidden shadow-inner">
+                        <div className="w-16 h-16 rounded-full border-4 border-accent/20 bg-accent/5 flex items-center justify-center mx-auto mb-3 overflow-hidden">
                           <img 
                             src={URL.createObjectURL(files.selfie)} 
                             className="w-full h-full object-cover" 
@@ -225,7 +225,7 @@ export function OnboardingFlow() {
                   </div>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-sm flex gap-3 text-sm text-yellow-800">
+                <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-lg flex gap-3 text-sm text-yellow-800">
                   <AlertCircle className="h-5 w-5 shrink-0" />
                   <p>Ensure your face is clear and matches your ID.</p>
                 </div>

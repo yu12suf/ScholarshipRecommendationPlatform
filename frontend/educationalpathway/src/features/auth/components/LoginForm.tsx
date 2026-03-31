@@ -50,7 +50,7 @@ export function LoginForm() {
         transition={{ duration: 0.35 }}
         className="w-full max-w-md"
       >
-        <Card className="bg-card border border-border shadow-sm rounded-sm">
+        <Card className="bg-card border border-border rounded-lg">
 
           <CardHeader className="text-center pt-10 pb-4">
 
@@ -121,7 +121,7 @@ export function LoginForm() {
               </div>
 
               {error && (
-                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-sm border border-destructive/20 animate-in fade-in slide-in-from-top-1">
+                <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-lg border border-destructive/20 animate-in fade-in slide-in-from-top-1">
                   {error}
                 </div>
               )}

@@ -40,6 +40,7 @@ export function NotificationBell() {
 
   const handleMarkAsClicked = async (id: number) => {
     await markAsClicked(id);
+    setIsOpen(false);
   };
 
   const getIconForType = (type: NotificationType) => {
@@ -80,7 +81,7 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-80 md:w-96 bg-card border border-border rounded-sm shadow-xl z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-80 md:w-96 bg-card border border-border rounded-lg z-50 overflow-hidden"
           >
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h3 className="text-sm font-bold text-foreground">

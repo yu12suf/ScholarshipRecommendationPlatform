@@ -40,7 +40,7 @@ export function DashboardHeader() {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-3 px-2 py-1.5 rounded-sm hover:bg-muted hover:rounded-full transition-all focus:outline-none cursor-pointer"
+            className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-muted hover:rounded-full transition-all focus:outline-none cursor-pointer"
             aria-expanded={showUserMenu}
             aria-haspopup="true"
           >
@@ -58,7 +58,7 @@ export function DashboardHeader() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-sm shadow-lg py-1 z-50 overflow-hidden"
+                className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-lg py-1 z-50 overflow-hidden"
               >
                 {/* User Profile Info */}
                 <div className="px-4 py-3 border-b border-border bg-muted/30">

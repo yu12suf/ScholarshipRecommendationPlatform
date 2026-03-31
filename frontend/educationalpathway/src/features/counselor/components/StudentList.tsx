@@ -37,7 +37,7 @@ export const StudentList = () => {
     <div className="space-y-4">
       {students.length > 0 ? (
         students.map((student) => (
-          <Card key={student.id} className="rounded-sm">
+          <Card key={student.id} className="rounded-lg">
             <CardBody className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-secondary/10 rounded-full flex items-center justify-center text-secondary font-bold">
@@ -55,7 +55,7 @@ export const StudentList = () => {
           </Card>
         ))
       ) : (
-        <div className="text-center py-8 bg-gray-50 rounded-sm border-2 border-dashed border-gray-100">
+        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-100">
           <p className="text-muted-foreground text-sm">No students assigned yet.</p>
         </div>
       )}

@@ -58,11 +58,17 @@ export class LearningPathService {
       speaking: [],
     };
 
-    // 4. Persist the learning path
+    // 4. Extract Competency Gap and Curriculum Map
+    const competencyGapAnalysis = evaluation.evaluation?.competency_gap_analysis || null;
+    const curriculumMap = evaluation.evaluation?.adaptive_curriculum_map || null;
+
+    // 5. Persist the learning path
     await LearningPathRepository.upsert(studentId, {
       videoSections,
       noteSections,
       learningModeSections,
+      competencyGapAnalysis,
+      curriculumMap,
       proficiencyLevel: level,
       examType,
     });
@@ -77,6 +83,8 @@ export class LearningPathService {
 
     const skills = ["reading", "listening", "writing", "speaking"];
     const result: any = {};
+    let totalVideos = 0;
+    let completedVideos = 0;
 
     for (const skill of skills) {
       const videoIds = (path.videoSections as any)[skill] || [];
@@ -94,9 +102,15 @@ export class LearningPathService {
             },
           });
 
+          const isCompleted = progress?.isCompleted || false;
+          totalVideos++;
+          if (isCompleted) {
+            completedVideos++;
+          }
+
           return {
             ...video.get({ plain: true }),
-            isCompleted: progress?.isCompleted || false,
+            isCompleted: isCompleted,
           };
         }),
       );
@@ -107,11 +121,21 @@ export class LearningPathService {
       };
     }
 
+    const progressPercentage = totalVideos === 0 ? 0 : Math.round((completedVideos / totalVideos) * 100);
+    // Update the record in the database
+    if (path.currentProgressPercentage !== progressPercentage) {
+      path.currentProgressPercentage = progressPercentage;
+      await path.save();
+    }
+
     return {
       proficiencyLevel: path.proficiencyLevel,
       examType: path.examType,
       skills: result,
       learningMode: path.learningModeSections,
+      competencyGapAnalysis: path.competencyGapAnalysis,
+      curriculumMap: path.curriculumMap,
+      current_progress_percentage: progressPercentage
     };
   }
 }

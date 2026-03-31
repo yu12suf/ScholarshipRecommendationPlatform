@@ -25,6 +25,28 @@ export class ChatController {
     });
 
     /**
+     * POST /start - Start/get a conversation without sending a message
+     */
+    static startChat = catchAsync(async (req: Request, res: Response) => {
+        const { receiverId } = req.body;
+        const senderId = (req as any).user.id;
+
+        if (!receiverId) {
+            throw new AppError("Invalid request. Missing receiverId.", 400);
+        }
+
+        const conversation = await ChatService.getOrCreateConversation(senderId, Number(receiverId));
+        
+        // Fetch the conversation with participants to be consistent with getConversations
+        const fullConversation = await ChatService.getConversations(senderId).then(convs => convs.find(c => c.id === conversation.id));
+
+        res.status(200).json({
+            status: "success",
+            data: fullConversation || conversation
+        });
+    });
+
+    /**
      * GET /conversations - Fetch all user's conversations
      */
     static getConversations = catchAsync(async (req: Request, res: Response) => {
@@ -34,6 +56,19 @@ export class ChatController {
         res.status(200).json({
             status: "success",
             data: conversations
+        });
+    });
+
+    /**
+     * GET /available-users - Fetch all users user can start a chat with
+     */
+    static getAvailableUsers = catchAsync(async (req: Request, res: Response) => {
+        const userId = (req as any).user.id;
+        const users = await ChatService.getAvailableUsersToChat(userId);
+
+        res.status(200).json({
+            status: "success",
+            data: users
         });
     });
 

@@ -3,8 +3,6 @@
 
 import { useState } from "react";
 import {
-  User,
-  Bell,
   Shield,
   CreditCard,
   Sun,
@@ -22,8 +20,6 @@ export const SettingsForm = () => {
   const [activeTab, setActiveTab] = useState("appearance");
 
   const tabs = [
-    { id: "profile", title: "Profile", icon: User },
-    { id: "notifications", title: "Notifications", icon: Bell },
     { id: "security", title: "Security", icon: Shield },
     { id: "appearance", title: "Appearance", icon: Palette },
     { id: "billing", title: "Billing", icon: CreditCard },
@@ -45,7 +41,7 @@ export const SettingsForm = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-full text-sm font-medium transition-colors
+                  className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
                     ${
                       active
                         ? "bg-primary/10 text-primary"
@@ -86,7 +82,7 @@ export const SettingsForm = () => {
                 </div>
 
                 {/* Chrome-like grouped list */}
-                <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-card rounded-lg overflow-hidden">
 
                   {/* Theme Selector */}
                   <div className="flex items-center justify-between p-5 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
@@ -103,7 +99,7 @@ export const SettingsForm = () => {
                       <select
                         value={mode}
                         onChange={(e) => setMode(e.target.value as ThemeMode)}
-                        className="appearance-none bg-muted hover:bg-muted/80 text-foreground text-sm font-medium border border-border/50 rounded-sm py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-colors"
+                        className="appearance-none bg-muted hover:bg-muted/80 text-foreground text-sm font-medium border border-border/50 rounded-lg py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-colors"
                       >
                         <option value="light">Light</option>
                         <option value="dark">Dark</option>
@@ -129,7 +125,7 @@ export const SettingsForm = () => {
                     
                     <button className="text-sm font-medium text-primary hover:underline px-2 py-1 relative">
                        <span className="flex items-center gap-2">
-                         <span className="h-4 w-4 rounded-full bg-primary block shadow-inner"></span>
+                         <span className="h-4 w-4 rounded-full bg-primary block"></span>
                          Blue
                        </span>
                     </button>
@@ -158,7 +154,7 @@ export const SettingsForm = () => {
                   </p>
                 </div>
 
-                <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-card border border-border/50 rounded-lg overflow-hidden">
 
                   <div className="flex items-center justify-between p-5 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
                     <div className="flex flex-col">

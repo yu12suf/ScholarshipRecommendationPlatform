@@ -93,7 +93,7 @@ export default function ScholarshipDetailsPage() {
           onClick={() => router.back()}
           className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
         >
-          <div className="p-1 rounded-sm group-hover:bg-muted transition-colors">
+          <div className="p-1 rounded-lg group-hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </div>
           Back to list
@@ -121,7 +121,7 @@ export default function ScholarshipDetailsPage() {
             href={scholarship.originalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 h-12 px-8 bg-blue-600 dark:bg-blue-500 text-white font-bold rounded-sm hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/20 transition-all"
+            className="flex items-center justify-center gap-2 h-12 px-8 bg-blue-600 dark:bg-blue-500 text-white font-bold rounded-lg hover:scale-[1.02] active:scale-[0.98] shadow-blue-500/20 transition-all"
           >
             Apply Now
             <ExternalLink className="h-5 w-5" />
@@ -134,8 +134,8 @@ export default function ScholarshipDetailsPage() {
         <div className="lg:col-span-2 space-y-8">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-card border border-border p-5 rounded-sm flex items-start gap-4">
-              <div className="h-10 w-10 flex items-center justify-center rounded-sm bg-green-500/10 text-green-600 shrink-0">
+            <div className="bg-card border border-border p-5 rounded-lg flex items-start gap-4">
+              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-green-500/10 text-green-600 shrink-0">
                 <DollarSign className="h-5 w-5" />
               </div>
               <div>
@@ -144,8 +144,8 @@ export default function ScholarshipDetailsPage() {
               </div>
             </div>
             
-            <div className="bg-card border border-border p-5 rounded-sm flex items-start gap-4">
-              <div className="h-10 w-10 flex items-center justify-center rounded-sm bg-orange-500/10 text-orange-600 shrink-0">
+            <div className="bg-card border border-border p-5 rounded-lg flex items-start gap-4">
+              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 shrink-0">
                 <Calendar className="h-5 w-5" />
               </div>
               <div>
@@ -154,8 +154,8 @@ export default function ScholarshipDetailsPage() {
               </div>
             </div>
 
-            <div className="bg-card border border-border p-5 rounded-sm flex items-start gap-4">
-              <div className="h-10 w-10 flex items-center justify-center rounded-sm bg-blue-500/10 text-blue-600 shrink-0">
+            <div className="bg-card border border-border p-5 rounded-lg flex items-start gap-4">
+              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 shrink-0">
                 <GraduationCap className="h-5 w-5" />
               </div>
               <div>
@@ -172,7 +172,7 @@ export default function ScholarshipDetailsPage() {
             <h2 className="text-xl font-bold flex items-center gap-2">
               Description
             </h2>
-            <div className="bg-card border border-border p-6 rounded-sm">
+            <div className="bg-card border border-border p-6 rounded-lg">
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {scholarship.description || "No detailed description available for this scholarship."}
               </p>
@@ -185,7 +185,7 @@ export default function ScholarshipDetailsPage() {
               <h2 className="text-xl font-bold flex items-center gap-2">
                 Requirements
               </h2>
-              <div className="bg-card border border-border p-6 rounded-sm">
+              <div className="bg-card border border-border p-6 rounded-lg">
                 <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap italic">
                   {scholarship.requirements}
                 </p>
@@ -199,12 +199,12 @@ export default function ScholarshipDetailsPage() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-card border-2 border-primary/20 rounded-sm overflow-hidden shadow-xl shadow-primary/5"
+            className="bg-card border-2 border-primary/20 rounded-lg overflow-hidden shadow-primary/5"
           >
             <div className="primary-gradient p-6 text-white">
               <h3 className="text-sm font-bold uppercase tracking-widest opacity-80 mb-6">AI Match Analysis</h3>
               
-              <div className="flex justify-between items-center bg-white/10 backdrop-blur-md rounded-sm p-6 border border-white/10">
+              <div className="flex justify-between items-center bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/10">
                 <div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-5xl font-black">{Math.round(matchScore)}</span>
@@ -239,15 +239,15 @@ export default function ScholarshipDetailsPage() {
             <div className="p-6 space-y-6">
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Why this matches you</h4>
-                <div className="bg-muted/50 rounded-sm p-4 border border-border">
+                <div className="bg-muted/50 rounded-lg p-4 border border-border">
                   <p className="text-sm text-foreground leading-relaxed italic">
                     "{matchReason}"
                   </p>
                 </div>
               </div>
 
-              <div className="p-4 bg-primary/5 rounded-sm border border-primary/10 flex items-start gap-3">
-                <div className="p-2 rounded-sm bg-primary/10 text-primary shrink-0">
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/10 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
                   <AlertCircle className="h-4 w-4" />
                 </div>
                 <p className="text-[11px] text-primary/80 leading-relaxed font-medium">
@@ -260,7 +260,7 @@ export default function ScholarshipDetailsPage() {
                   href={scholarship.originalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center justify-center gap-2 w-full py-4 rounded-sm border-2 border-primary text-primary font-bold hover:bg-primary hover:text-white transition-all duration-300"
+                  className="group flex items-center justify-center gap-2 w-full py-4 rounded-lg border-2 border-primary text-primary font-bold hover:bg-primary hover:text-white transition-all duration-300"
                 >
                   Confirm & Apply
                   <ExternalLink className="h-4 w-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
@@ -272,7 +272,7 @@ export default function ScholarshipDetailsPage() {
             </div>
           </motion.div>
 
-          <Card className="rounded-sm border-border bg-muted/30">
+          <Card className="rounded-lg border-border bg-muted/30">
             <CardBody className="p-6">
               <h4 className="font-bold text-foreground mb-4">Tips for Application</h4>
               <ul className="space-y-3">

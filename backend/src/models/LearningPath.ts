@@ -85,6 +85,20 @@ export class LearningPath extends Model {
     };
 
     @Column({
+        type: DataType.JSONB,
+        allowNull: true,
+        field: 'competency_gap_analysis'
+    })
+    declare competencyGapAnalysis: any;
+
+    @Column({
+        type: DataType.JSONB,
+        allowNull: true,
+        field: 'curriculum_map'
+    })
+    declare curriculumMap: any;
+
+    @Column({
         type: DataType.STRING,
         allowNull: false,
         field: 'proficiency_level',
@@ -99,6 +113,14 @@ export class LearningPath extends Model {
         defaultValue: 'IELTS'
     })
     declare examType: 'IELTS' | 'TOEFL';
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        field: 'current_progress_percentage'
+    })
+    declare currentProgressPercentage: number;
 
     @CreatedAt
     @Column({
