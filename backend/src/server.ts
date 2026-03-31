@@ -3,11 +3,17 @@ import { connectSequelize } from "./config/sequelize.js";
 import configs from "./config/configs.js";
 // import { createTables, seedAdminUser } from "./utils/databaseMigration.js"; // Migration is now handled by Sequelize sync or manual scripts
 
-//Temporary
+// Scholarship automation imports
+import { startScholarshipCron } from "./automation/scholarshipCron.js";
+import { assessmentWorker } from "./workers/AssessmentWorker.js";
+import { seedScholarshipSources } from "./scripts/seedScholarships.js";
+import { seedTestData } from "./scripts/seedsampleactuallscholarship.js";
+
+// Temporary: Global unhandled rejection handler for debugging
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
-//up to here temporary
+
 async function start() {
   console.log("Initializing server...");
 
@@ -25,6 +31,15 @@ async function start() {
   // Load configurations and connect to DB asynchronously
   try {
     await connectSequelize();
+
+    // Ensure the assessment worker is running (explicit reference prevents tree-shaking)
+    console.log(`🧠 Assessment worker started: ${assessmentWorker.name}`);
+
+    // Initialize Scholarship Ingestion System
+    // await seedScholarshipSources();
+    startScholarshipCron();
+    // seedTestData();
+
   } catch (err) {
     console.error("Failed to connect to database:", err);
   }

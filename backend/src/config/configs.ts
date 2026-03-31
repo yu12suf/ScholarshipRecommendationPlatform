@@ -23,8 +23,8 @@ function setConfigs() {
         // Auth Config
         JWT_SECRET: process.env.JWT_SECRET || "tempSecret",
         REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || "refreshSecret",
-        JWT_ACCESS_EXPIRATION: process.env.JWT_ACCESS_EXPIRATION || "15m",
-        JWT_REFRESH_EXPIRATION: process.env.JWT_REFRESH_EXPIRATION || "7d",
+        JWT_ACCESS_EXPIRATION: process.env.JWT_ACCESS_EXPIRATION || process.env.JWT_EXPIRES_IN || "1d",
+        JWT_REFRESH_EXPIRATION: process.env.JWT_REFRESH_EXPIRATION || process.env.JWT_REFRESH_EXPIRES_IN || "7d",
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 
         // Email SMTP Config
@@ -45,10 +45,13 @@ function setConfigs() {
         ANNUAL_PRICE_IN_ETB: parseFloat(process.env.ANNUAL_PRICE_IN_ETB || "0"),
         SEMIANNUAL_PRICE_IN_ETB: parseFloat(process.env.SEMIANNUAL_PRICE_IN_ETB || "0"),
         MAX_CHAT_USAGE: Number(process.env.MAX_CHAT_USAGE) || 10,
-        CLOUDINARY_CLOUD_NAME:process.env.CLOUDINARY_CLOUD_NAME,
-        CLOUDINARY_API_KEY:process.env.CLOUDINARY_API_KEY,
-        CLOUDINARY_API_SECRET:process.env.CLOUDINARY_API_SECRET,
-GEMINI_API_KEY:process.env.GEMINI_API_KEY    };
+        CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+        CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+        CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+        GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+        REDIS_HOST: process.env.REDIS_HOST || "127.0.0.1",
+        REDIS_PORT: parseInt(process.env.REDIS_PORT || "6379")
+    };
 }
 
 const configs = setConfigs();

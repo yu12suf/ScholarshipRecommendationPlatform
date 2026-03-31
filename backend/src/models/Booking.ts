@@ -104,12 +104,13 @@ export class Booking extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => Student)
+    // Associations with explicit aliases to match service queries
+    @BelongsTo(() => Student, { as: 'student' })
     student!: Student;
 
-    @BelongsTo(() => Counselor)
+    @BelongsTo(() => Counselor, { as: 'counselor' })
     counselor!: Counselor;
 
-    @BelongsTo(() => AvailabilitySlot)
+    @BelongsTo(() => AvailabilitySlot, { as: 'slot' })
     slot!: AvailabilitySlot;
 }
