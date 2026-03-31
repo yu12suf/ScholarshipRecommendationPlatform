@@ -8,8 +8,12 @@ import {
     Default,
     CreatedAt,
     UpdatedAt,
+    HasMany,
 } from "sequelize-typescript";
 import { User } from "./User.js";
+import { AvailabilitySlot } from './AvailabilitySlot.js';
+import { Booking } from './Booking.js';
+import { CounselorReview } from './CounselorReview.js';
 
 @Table({
     tableName: "counselors",
@@ -45,6 +49,13 @@ export class Counselor extends Model {
     declare areasOfExpertise: string;
 
     @Column({
+        type: DataType.DECIMAL(10, 2),
+        allowNull: true,
+        field: 'hourly_rate'
+    })
+    declare hourlyRate: number;
+
+    @Column({
         type: DataType.INTEGER,
         allowNull: true,
         field: 'years_of_experience'
@@ -57,7 +68,31 @@ export class Counselor extends Model {
         defaultValue: 'pending',
         field: 'verification_status'
     })
-    declare verificationStatus: string;
+    declare verificationStatus: 'pending' | 'verified' | 'rejected';
+
+    @Default(true)
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        field: 'is_active'
+    })
+    declare isActive: boolean;
+
+    @Column({
+        type: DataType.DECIMAL(3, 2),
+        allowNull: true,
+        defaultValue: 0,
+        field: 'rating'
+    })
+    declare rating: number;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: 0,
+        field: 'total_sessions'
+    })
+    declare totalSessions: number;
 
     @Column({
         type: DataType.TEXT,
@@ -126,4 +161,13 @@ export class Counselor extends Model {
 
     @BelongsTo(() => User)
     user!: User;
+
+    @HasMany(() => AvailabilitySlot, { foreignKey: 'counselorId' })
+    availabilitySlots!: AvailabilitySlot[];
+
+    @HasMany(() => Booking, { foreignKey: 'counselorId' })
+    bookings!: Booking[];
+
+    @HasMany(() => CounselorReview, { foreignKey: 'counselorId' })
+    reviews!: CounselorReview[];
 }

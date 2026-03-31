@@ -13,7 +13,9 @@ node_modules/
 .env
 .env.*
 !**/.env.example
-
+#local testin gfiles
+backend/check-env.js
+backend/test-db.js
 # IDE and System files
 .vscode/
 .idea/
