@@ -2,6 +2,7 @@ import { Counselor } from "../models/Counselor.js";
 
 export class CounselorRepository {
     static async findByUserId(userId: number): Promise<Counselor | null> {
+        if (!userId || userId <= 0) return null;
         return Counselor.findOne({ where: { userId } });
     }
 
