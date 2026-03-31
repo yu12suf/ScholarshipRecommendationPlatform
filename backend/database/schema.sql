@@ -171,6 +171,16 @@ CREATE TABLE IF NOT EXISTS counselor_credentials (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Counselor Messages table
+CREATE TABLE IF NOT EXISTS counselor_messages (
+    id SERIAL PRIMARY KEY,
+    sender_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    recipient_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ============================================
 -- Indexes
 -- ============================================
@@ -200,6 +210,8 @@ CREATE INDEX IF NOT EXISTS idx_documents_student_id ON documents(student_id);
 CREATE INDEX IF NOT EXISTS idx_documents_counselor_id ON documents(counselor_id);
 
 CREATE INDEX IF NOT EXISTS idx_counselor_reviews_counselor_id ON counselor_reviews(counselor_id);
+CREATE INDEX IF NOT EXISTS idx_counselor_messages_sender ON counselor_messages(sender_user_id);
+CREATE INDEX IF NOT EXISTS idx_counselor_messages_recipient ON counselor_messages(recipient_user_id);
 
 -- ============================================
 -- Function and trigger for updated_at
