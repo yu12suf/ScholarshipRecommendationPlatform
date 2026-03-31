@@ -3,6 +3,13 @@ import { Counselor } from "../models/Counselor.js";
 import { User } from "../models/User.js";
 import { Student } from "../models/Student.js";
 import { Booking } from "../models/Booking.js";
+import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
+import { LearningPath } from "../models/LearningPath.js";
+import { LearningPathProgress } from "../models/LearningPathProgress.js";
+import { AssessmentResult } from "../models/AssessmentResult.js";
+import { TrackedScholarship } from "../models/TrackedScholarship.js";
+import { Scholarship } from "../models/Scholarship.js";
+import { ScholarshipMilestone } from "../models/ScholarshipMilestone.js";
 import { UserRole } from "../types/userTypes.js";
 import { AvailabilitySlotRepository } from "../repositories/AvailabilitySlotRepository.js";
 import { BookingRepository } from "../repositories/BookingRepository.js";
@@ -10,6 +17,7 @@ import { CounselorRepository } from "../repositories/CounselorRepository.js";
 import { CounselorReviewRepository } from "../repositories/CounselorReviewRepository.js";
 import { DocumentRepository } from "../repositories/DocumentRepository.js";
 import { CounselorMessageRepository } from "../repositories/CounselorMessageRepository.js";
+import { NotificationService } from "./NotificationService.js";
 import {
   AdminVerificationDto,
   AdminVisibilityDto,
@@ -105,15 +113,51 @@ export class CounselorService {
       return true;
     });
 
-    const payload = filteredRows.map((c) => this.formatCounselorResponse(c, (c as any).user || null));
-    return { rows: payload, count, page, limit };
+    const slotsByCounselor = await this.findAvailableSlotsForDirectory(
+      filteredRows.map((item) => item.id),
+      query.fromDate,
+      query.toDate,
+    );
+
+    const availabilityFilteredRows =
+      query.availableOnly
+        ? filteredRows.filter((item) => (slotsByCounselor.get(item.id) || []).length > 0)
+        : filteredRows;
+
+    const payload = availabilityFilteredRows.map((c) => {
+      const base = this.formatCounselorResponse(c, (c as any).user || null);
+      const availableSlots = slotsByCounselor.get(c.id) || [];
+      return {
+        ...base,
+        availabilitySummary:
+          base.availabilitySummary ||
+          (availableSlots.length > 0 ? `${availableSlots.length} open slots` : null),
+      };
+    });
+
+    return {
+      rows: payload,
+      count: query.availableOnly ? payload.length : count,
+      page,
+      limit,
+    };
   }
 
   static async recommendForStudent(userId: number): Promise<CounselorRecommendationResponse[]> {
     const student = await Student.findOne({ where: { userId } });
     if (!student) throw httpError(404, "Student profile not found");
 
-    const studentPreferences = (student.studyPreferences || "").toLowerCase();
+    const studentProfileSignal = [
+      student.studyPreferences,
+      student.academicHistory,
+      student.countryInterest,
+      student.academicStatus,
+      student.extractedData,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
     const candidates = await Counselor.findAll({
       where: { verificationStatus: "verified", isActive: true },
       include: [{ model: User, as: "user", attributes: ["name", "email"] }],
@@ -123,11 +167,27 @@ export class CounselorService {
     return candidates
       .map((counselor) => {
         const metadata = this.parseMetadata(counselor.extractedData);
+        const matchReasons: string[] = [];
         let recommendationScore = Number(counselor.rating || 0);
-        if ((counselor.areasOfExpertise || "").toLowerCase().includes(studentPreferences)) recommendationScore += 2;
-        if (metadata.currentUniversity && studentPreferences.includes(metadata.currentUniversity.toLowerCase())) recommendationScore += 2;
+
+        const expertiseText = (counselor.areasOfExpertise || "").toLowerCase();
+        if (expertiseText && this.hasTokenOverlap(expertiseText, studentProfileSignal)) {
+          recommendationScore += 2;
+          matchReasons.push("specialization aligns with student profile");
+        }
+
+        if (metadata.currentUniversity && studentProfileSignal.includes(metadata.currentUniversity.toLowerCase())) {
+          recommendationScore += 2;
+          matchReasons.push("same target/current university context");
+        }
+
+        if (metadata.currentDegreeLevel && studentProfileSignal.includes(metadata.currentDegreeLevel.toLowerCase())) {
+          recommendationScore += 1;
+          matchReasons.push("degree level alignment");
+        }
+
         const base = this.formatCounselorResponse(counselor, (counselor as any).user || null);
-        return { ...base, recommendationScore };
+        return { ...base, recommendationScore, matchReasons };
       })
       .sort((a, b) => b.recommendationScore - a.recommendationScore)
       .slice(0, 10);
@@ -329,13 +389,61 @@ export class CounselorService {
     if (!link) throw httpError(403, "You are not authorized to view this student's progress");
     const student = await Student.findByPk(studentId, { include: [{ model: User, as: "user", attributes: ["name", "email"] }] });
     if (!student) throw httpError(404, "Student not found");
+    const [learningPath, learningPathProgressRows, recentAssessments, trackedScholarships] = await Promise.all([
+      LearningPath.findOne({ where: { studentId } }),
+      LearningPathProgress.findAll({ where: { studentId } }),
+      AssessmentResult.findAll({
+        where: { studentId },
+        order: [["createdAt", "DESC"]],
+        limit: 5,
+      }),
+      TrackedScholarship.findAll({
+        where: { studentId },
+        include: [
+          { model: Scholarship },
+          { model: ScholarshipMilestone },
+        ],
+        order: [["updatedAt", "DESC"]],
+        limit: 10,
+      }),
+    ]);
+
+    const completedProgressCount = learningPathProgressRows.filter((item) => item.isCompleted).length;
+    const progressPercent =
+      learningPathProgressRows.length > 0
+        ? Math.round((completedProgressCount / learningPathProgressRows.length) * 100)
+        : 0;
+
     return {
       studentId: student.id,
       name: (student as any).user?.name || "Unknown",
       email: (student as any).user?.email || "Unknown",
-      learningPath: null,
-      recentAssessments: [],
-      trackedScholarships: [],
+      learningPath: learningPath
+        ? {
+            id: learningPath.id,
+            currentProgress: progressPercent,
+            targetLevel: null,
+          }
+        : null,
+      recentAssessments: recentAssessments.map((assessment) => ({
+        id: assessment.id,
+        type: assessment.examType,
+        score: Number(assessment.overallBand || 0),
+        createdAt: assessment.createdAt,
+      })),
+      trackedScholarships: trackedScholarships.map((item: any) => {
+        const milestones = item.scholarshipMilestones || [];
+        const completedMilestones = milestones.filter((milestone: any) => milestone.isCompleted).length;
+        return {
+          id: item.id,
+          title: item.scholarship?.title || "Untitled Scholarship",
+          matchScore: 0,
+          status: item.status,
+          deadline: item.manualDeadline || item.scholarship?.deadline || null,
+          completedMilestones,
+          totalMilestones: milestones.length,
+        };
+      }),
     };
   }
 
@@ -510,6 +618,47 @@ export class CounselorService {
     }
   }
 
+  private static hasTokenOverlap(leftText: string, rightText: string): boolean {
+    if (!leftText || !rightText) return false;
+    const normalizedLeft = leftText
+      .split(/[^a-z0-9]+/i)
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3);
+    return normalizedLeft.some((token) => rightText.includes(token));
+  }
+
+  private static async findAvailableSlotsForDirectory(
+    counselorIds: number[],
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<Map<number, AvailabilitySlot[]>> {
+    const result = new Map<number, AvailabilitySlot[]>();
+    if (counselorIds.length === 0) return result;
+
+    const whereClause: any = {
+      counselorId: { [Op.in]: counselorIds },
+      status: "available",
+    };
+
+    if (fromDate || toDate) {
+      whereClause.startTime = {};
+      if (fromDate) whereClause.startTime[Op.gte] = new Date(fromDate);
+      if (toDate) whereClause.startTime[Op.lte] = new Date(toDate);
+    }
+
+    const slots = await AvailabilitySlot.findAll({
+      where: whereClause,
+      order: [["startTime", "ASC"]],
+    });
+
+    for (const slot of slots) {
+      const existing = result.get(slot.counselorId) || [];
+      existing.push(slot);
+      result.set(slot.counselorId, existing);
+    }
+    return result;
+  }
+
   private static mergeMetadata(existingRaw: string | null, dto: Partial<CreateCounselorDto | UpdateCounselorDto>): CounselorMetadata {
     const existing = this.parseMetadata(existingRaw);
     return {
@@ -590,6 +739,44 @@ export class CounselorService {
   // Hook point for plugging a real scheduler/queue service.
   private static queueSessionReminder(bookingId: number, startTime: Date): void {
     const reminderAt = new Date(startTime.getTime() - 30 * 60 * 1000);
-    console.log(`[reminder] schedule booking=${bookingId} reminderAt=${reminderAt.toISOString()}`);
+    const delayMs = reminderAt.getTime() - Date.now();
+    if (delayMs <= 0) return;
+    const maxDelay = 2_147_483_647;
+    if (delayMs > maxDelay) {
+      console.log(`[reminder] skipped booking=${bookingId}, delay too long for timer`);
+      return;
+    }
+
+    setTimeout(async () => {
+      try {
+        const booking = await BookingRepository.findById(bookingId);
+        if (!booking || !["confirmed", "started"].includes(booking.status)) return;
+
+        const [student, counselor] = await Promise.all([
+          Student.findByPk(booking.studentId),
+          CounselorRepository.findById(booking.counselorId),
+        ]);
+        if (!student || !counselor) return;
+
+        await Promise.all([
+          NotificationService.createNotification(
+            student.userId,
+            "Counseling session reminder",
+            "Your counseling session starts in about 30 minutes.",
+            "SESSION_REMINDER",
+            booking.id,
+          ),
+          NotificationService.createNotification(
+            counselor.userId,
+            "Upcoming counseling session",
+            "A booked counseling session starts in about 30 minutes.",
+            "SESSION_REMINDER",
+            booking.id,
+          ),
+        ]);
+      } catch (error) {
+        console.error(`[reminder] failed for booking=${bookingId}`, error);
+      }
+    }, delayMs);
   }
 }

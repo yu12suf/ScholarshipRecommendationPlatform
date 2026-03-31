@@ -231,6 +231,16 @@ export const counselorDirectoryValidation = [
   query("language").optional().isString(),
   query("mode").optional().isIn(["chat", "audio", "video"]),
   query("minRating").optional().isFloat({ min: 0, max: 5 }).toFloat(),
+  query("fromDate").optional().isISO8601().withMessage("fromDate must be a valid ISO date"),
+  query("toDate").optional().isISO8601().withMessage("toDate must be a valid ISO date")
+    .custom((value, { req }) => {
+      const fromDate = req.query?.fromDate as string | undefined;
+      if (fromDate && new Date(value) < new Date(fromDate)) {
+        throw new Error("toDate must be greater than or equal to fromDate");
+      }
+      return true;
+    }),
+  query("availableOnly").optional().isBoolean().toBoolean(),
   query("page").optional().isInt({ min: 1 }).toInt(),
   query("limit").optional().isInt({ min: 1, max: 100 }).toInt(),
 ];

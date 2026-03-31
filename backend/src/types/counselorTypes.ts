@@ -102,12 +102,14 @@ export interface CounselorDirectoryQuery {
     minRating?: number;
     fromDate?: string;
     toDate?: string;
+    availableOnly?: boolean;
     page?: number;
     limit?: number;
 }
 
 export interface CounselorRecommendationResponse extends CounselorResponse {
     recommendationScore: number;
+    matchReasons?: string[];
 }
 
 export interface CreateBookingDto {
@@ -161,7 +163,7 @@ export interface StudentProgressResponse {
     learningPath?: {
         id: number;
         currentProgress: number;
-        targetLevel: string;
+        targetLevel: string | null;
     } | null;
     recentAssessments?: Array<{
         id: number;
@@ -173,6 +175,10 @@ export interface StudentProgressResponse {
         id: number;
         title: string;
         matchScore: number;
+        status?: string;
+        deadline?: Date | null;
+        completedMilestones?: number;
+        totalMilestones?: number;
     }>;
 }
 
