@@ -9,6 +9,15 @@ import { Booking } from "../models/Booking.js";
 import { CounselorReview } from "../models/CounselorReview.js";
 import { Document } from "../models/Document.js";
 import { CounselorMessage } from "../models/CounselorMessage.js";
+import { ScholarshipSource } from "../models/ScholarshipSource.js";
+import { Scholarship } from "../models/Scholarship.js";
+import { AssessmentResult } from "../models/AssessmentResult.js";
+import { Notification } from "../models/Notification.js";
+import { Video } from "../models/Video.js";
+import { LearningPath } from "../models/LearningPath.js";
+import { LearningPathProgress } from "../models/LearningPathProgress.js";
+import { TrackedScholarship } from "../models/TrackedScholarship.js";
+import { ScholarshipMilestone } from "../models/ScholarshipMilestone.js";
 import configs from "./configs.js";
 
 console.log('DB_PASSWORD from env:', process.env.DB_PASSWORD ? '****' : 'NOT SET');
@@ -19,8 +28,7 @@ const dbOptions: SequelizeOptions = {
     username: configs.DB_USER,
     password: configs.DB_PASSWORD,
     database: configs.DB_NAME,
-    //logging: false, // Set to console.log to see SQL queries
-    logging: console.log,
+    logging: console.log, // Set to console.log to see SQL queries
 
     dialectOptions: {
         // Force the connection to use UTC for all date/time operations
@@ -39,7 +47,7 @@ const dbOptions: SequelizeOptions = {
 export const sequelize = new Sequelize({
     dialect: "postgres",
     ...dbOptions,
-    timezone: "+00:00", // Additional safety: ensure Sequelize sessions use UTC
+    timezone: "+00:00", // Force UTC to avoid timezone issues
     models: [
         User,
         RefreshToken,
@@ -51,6 +59,15 @@ export const sequelize = new Sequelize({
         CounselorReview,
         Document,
         CounselorMessage,
+        ScholarshipSource,
+        Scholarship,
+        AssessmentResult,
+        Notification,
+        Video,
+        LearningPath,
+        LearningPathProgress,
+        TrackedScholarship,
+        ScholarshipMilestone
     ],
 } as SequelizeOptions);
 
@@ -58,6 +75,12 @@ export const connectSequelize = async () => {
     try {
         await sequelize.authenticate();
         console.log("Sequelize connected successfully");
+
+        // Sync models with database (creates tables if missing)
+        // Note: In production, migrations are preferred.
+        await sequelize.sync({});
+        console.log("Database models synchronized");
+
     } catch (error) {
         console.error("Sequelize connection error:", error);
         process.exit(1);
