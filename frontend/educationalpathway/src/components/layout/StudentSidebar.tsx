@@ -19,9 +19,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { ThemeToggle } from './ThemeToggle';
 
 export function StudentSidebar() {
   const pathname = usePathname();
+  const { logout, user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -32,6 +34,7 @@ export function StudentSidebar() {
     { name: 'Messages', href: '/dashboard/student/chat', icon: MessageSquare },
     { name: 'Assessment', href: '/dashboard/assessment', icon: ClipboardList },
     { name: 'Learning Path', href: '/dashboard/learning-path', icon: Compass },
+    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
@@ -40,10 +43,10 @@ export function StudentSidebar() {
       <div className={`h-16 flex items-center border-b border-border relative ${collapsed && !mobile ? 'justify-center px-3' : 'px-5'}`}>
         {(!collapsed || mobile) && (
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
               <Image src="/admas.png" alt="Logo" width={36} height={36} className="h-full w-full object-cover" />
             </div>
-            <span className="text-sm font-semibold text-foreground tracking-tight">Admas</span>
+            <span className="text-sm font-bold text-foreground tracking-tight">አድማስ</span>
           </div>
         )}
         
@@ -66,8 +69,8 @@ export function StudentSidebar() {
       </div>
 
       {/* NAV */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
+        {menuItems.filter(item => item.name !== 'Settings').map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
           return (
@@ -80,27 +83,39 @@ export function StudentSidebar() {
                 active
                   ? 'text-primary font-bold bg-primary/10'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground font-medium'
-              } ${collapsed && !mobile ? 'justify-center' : ''}`}
+              } ${collapsed && !mobile ? 'justify-center px-0' : ''}`}
             >
               <Icon size={18} className={active ? 'text-primary' : ''} />
-              {(!collapsed || mobile) && <span className="text-sm font-medium">{item.name}</span>}
+              {(!collapsed || mobile) && <span className="text-sm tracking-tight">{item.name}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* FOOTER — Quick Settings */}
-      <div className="p-3 border-t border-border">
-        <Link
-          href="/dashboard/settings"
-          onClick={() => setMobileOpen(false)}
-          title={collapsed && !mobile ? 'Settings' : undefined}
-          className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition focus:outline-none text-muted-foreground hover:bg-muted hover:text-foreground font-medium ${collapsed && !mobile ? 'justify-center' : ''}`}
-        >
-          <Settings size={18} />
-          {(!collapsed || mobile) && <span className="text-sm font-medium">Settings</span>}
-        </Link>
+      {/* FOOTER - Settings */}
+      <div className="p-3 border-t border-border mt-auto">
+        {menuItems.filter(item => item.name === 'Settings').map((item) => {
+          const active = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              title={collapsed && !mobile ? item.name : undefined}
+              className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition focus:outline-none ${
+                active
+                  ? 'text-primary font-bold bg-primary/10'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground font-medium'
+              } ${collapsed && !mobile ? 'justify-center px-0' : ''}`}
+            >
+              <Icon size={18} className={active ? 'text-primary' : ''} />
+              {(!collapsed || mobile) && <span className="text-sm tracking-tight">{item.name}</span>}
+            </Link>
+          );
+        })}
       </div>
+
     </div>
   );
 

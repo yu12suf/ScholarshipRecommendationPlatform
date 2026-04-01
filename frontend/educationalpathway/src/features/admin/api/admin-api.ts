@@ -45,3 +45,12 @@ export const deactivateUser = async (id: number): Promise<void> => {
 export const activateUser = async (id: number): Promise<void> => {
   await api.put(`/user/${id}/activate`);
 };
+
+export const getAllCounselors = async (): Promise<any[]> => {
+  const response = await api.get('/counselors/admin/list');
+  return response.data || [];
+};
+
+export const updateCounselorVerification = async (id: number, status: 'verified' | 'rejected'): Promise<void> => {
+  await api.patch(`/counselors/admin/${id}/verification`, { verificationStatus: status });
+};

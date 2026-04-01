@@ -387,7 +387,7 @@ export function Navbar({ simplified = false }: NavbarProps) {
                         {/* Quick Links */}
                         <div className="p-2 border-b border-gray-100">
                           <Link
-                            href="/dashboard/profile"
+                            href={user?.role === 'counselor' ? '/dashboard/counselor/profile' : '/dashboard/student/profile'}
                             className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                             onClick={() => setIsProfileOpen(false)}
                           >

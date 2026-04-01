@@ -9,21 +9,33 @@ import {
   ChevronRight,
   ArrowRight,
   MessageSquare,
-  FileText
+  FileText,
+  UserPlus
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getScholarships } from "@/features/scholarships/api/get-scholarships";
 import { Scholarship } from "@/features/scholarships/types";
 import { ScholarshipCard } from "@/features/scholarships/components/ScholarshipCard";
+import { getRecommendedCounselors } from "@/features/counselor/api/counselor-api";
 
 export const StudentDashboard = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const [matches, setMatches] = useState<Scholarship[]>([]);
+  const [recommendedCounselors, setRecommendedCounselors] = useState<any[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(true);
+  const [loadingCounselors, setLoadingCounselors] = useState(true);
+
+  useEffect(() => {
+    if (user && !user.isOnboarded) {
+      router.push("/dashboard/student/profile");
+    }
+  }, [user, user?.isOnboarded, router]);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -37,10 +49,23 @@ export const StudentDashboard = () => {
       }
     };
 
+    const fetchCounselors = async () => {
+      try {
+        const data = await getRecommendedCounselors();
+        setRecommendedCounselors(data);
+      } catch (error) {
+        console.error("Failed to fetch recommended counselors:", error);
+      } finally {
+        setLoadingCounselors(false);
+      }
+    };
+
     if (user?.isOnboarded) {
       fetchMatches();
+      fetchCounselors();
     } else {
       setLoadingMatches(false);
+      setLoadingCounselors(false);
     }
   }, [user?.isOnboarded]);
 
@@ -135,7 +160,7 @@ export const StudentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground space-y-12 pb-20">
-
+      
       {/* Welcome */}
       <motion.section
         initial={{ opacity: 0, y: 15 }}
@@ -203,62 +228,122 @@ export const StudentDashboard = () => {
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-        {/* Scholarships */}
-        <div className="lg:col-span-2 space-y-8">
+        {/* Left/Middle Column */}
+        <div className="lg:col-span-2 space-y-12">
 
-          <div className="flex justify-between items-end border-b border-border pb-4">
+          {/* Scholarships */}
+          <div className="space-y-8">
 
-            <div>
-              <h2 className="h3">Recommended Scholarships</h2>
-              <p className="text-small mt-1">
-                Personalized opportunities based on your academic profile.
-              </p>
+            <div className="flex justify-between items-end border-b border-border pb-4">
+
+              <div>
+                <h2 className="h3">Recommended Scholarships</h2>
+                <p className="text-small mt-1">
+                  Personalized opportunities based on your academic profile.
+                </p>
+              </div>
+
+              <Link
+                href="/dashboard/scholarships"
+                className="flex items-center text-primary font-semibold hover:opacity-80"
+              >
+                View all
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+
             </div>
 
-            <Link
-              href="/dashboard/scholarships"
-              className="flex items-center text-primary font-semibold hover:opacity-80"
-            >
-              View all
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {loadingMatches ? (
+                Array.from({ length: 2 }).map((_, i) => (
+                  <Card key={i} className="animate-pulse border border-border bg-card h-48" />
+                ))
+              ) : matches.length > 0 ? (
+                matches.slice(0, 4).map((match) => (
+                  <ScholarshipCard key={match.id} scholarship={match} />
+                ))
+              ) : (
+                <Card className="border border-dashed border-border bg-muted col-span-2">
+                  <CardBody className="py-24 text-center">
+                    <h3 className="h4">Scanning for matches...</h3>
+                    <p className="text-small mt-2 max-w-sm mx-auto">
+                      {user?.isOnboarded 
+                        ? "We haven't found exact matches yet. Try updating your profile with more details."
+                        : "Complete your profile to unlock more scholarship opportunities."}
+                    </p>
+                    <Link href="/dashboard/student/profile">
+                      <Button className="mt-8 primary-gradient text-white">
+                        {user?.isOnboarded ? "Update Profile" : "Enhance Your Profile"}
+                      </Button>
+                    </Link>
+                  </CardBody>
+                </Card>
+              )}
+            </div>
 
           </div>
 
+          {/* More Scholarships */}
+          <div className="space-y-8">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {loadingMatches ? (
-              Array.from({ length: 2 }).map((_, i) => (
-                <Card key={i} className="animate-pulse border border-border bg-card h-48" />
-              ))
-            ) : matches.length > 0 ? (
-              matches.slice(0, 4).map((match) => (
-                <ScholarshipCard key={match.id} scholarship={match} />
-              ))
-            ) : (
-              <Card className="border border-dashed border-border bg-muted col-span-2">
-                <CardBody className="py-24 text-center">
-                  <h3 className="h4">Scanning for matches...</h3>
-                  <p className="text-small mt-2 max-w-sm mx-auto">
-                    {user?.isOnboarded 
-                      ? "We haven't found exact matches yet. Try updating your profile with more details."
-                      : "Complete your profile to unlock more scholarship opportunities."}
-                  </p>
-                  <Link href="/dashboard/student/profile">
-                    <Button className="mt-8 primary-gradient text-white">
-                      {user?.isOnboarded ? "Update Profile" : "Enhance Your Profile"}
-                    </Button>
-                  </Link>
-                </CardBody>
-              </Card>
-            )}
+            <div className="flex justify-between items-end border-b border-border pb-4">
+
+              <div>
+                <h2 className="h3">Matched Opportunities</h2>
+                <p className="text-small mt-1">
+                  High-priority scholarships that match your academic status perfectly.
+                </p>
+              </div>
+
+              <Link
+                href="/dashboard/scholarships"
+                className="flex items-center text-primary font-semibold hover:opacity-80"
+              >
+                Find more
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {loadingMatches ? (
+                <Card className="animate-pulse border border-border bg-card h-24" />
+              ) : matches?.length > 0 ? (
+                matches?.slice(4, 6).map((match) => (
+                  <Card key={match?.id} className="border border-border bg-card hover:border-primary/30 transition-all cursor-pointer">
+                    <CardBody className="p-5 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="h-12 w-12 rounded-full primary-gradient flex items-center justify-center font-bold text-white shrink-0 shadow-sm">
+                          <Award size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-foreground truncate">{match?.title || 'Scholarship Match'}</h4>
+                          <p className="text-[12px] text-muted-foreground truncate">{match?.provider || 'Academic Provider'}</p>
+                        </div>
+                      </div>
+                      <Link href={`/dashboard/scholarships/${match?.id}`}>
+                        <Button variant="outline" size="sm" className="shrink-0 h-9 px-4 font-semibold cursor-pointer">
+                          View
+                        </Button>
+                      </Link>
+                    </CardBody>
+                  </Card>
+                ))
+              ) : (
+                <div className="py-8 text-center bg-muted/30 rounded-lg border border-dashed border-border">
+                  <p className="text-small text-muted-foreground">Finding more opportunities...</p>
+                </div>
+              )}
+            </div>
+
           </div>
 
         </div>
 
-
-        {/* Activity */}
+        {/* Right Column (Activity) */}
         <div className="space-y-8">
+          {/* ... existing activity card ... */}
 
           <div className="border-b border-border pb-4">
             <h2 className="h3">Recent Activity</h2>

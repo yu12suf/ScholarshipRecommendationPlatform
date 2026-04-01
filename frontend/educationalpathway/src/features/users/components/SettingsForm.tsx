@@ -9,17 +9,22 @@ import {
   Moon,
   Monitor,
   Palette,
+  User,
+  LogOut
 } from "lucide-react";
 
-import { Button } from "@/components/ui";
+import { Button } from "@/components/ui/Button";
 import { useTheme, ThemeMode } from "@/providers/theme-context";
+import { useAuth } from "@/providers/auth-context";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const SettingsForm = () => {
   const { mode, setMode } = useTheme();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState("appearance");
 
   const tabs = [
+    { id: "account", title: "Account", icon: User },
     { id: "security", title: "Security", icon: Shield },
     { id: "appearance", title: "Appearance", icon: Palette },
     { id: "billing", title: "Billing", icon: CreditCard },
@@ -61,6 +66,27 @@ export const SettingsForm = () => {
         <main className="flex-1 max-w-2xl">
 
           <AnimatePresence mode="wait">
+
+            {/* ACCOUNT */}
+            {activeTab === "account" && (
+              <motion.div
+                key="account"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-8"
+              >
+                <div>
+                  <h2 className="text-2xl font-black tracking-tight text-foreground">
+                    Account
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Manage your account session and personal identity.
+                  </p>
+                </div>
+
+              </motion.div>
+            )}
 
             {/* APPEARANCE */}
             {activeTab === "appearance" && (
@@ -135,8 +161,8 @@ export const SettingsForm = () => {
               </motion.div>
             )}
 
-            {/* OTHER SETTINGS */}
-            {activeTab !== "appearance" && (
+            {/* OTHER SETTINGS (Security, Billing, etc.) */}
+            {activeTab !== "appearance" && activeTab !== "account" && (
               <motion.div
                 key={activeTab}
                 initial={{ opacity: 0, y: 10 }}

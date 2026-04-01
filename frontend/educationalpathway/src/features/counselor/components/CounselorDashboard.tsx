@@ -11,175 +11,272 @@ import {
   Search,
   Filter,
   UserPlus,
-  ShieldCheck
+  ShieldCheck,
+  CalendarCheck,
+  Clock,
+  CheckCircle2,
+  Award,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { StudentList } from './StudentList';
 import { motion } from 'framer-motion';
-import { getBookedStudents } from '@/features/admin/api/admin-api';
+import { 
+  getCounselorDashboardOverview, 
+  CounselorDashboardOverview,
+  getCounselorProfile 
+} from '@/features/counselor/api/counselor-api';
+import { useRouter } from 'next/navigation';
 
 export const CounselorDashboard = () => {
   const { user } = useAuth();
-  const [studentCount, setStudentCount] = useState<number | null>(null);
+  const router = useRouter();
+  const [statsData, setStatsData] = useState<CounselorDashboardOverview | null>(null);
+  const [counselorProfile, setCounselorProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const students = await getBookedStudents();
-        setStudentCount(students.length);
+        const [stats, profile] = await Promise.all([
+          getCounselorDashboardOverview(),
+          getCounselorProfile()
+        ]);
+        setStatsData(stats);
+        setCounselorProfile(profile);
       } catch (error) {
-        console.error('Failed to fetch counselor stats:', error);
+        console.error('Failed to fetch counselor data:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchStats();
+    fetchData();
   }, []);
 
-  const stats = [
-    { label: 'Total Students', value: studentCount?.toString() || '0', icon: Users, color: 'text-blue-600', bg: 'bg-blue-100', trend: 'Assigned to you' },
-    { label: 'Upcoming Sessions', value: '0', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-100', trend: 'Schedule clear' },
-    { label: 'Unread Messages', value: '0', icon: MessageSquare, color: 'text-amber-600', bg: 'bg-amber-100', trend: 'No new alerts' },
-    { label: 'Success Rate', value: '--', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-100', trend: 'Tracked annually' },
-  ];
+  useEffect(() => {
+    if (counselorProfile && !counselorProfile.isOnboarded) {
+      router.push("/dashboard/counselor/profile");
+    }
+  }, [counselorProfile, counselorProfile?.isOnboarded, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Handle Onboarding / Verification States
+  if (counselorProfile?.verificationStatus === 'pending') {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-6">
+        <Card className="max-w-xl w-full border-border bg-card shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-full h-1 primary-gradient animate-pulse" />
+          <CardBody className="p-12 text-center space-y-6">
+            <div className="h-20 w-20 rounded-full bg-warning/10 flex items-center justify-center mx-auto border-4 border-warning/20">
+              <Clock className="h-10 w-10 text-warning" />
+            </div>
+            <div className="space-y-3">
+              <h1 className="text-3xl font-black tracking-tight">Verification Under Review</h1>
+              <p className="text-muted-foreground leading-relaxed">
+                Our administrative team is currently reviewing your application. This process usually takes <span className="font-bold text-foreground">24-48 hours</span>.
+              </p>
+            </div>
+            <div className="p-4 bg-muted/30 rounded-lg border border-border">
+              <p className="text-xs font-semibold text-muted-foreground">
+                We'll notify you via email as soon as your profile is approved.
+              </p>
+            </div>
+            <Button variant="outline" className="w-full h-12 border-border" onClick={() => window.location.reload()}>
+              Check Status
+            </Button>
+            <div className="pt-2 text-center">
+              <button 
+                onClick={() => {
+                   localStorage.removeItem('accessToken');
+                   window.location.href = '/login';
+                }}
+                className="text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+              >
+                Logout
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  if (counselorProfile.verificationStatus === 'rejected') {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-6">
+        <Card className="max-w-xl w-full border-border bg-card shadow-2xl">
+          <CardBody className="p-12 text-center space-y-6">
+            <div className="h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+              <AlertCircle className="h-10 w-10 text-destructive" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-black tracking-tight">Application Rejected</h1>
+              <p className="text-muted-foreground">Unfortunately, your counselor application was not approved at this time.</p>
+            </div>
+            <p className="text-sm text-muted-foreground pb-4">
+              Common reasons include incomplete documentation or mismatch with platform requirements. Please contact support for more details.
+            </p>
+            <Button variant="outline" className="w-full h-12 border-border">
+              Contact Support
+            </Button>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative min-h-screen space-y-8 pb-12 overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/10 rounded-full blur-[120px] -z-10 animate-pulse" />
-      <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-indigo-400/10 rounded-full blur-[100px] -z-10" />
-
-      {/* Hero Welcome Section */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 md:p-12 shadow-slate-900/20"
-      >
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-            </span>
-            Counselor Portal
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-6">
-            Welcome back, <br/>
-            <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent italic">{user?.name}</span>
-          </h1>
-          <p className="text-slate-400 text-lg md:text-xl font-medium max-w-xl leading-relaxed">
-            You are currently managing <span className="text-white font-bold">{studentCount || 0} students</span>. Check their progress and provide guidance below.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 h-14 rounded-lg shadow-blue-600/20 transition-all hover:scale-105">
-              <UserPlus className="mr-2 h-5 w-5" /> All Students
-            </Button>
-            <Button size="lg" variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10 font-bold px-8 h-14 rounded-lg backdrop-blur-md">
-              <Calendar className="mr-2 h-5 w-5" /> My Schedule
-            </Button>
-          </div>
-        </div>
-        
-        {/* Decorative Background Icon */}
-        <div className="absolute top-0 right-0 mt-8 mr-8 opacity-[0.03] rotate-12">
-          <Users className="h-64 w-64 text-white" />
-        </div>
-      </motion.section>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
-          <motion.div 
-            key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="group bg-white/70 backdrop-blur-xl p-6 rounded-[2rem] border border-slate-200 hover:border-blue-300 hover: hover:shadow-blue-500/5 transition-all cursor-default"
-          >
-            <div className={`w-14 h-14 rounded-lg ${stat.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-              <stat.icon className={`h-7 w-7 ${stat.color}`} />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mb-1">{stat.label}</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-black text-slate-900">{stat.value}</p>
-              </div>
-              <p className="text-xs font-semibold text-slate-400 mt-2 flex items-center gap-1">
-                {stat.trend}
-              </p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Students Section */}
+    <div className="min-h-screen bg-background text-foreground space-y-8 pb-20 max-w-[1600px] mx-auto">
+      
+      {/* Dynamic Header & Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="lg:col-span-2 space-y-6"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="lg:col-span-3 rounded-lg border border-border bg-card p-6 flex items-center justify-between relative overflow-hidden shadow-sm"
         >
-          <div className="flex items-center justify-between px-2">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900">Student Overview</h2>
-              <p className="text-sm text-slate-500 font-medium">Manage your assigned students and their progress</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="rounded-lg border-slate-200">
-                <Filter className="h-4 w-4 mr-2" /> Filter
+          <div className="flex flex-wrap gap-4 relative z-10">
+            <Link href="/dashboard/counselor/bookings">
+              <Button className="primary-gradient text-white shadow-lg shadow-primary/20 h-12 px-6">
+                <CalendarCheck className="mr-2 h-4 w-4" /> Manage Bookings
               </Button>
-              <Button variant="outline" size="sm" className="rounded-lg border-slate-200">
-                <Search className="h-4 w-4 mr-2" /> Search
+            </Link>
+            <Link href="/dashboard/counselor/chat">
+              <Button variant="outline" className="border-border hover:bg-muted text-sm px-6 h-12">
+                <MessageSquare className="mr-2 h-4 w-4" /> Active Chats
               </Button>
-            </div>
+            </Link>
           </div>
 
-          <div className="bg-white/50 backdrop-blur-md rounded-[2.5rem] border border-slate-200 overflow-hidden">
-            <StudentList />
-          </div>
+          {/* Decorative background shape */}
+          <div className="absolute top-0 right-0 -mt-24 -mr-24 w-80 h-80 bg-primary/5 rounded-full blur-[100px]" />
         </motion.div>
 
-        {/* Sidebar / Secondary Section */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-          className="space-y-6"
-        >
-          <div className="px-2">
-            <h2 className="text-2xl font-black text-slate-900">Upcoming</h2>
-            <p className="text-sm text-slate-500 font-medium">Your schedule for the next 24h</p>
+        <Card className="border-border bg-card shadow-sm group hover:border-primary/30 transition-all">
+          <CardBody className="p-8 flex flex-col items-center justify-center text-center h-full space-y-4">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+              <TrendingUp className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <p className="text-small font-black uppercase tracking-tighter opacity-60">Total Impact</p>
+              <h3 className="text-4xl font-black text-foreground mt-1">
+                {statsData?.assignedStudents || 0}
+              </h3>
+              <p className="text-[10px] text-muted-foreground mt-1 font-bold">Mentees Guided</p>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Main Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+        {/* Activity Pulse (Middle Content) */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="flex justify-between items-end border-b border-border pb-4">
+            <div>
+              <h2 className="h3">Mentorship Overview</h2>
+              <p className="text-small mt-1">Assigned students and their engagement levels.</p>
+            </div>
+            <Link href="/dashboard/students" className="text-xs font-bold text-primary hover:underline flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
+              Explore All <ChevronRight size={14} />
+            </Link>
           </div>
 
-          <Card className="rounded-[2rem] border-slate-200 overflow-hidden bg-gradient-to-br from-white to-slate-50">
-            <CardBody className="p-8 text-center">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Calendar className="h-10 w-10 text-slate-300" />
+          <Card className="border-border bg-card overflow-hidden shadow-sm">
+            <StudentList />
+          </Card>
+        </div>
+
+        {/* Sidebar: Insights & Short Term Goals */}
+        <div className="space-y-8 flex flex-col h-full">
+          {/* Actionable Statistics */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="bg-card border-border border-l-4 border-l-primary hover:translate-y-[-2px] transition-transform shadow-sm">
+              <CardBody className="p-6">
+                <p className="text-[10px] font-black tracking-widest uppercase text-muted-foreground mb-3">Pending</p>
+                <div className="flex items-end justify-between">
+                  <h4 className="text-2xl font-black">{statsData?.pendingBookings || 0}</h4>
+                  <div className="p-2 bg-muted rounded-lg"><Clock size={16} className="text-warning" /></div>
+                </div>
+              </CardBody>
+            </Card>
+            <Card className="bg-card border-border border-l-4 border-l-success hover:translate-y-[-2px] transition-transform shadow-sm">
+              <CardBody className="p-6">
+                <p className="text-[10px] font-black tracking-widest uppercase text-muted-foreground mb-3">Completed</p>
+                <div className="flex items-end justify-between">
+                  <h4 className="text-2xl font-black">{statsData?.completedSessions || 0}</h4>
+                  <div className="p-2 bg-muted rounded-lg"><CheckCircle2 size={16} className="text-success" /></div>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Quick Tasks / Next Session */}
+          <Card className="border-border bg-card shadow-sm flex-1">
+            <CardBody className="p-8 flex flex-col h-full">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="font-black text-sm uppercase tracking-widest">Immediate Agenda</h3>
+                <div className="p-1 px-2 bg-muted rounded-lg text-[10px] font-bold">Upcoming</div>
               </div>
-              <p className="text-slate-900 font-black text-xl mb-2">Clear Schedule</p>
-              <p className="text-slate-500 text-sm font-medium mb-8">
-                No sessions scheduled for the rest of today. Take some time to review student applications!
-              </p>
-              <Button className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg shadow-slate-900/10">
-                Update Availability
+
+              {statsData && statsData.upcomingBookings > 0 ? (
+                <div className="space-y-6 flex-1">
+                  {[1, 2].map((_, i) => (
+                    <div key={i} className="flex gap-4 group cursor-pointer hover:translate-x-2 transition-transform">
+                      <div className="w-1 px-0.5 rounded-full bg-primary/20 group-hover:bg-primary transition-colors" />
+                      <div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">In 2 hours</p>
+                        <p className="text-sm font-bold leading-none">Scholarship Strategy Review</p>
+                        <p className="text-xs text-muted-foreground mt-2">with Student Application #{1241 + i}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center py-10 opacity-60 grayscale group hover:grayscale-0 transition-all">
+                  <div className="p-4 bg-muted rounded-full mb-4 group-hover:scale-110 transition-transform">
+                    <Calendar size={24} className="text-muted-foreground" />
+                  </div>
+                  <p className="text-xs font-bold text-center">No immediate sessions.<br/><span className="text-[10px] opacity-70">Focus on mentee progress.</span></p>
+                </div>
+              )}
+
+              <Button className="w-full mt-10 h-12 bg-muted text-foreground hover:bg-primary hover:text-white border-border gap-2 font-bold transition-all shadow-sm">
+                <Filter size={16} /> Open Full Schedule
               </Button>
             </CardBody>
           </Card>
 
-          {/* Quick Tips or Insights */}
-          <div className="p-6 rounded-[2rem] bg-indigo-600 text-white shadow-indigo-600/20">
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-2 bg-white/20 rounded-lg">
+          {/* Engagement Card */}
+          <div className="p-8 rounded-lg bg-primary/10 border border-primary/20 shadow-inner group overflow-hidden relative">
+            <div className="relative z-10 flex items-start gap-4">
+              <div className="p-2.5 bg-primary rounded-lg shadow-md group-hover:rotate-12 transition-transform">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">Pro Tip</span>
+              <div className="space-y-1">
+                <h3 className="font-black text-sm text-primary uppercase tracking-tighter">Pro Insight</h3>
+                <p className="text-foreground/80 text-xs leading-relaxed font-medium">
+                  Reviewing student drafts 48h before deadlines increases successful matching by 72%. 
+                </p>
+              </div>
             </div>
-            <h3 className="font-bold text-lg mb-2">Boost Engagement</h3>
-            <p className="text-indigo-100 text-sm leading-relaxed">
-              Students who receive feedback within 24 hours are 3x more likely to complete their applications.
-            </p>
+            {/* Visual fluff */}
+            <div className="absolute bottom-0 right-0 p-4 opacity-5 translate-y-4 group-hover:translate-y-0 transition-transform">
+              <Award size={100} strokeWidth={1} />
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

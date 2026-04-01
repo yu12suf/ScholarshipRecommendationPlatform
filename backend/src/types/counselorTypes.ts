@@ -11,23 +11,41 @@ export interface CreateCounselorDto {
     currentUniversity?: string;
     currentDegreeLevel?: "bachelors" | "masters";
     availabilitySummary?: string;
+    isOnboarded?: boolean;
+    documentUrl?: string;
+    idCardUrl?: string;
+    selfieUrl?: string;
+    phoneNumber?: string;
+    countryOfResidence?: string;
+    city?: string;
+    specializedCountries?: string;
+    currentPosition?: string;
+    organization?: string;
+    highestEducationLevel?: string;
+    universityName?: string;
+    studyCountry?: string;
+    languages?: string;
+    fieldsOfStudy?: string;
+    weeklySchedule?: string;
+    sessionDuration?: number;
+    profileImageUrl?: string;
+    cvUrl?: string;
+    certificateUrls?: string;
 }
 
-export interface UpdateCounselorDto {
-    bio?: string;
-    areasOfExpertise?: string;
-    hourlyRate?: number;
-    yearsOfExperience?: number;
-    qualifications?: string[];
-    specializations?: string[];
-    supportedLanguages?: string[];
-    consultationModes?: ConsultationMode[];
-    currentUniversity?: string;
-    currentDegreeLevel?: "bachelors" | "masters";
-    availabilitySummary?: string;
-}
+export interface UpdateCounselorDto extends Partial<CreateCounselorDto> {}
 
 export type ConsultationMode = "chat" | "audio" | "video";
+
+export interface WeeklySchedule {
+    slots: DaySchedule[];
+}
+
+export interface DaySchedule {
+    day: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
+    startTime: string; // HH:mm
+    endTime: string; // HH:mm
+}
 
 export interface CredentialDto {
     credentialType: string;
@@ -65,10 +83,30 @@ export interface CounselorResponse {
     qualifications: string[];
     specializations: string[];
     supportedLanguages: string[];
-    consultationModes: ConsultationMode[];
+    consultationModes: ConsultationMode[] | null;
     currentUniversity: string | null;
     currentDegreeLevel: "bachelors" | "masters" | null;
     availabilitySummary: string | null;
+    isOnboarded: boolean;
+    documentUrl: string | null;
+    idCardUrl: string | null;
+    selfieUrl: string | null;
+    phoneNumber: string | null;
+    countryOfResidence: string | null;
+    city: string | null;
+    specializedCountries: string | null;
+    currentPosition: string | null;
+    organization: string | null;
+    highestEducationLevel: string | null;
+    universityName: string | null;
+    studyCountry: string | null;
+    languages: string | null;
+    fieldsOfStudy: string | null;
+    weeklySchedule: string | null;
+    sessionDuration: number | null;
+    profileImageUrl: string | null;
+    cvUrl: string | null;
+    certificateUrls: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

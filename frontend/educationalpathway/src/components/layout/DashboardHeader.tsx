@@ -71,7 +71,7 @@ export function DashboardHeader() {
                 </div>
 
                 <Link
-                  href="/dashboard/profile"
+                  href={user?.role === 'counselor' ? '/dashboard/counselor/profile' : '/dashboard/student/profile'}
                   className="flex items-center gap-3 px-4 py-2.5 mt-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                   onClick={() => setShowUserMenu(false)}
                 >

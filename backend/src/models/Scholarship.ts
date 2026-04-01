@@ -16,6 +16,12 @@ import { ScholarshipSource } from "./ScholarshipSource.js";
 @Table({
     tableName: "scholarships",
     timestamps: true,
+    indexes: [
+        { fields: ["country"] },
+        { fields: ["fund_type"] },
+        { fields: ["degree_levels"], using: "GIN" },
+        { fields: ["source_id"] }
+    ]
 })
 export class Scholarship extends Model {
     @PrimaryKey

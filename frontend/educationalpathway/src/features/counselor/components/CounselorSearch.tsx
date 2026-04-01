@@ -1,16 +1,35 @@
 'use client';
 
-import { Users, Search } from 'lucide-react';
+import { Users, Search, Award } from 'lucide-react';
 import { Input, Button } from '@/components/ui';
+import { useEffect, useState } from 'react';
+import { getRecommendedCounselors } from '../api/counselor-api';
 
 export const CounselorSearch = () => {
+  const [counselors, setCounselors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCounselors = async () => {
+      try {
+        const data = await getRecommendedCounselors();
+        setCounselors(data);
+      } catch (error) {
+        console.error('Failed to fetch recommended counselors:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCounselors();
+  }, []);
+
   return (
     <div className="space-y-12">
 
       {/* Header */}
       <div className="bg-card border border-border rounded-lg p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
         <div className="space-y-2">
-          <h1 className="h2">
+          <h1 className="h2 flex items-center gap-3">
             Experts & Counselors
           </h1>
 
@@ -43,45 +62,77 @@ export const CounselorSearch = () => {
       </div>
 
       {/* Counselor List */}
-      <div className="bg-card border border-border rounded-lg divide-y divide-border">
+      <div className="bg-card border border-border rounded-lg divide-y divide-border overflow-hidden">
 
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between p-6 hover:bg-muted transition"
-          >
+        {loading ? (
+          <div className="p-12 text-center text-muted-foreground animate-pulse">
+            Searching for expert matches...
+          </div>
+        ) : counselors?.length > 0 ? (
+          counselors.map((counselor) => (
+            <div
+              key={counselor.id}
+              className="flex flex-col md:flex-row md:items-center justify-between p-6 hover:bg-muted transition gap-6"
+            >
 
-            {/* Left */}
-            <div className="flex items-center gap-4">
+              {/* Left */}
+              <div className="flex items-center gap-6">
 
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center font-semibold text-sm">
-                {i === 1 ? 'YD' : i === 2 ? 'JS' : 'MA'}
+                <div className="h-14 w-14 rounded-full primary-gradient flex items-center justify-center font-bold text-white shadow-md shrink-0">
+                  {counselor?.name ? counselor.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'A'}
+                </div>
+
+                <div className="space-y-1">
+
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-foreground hover:text-primary transition-colors cursor-pointer">
+                      {counselor?.name || 'Anonymous Expert'}
+                    </h3>
+                    {(counselor?.recommendationScore || 0) >= 8 && (
+                      <div className="px-2 py-0.5 bg-success/10 text-success text-[10px] font-black rounded-full uppercase tracking-tighter">
+                        Top Match
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {counselor?.areasOfExpertise || 'Academic Expert'}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {counselor?.matchReasons?.slice(0, 2).map((reason: string, idx: number) => (
+                      <span key={idx} className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
+                        <Award size={10} />
+                        {reason}
+                      </span>
+                    ))}
+                  </div>
+
+                </div>
+
               </div>
 
-              <div className="space-y-1">
-
-                <h3 className="font-semibold text-foreground">
-                  Professional Counselor {i}
-                </h3>
-
-                <p className="text-small">
-                  Expert in International Scholarships
-                </p>
-
+              {/* Right */}
+              <div className="flex items-center gap-4 shrink-0">
+                <Button
+                  variant="outline"
+                  className="h-10 px-6 font-semibold border-2 hover:bg-primary hover:text-white transition-all cursor-pointer"
+                >
+                  Book Session
+                </Button>
               </div>
 
             </div>
-
-            {/* Right */}
-            <Button
-              variant="outline"
-              className="h-9 cursor-pointer"
-            >
-              Book Session
-            </Button>
-
+          ))
+        ) : (
+          <div className="p-24 text-center">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <h3 className="text-xl font-bold">No Counselor Matches Found</h3>
+            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+              We couldn't find counselors matching your precise profile yet. Try broadening your research areas or interests.
+            </p>
           </div>
-        ))}
+        )}
 
       </div>
 

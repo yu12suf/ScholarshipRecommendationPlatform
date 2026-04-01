@@ -34,6 +34,7 @@ export function AdminSidebar() {
     { name: 'Platform Stats', href: '/dashboard/analytics', icon: Activity },
     { name: 'System Logs', href: '/dashboard/logs', icon: Zap },
     { name: 'Security Center', href: '/dashboard/security', icon: Shield },
+    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
   return (
@@ -113,7 +114,6 @@ export function AdminSidebar() {
       </nav>
 
       {/* FOOTER */}
-
       <div className="p-3 border-t border-border relative">
 
         <AnimatePresence>
@@ -122,56 +122,38 @@ export function AdminSidebar() {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className={`absolute bottom-full mb-2 bg-card border border-border rounded-lg  py-1 flex flex-col overflow-hidden z-50 ${collapsed ? 'left-3 right-3 items-center' : 'left-3 right-3'}`}
+              className="absolute bottom-full left-3 right-3 mb-2 p-2 bg-card border border-border rounded-lg shadow-xl z-50"
             >
-              <Link 
-                href="/dashboard/settings"
-                className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors ${collapsed ? 'justify-center px-0 w-full' : ''}`}
-                onClick={() => setShowUserMenu(false)}
-                title={collapsed ? "Settings" : undefined}
-              >
-                <Settings size={16} />
-                {!collapsed && <span>Settings</span>}
-              </Link>
               <button
-                onClick={() => {
-                  setShowUserMenu(false);
-                  logout();
-                }}
-                className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer w-full text-left ${collapsed ? 'justify-center px-0' : ''}`}
-                title={collapsed ? "Logout" : undefined}
+                onClick={() => logout()}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer"
               >
                 <LogOut size={16} />
-                {!collapsed && <span>Logout</span>}
+                <span>Sign Out</span>
               </button>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <button
+        <div
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer ${collapsed ? 'justify-center' : ''}`}
-          title={collapsed ? "Profile" : undefined}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer ${collapsed ? 'justify-center focus:ring-2 focus:ring-primary/20' : ''}`}
+          title={collapsed ? "Admin Menu" : undefined}
         >
-          <div className="h-8 w-8 rounded-full primary-gradient flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground text-sm font-bold">
+          <div className="h-8 w-8 rounded-full primary-gradient flex items-center justify-center shrink-0 shadow-sm">
+            <span className="text-white text-sm font-black">
               {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
             </span>
           </div>
 
           {!collapsed && (
-            <div className="flex-1 flex flex-col items-start overflow-hidden">
-              <span className="text-sm font-medium text-foreground truncate w-full text-left">
+            <div className="flex-1 flex items-center overflow-hidden">
+              <span className="text-sm font-bold text-foreground truncate w-full text-left">
                 {user?.name || 'Administrator'}
-              </span>
-              <span className="text-xs text-muted-foreground truncate w-full text-left">
-                Admin
               </span>
             </div>
           )}
-        </button>
-
+        </div>
       </div>
 
     </motion.aside>

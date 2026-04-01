@@ -165,7 +165,19 @@ export class CounselorController {
 
   static async getDashboardOverview(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await CounselorService.getDashboardOverview((req as any).counselor.id);
+      const counselor = (req as any).counselor;
+      if (!counselor) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            assignedStudents: 0,
+            upcomingBookings: 0,
+            completedSessions: 0,
+            pendingBookings: 0,
+          },
+        });
+      }
+      const data = await CounselorService.getDashboardOverview(counselor.id);
       res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);
@@ -220,6 +232,15 @@ export class CounselorController {
   static async adminUpdateVerification(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await CounselorService.updateVerification(Number(req.params.id), req.body as AdminVerificationDto);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async adminList(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.adminList();
       res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);

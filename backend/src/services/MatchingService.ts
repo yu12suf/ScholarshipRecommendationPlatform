@@ -29,6 +29,20 @@ export class MatchingService {
       );
     }
 
+    // --- CACHING LAYER ---
+    const filterHash = filters ? JSON.stringify(filters) : "none";
+    const cacheKey = `scholarship_matches:${userId}:${student.profileHash || "no_hash"}:${filterHash}`;
+    
+    try {
+      const cachedResults = await redisConnection.get(cacheKey);
+      if (cachedResults) {
+        console.log(`[MatchingService] Returning CACHED scholarship matches for student ${userId}`);
+        return JSON.parse(cachedResults);
+      }
+    } catch (err) {
+      console.warn("[MatchingService] Redis cache failed, skipping cache lookup:", err);
+    }
+
     // Try to refresh embedding but don't crash if AI service is down
     try {
       await VectorService.generateStudentEmbedding(student);
@@ -71,16 +85,6 @@ export class MatchingService {
         topCandidates,
       );
 
-      // Cache the results for consistency in getMatchById
-      if (aiResults && Array.isArray(aiResults)) {
-        for (const res of aiResults) {
-          if (res && res.id && res.match_score != null) {
-            const cacheKey = `ai_match:${userId}:${res.id}`;
-            await redisConnection.set(cacheKey, JSON.stringify(res), "EX", 3600 * 24); // 24 hours
-          }
-        }
-      }
-
       // Map AI scores back to top candidates
       const rankedMatches = topCandidates.map((c) => {
         const aiMatch = aiResults.find(
@@ -104,11 +108,8 @@ export class MatchingService {
 
       // Pure hybrid for remaining candidates (skipped by AI)
       const unrankedMatches = remainingCandidates.map((c) => {
-        // Boost vector score with specific heuristic verification
         const hScore = MatchingService.calculateHeuristicScore(student, c);
         const vectorScore = c.matchScore || 0;
-        
-        // Final score: 70% vector similarity + 30% rule-based verification
         const finalScore = Math.round((vectorScore * 0.7) + (hScore * 0.3));
         
         return {
@@ -118,10 +119,18 @@ export class MatchingService {
         };
       });
 
-      // Merge and sort
-      return [...rankedMatches, ...unrankedMatches].sort(
+      const finalResults = [...rankedMatches, ...unrankedMatches].sort(
         (a, b) => (b.matchScore || 0) - (a.matchScore || 0),
       );
+
+      // --- STORE IN CACHE ---
+      try {
+        await redisConnection.set(cacheKey, JSON.stringify(finalResults), "EX", 1800); // 30 minutes
+      } catch (err) {
+        console.warn("[MatchingService] Failed to cache scholarship results:", err);
+      }
+
+      return finalResults;
     } catch (err: any) {
       if (err.status === 429 || err.message?.includes("429")) {
         console.warn(
@@ -135,7 +144,7 @@ export class MatchingService {
       }
 
       // Hybrid fallback strategy
-      return candidates
+      const results = candidates
         .map((c) => {
           const hScore = MatchingService.calculateHeuristicScore(student, c);
           const vectorScore = c.matchScore || 0;
@@ -148,6 +157,15 @@ export class MatchingService {
           };
         })
         .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+
+      // --- STORE IN CACHE (shorter ttl for fallbacks) ---
+      try {
+        await redisConnection.set(cacheKey, JSON.stringify(results), "EX", 300); // 5 minutes for fallback
+      } catch (cacheErr) {
+        console.warn("[MatchingService] Failed to cache fallback matching results:", cacheErr);
+      }
+
+      return results;
     }
   }
 

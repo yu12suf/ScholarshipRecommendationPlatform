@@ -14,6 +14,10 @@ import { User } from "./User.js";
 @Table({
     tableName: "students",
     timestamps: true,
+    indexes: [
+        { fields: ["user_id"], unique: true },
+        { fields: ["is_onboarded"] }
+    ]
 })
 export class Student extends Model {
     @Column({

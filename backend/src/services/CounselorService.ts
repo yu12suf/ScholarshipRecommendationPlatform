@@ -57,31 +57,133 @@ const httpError = (statusCode: number, message: string) =>
 export class CounselorService {
   static async applyAsCounselor(userId: number, dto: CreateCounselorDto): Promise<CounselorResponse> {
     const existingCounselor = await CounselorRepository.findByUserId(userId);
-    if (existingCounselor) {
+    
+    // If already exists and already onboarded, prevent re-application
+    if (existingCounselor && existingCounselor.isOnboarded) {
       throw httpError(409, "User already has a counselor profile");
     }
 
-    const counselor = await CounselorRepository.create({
-      userId,
+    let counselor;
+    if (existingCounselor) {
+      // Update existing unonboarded profile
+      counselor = await CounselorRepository.update(userId, {
+        bio: dto.bio || existingCounselor.bio,
+        areasOfExpertise: dto.areasOfExpertise || dto.specializations?.join(", ") || existingCounselor.areasOfExpertise,
+        hourlyRate: Number(dto.hourlyRate) || existingCounselor.hourlyRate,
+        yearsOfExperience: Number(dto.yearsOfExperience) || existingCounselor.yearsOfExperience,
+        verificationStatus: "pending",
+        isOnboarded: dto.isOnboarded || false,
+        phoneNumber: dto.phoneNumber || existingCounselor.phoneNumber,
+        countryOfResidence: dto.countryOfResidence || existingCounselor.countryOfResidence,
+        city: dto.city || existingCounselor.city,
+        specializedCountries: dto.specializedCountries || existingCounselor.specializedCountries,
+        currentPosition: dto.currentPosition || existingCounselor.currentPosition,
+        organization: dto.organization || existingCounselor.organization,
+        highestEducationLevel: dto.highestEducationLevel || existingCounselor.highestEducationLevel,
+        universityName: dto.universityName || existingCounselor.universityName,
+        studyCountry: dto.studyCountry || existingCounselor.studyCountry,
+        languages: dto.languages || existingCounselor.languages,
+        fieldsOfStudy: dto.fieldsOfStudy || existingCounselor.fieldsOfStudy,
+        weeklySchedule: dto.weeklySchedule || existingCounselor.weeklySchedule,
+        sessionDuration: dto.sessionDuration || existingCounselor.sessionDuration,
+        consultationModes: dto.consultationModes ? JSON.stringify(dto.consultationModes) : existingCounselor.consultationModes,
+        profileImageUrl: dto.profileImageUrl || existingCounselor.profileImageUrl,
+        cvUrl: dto.cvUrl || existingCounselor.cvUrl,
+        certificateUrls: dto.certificateUrls || existingCounselor.certificateUrls,
+      });
+    } else {
+      // Create new profile
+      counselor = await CounselorRepository.create({
+        userId,
       bio: dto.bio || "",
       areasOfExpertise: dto.areasOfExpertise || dto.specializations?.join(", ") || "",
-      hourlyRate: dto.hourlyRate,
-      yearsOfExperience: dto.yearsOfExperience,
+      hourlyRate: Number(dto.hourlyRate) || 0,
+      yearsOfExperience: Number(dto.yearsOfExperience) || 0,
       verificationStatus: "pending",
       isActive: true,
+      isOnboarded: dto.isOnboarded || false,
+      idCardUrl: dto.idCardUrl || null,
+      selfieUrl: dto.selfieUrl || null,
+      phoneNumber: dto.phoneNumber || null,
+      countryOfResidence: dto.countryOfResidence || null,
+      city: dto.city || null,
+      specializedCountries: dto.specializedCountries || null,
+      currentPosition: dto.currentPosition || null,
+      organization: dto.organization || null,
+      highestEducationLevel: dto.highestEducationLevel || null,
+      universityName: dto.universityName || null,
+      studyCountry: dto.studyCountry || null,
+      languages: dto.languages || null,
+      fieldsOfStudy: dto.fieldsOfStudy || null,
+      weeklySchedule: dto.weeklySchedule || null,
+      sessionDuration: dto.sessionDuration || 60,
+      consultationModes: dto.consultationModes ? JSON.stringify(dto.consultationModes) : null,
+      profileImageUrl: dto.profileImageUrl || null,
+      cvUrl: dto.cvUrl || null,
+      certificateUrls: dto.certificateUrls || null,
       extractedData: JSON.stringify(this.mergeMetadata(null, dto)),
-    });
+      });
+    }
+
+    if (!counselor) {
+      throw httpError(500, "Failed to create or update counselor profile");
+    }
 
     const user = await User.findByPk(userId);
     return this.formatCounselorResponse(counselor, user);
   }
 
   static async getMyProfile(userId: number): Promise<CounselorResponse> {
+    const user = await User.findByPk(userId);
+    if (!user) throw httpError(404, "User not found");
+
     const counselor = await CounselorRepository.findByUserId(userId);
     if (!counselor) {
-      throw httpError(404, "Counselor profile not found");
+      // Return a partial profile for a counselor who hasn't applied yet
+      return {
+        id: 0,
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        bio: "",
+        areasOfExpertise: "",
+        hourlyRate: 0,
+        yearsOfExperience: 0,
+        verificationStatus: "pending",
+        isActive: true,
+        rating: 0,
+        totalSessions: 0,
+        qualifications: [],
+        specializations: [],
+        supportedLanguages: [],
+        currentUniversity: null,
+        currentDegreeLevel: null,
+        availabilitySummary: null,
+        isOnboarded: false,
+        documentUrl: null,
+        idCardUrl: null,
+        selfieUrl: null,
+        phoneNumber: null,
+        countryOfResidence: null,
+        city: null,
+        specializedCountries: null,
+        currentPosition: null,
+        organization: null,
+        highestEducationLevel: null,
+        universityName: null,
+        studyCountry: null,
+        languages: null,
+        fieldsOfStudy: null,
+        weeklySchedule: null,
+        sessionDuration: 60,
+        consultationModes: null,
+        profileImageUrl: null,
+        cvUrl: null,
+        certificateUrls: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
     }
-    const user = await User.findByPk(userId);
     return this.formatCounselorResponse(counselor, user);
   }
 
@@ -220,9 +322,30 @@ export class CounselorService {
     await counselor.update({
       bio: dto.bio ?? counselor.bio,
       areasOfExpertise: dto.areasOfExpertise ?? dto.specializations?.join(", ") ?? counselor.areasOfExpertise,
-      hourlyRate: dto.hourlyRate ?? counselor.hourlyRate,
-      yearsOfExperience: dto.yearsOfExperience ?? counselor.yearsOfExperience,
+      hourlyRate: dto.hourlyRate !== undefined ? (Number(dto.hourlyRate) || 0) : counselor.hourlyRate,
+      yearsOfExperience: dto.yearsOfExperience !== undefined ? (Number(dto.yearsOfExperience) || 0) : counselor.yearsOfExperience,
       extractedData: JSON.stringify(this.mergeMetadata(counselor.extractedData, dto)),
+      isOnboarded: dto.isOnboarded ?? counselor.isOnboarded,
+      documentUrl: dto.documentUrl ?? counselor.documentUrl,
+      idCardUrl: dto.idCardUrl ?? counselor.idCardUrl,
+      selfieUrl: dto.selfieUrl ?? counselor.selfieUrl,
+      phoneNumber: dto.phoneNumber ?? counselor.phoneNumber,
+      countryOfResidence: dto.countryOfResidence ?? counselor.countryOfResidence,
+      city: dto.city ?? counselor.city,
+      specializedCountries: dto.specializedCountries ?? counselor.specializedCountries,
+      currentPosition: dto.currentPosition ?? counselor.currentPosition,
+      organization: dto.organization ?? counselor.organization,
+      highestEducationLevel: dto.highestEducationLevel ?? counselor.highestEducationLevel,
+      universityName: dto.universityName ?? counselor.universityName,
+      studyCountry: dto.studyCountry ?? counselor.studyCountry,
+      languages: dto.languages ?? counselor.languages,
+      fieldsOfStudy: dto.fieldsOfStudy ?? counselor.fieldsOfStudy,
+      weeklySchedule: dto.weeklySchedule ?? counselor.weeklySchedule,
+      sessionDuration: dto.sessionDuration ?? counselor.sessionDuration,
+      consultationModes: dto.consultationModes ? JSON.stringify(dto.consultationModes) : counselor.consultationModes,
+      profileImageUrl: dto.profileImageUrl ?? counselor.profileImageUrl,
+      cvUrl: dto.cvUrl ?? counselor.cvUrl,
+      certificateUrls: dto.certificateUrls ?? counselor.certificateUrls,
     });
 
     const user = await User.findByPk(userId);
@@ -541,6 +664,13 @@ export class CounselorService {
     return this.formatCounselorResponse(counselor, user);
   }
 
+  static async adminList(): Promise<CounselorResponse[]> {
+    const counselors = await Counselor.findAll({
+      include: [{ model: User, as: "user", attributes: ["name", "email"] }],
+    });
+    return counselors.map((counselor) => this.formatCounselorResponse(counselor, (counselor as any).user || null));
+  }
+
   static async updateVisibility(counselorId: number, dto: AdminVisibilityDto): Promise<CounselorResponse> {
     const counselor = await CounselorRepository.findById(counselorId);
     if (!counselor) throw httpError(404, "Counselor not found");
@@ -673,13 +803,12 @@ export class CounselorService {
   }
 
   private static formatCounselorResponse(counselor: Counselor, user: User | null): CounselorResponse {
-    if (!user) throw httpError(404, "User not found for counselor");
     const metadata = this.parseMetadata(counselor.extractedData);
     return {
       id: counselor.id,
       userId: counselor.userId,
-      name: user.name,
-      email: user.email,
+      name: user?.name || "Unknown User",
+      email: user?.email || "N/A",
       bio: counselor.bio,
       areasOfExpertise: counselor.areasOfExpertise,
       hourlyRate: counselor.hourlyRate,
@@ -695,6 +824,26 @@ export class CounselorService {
       currentUniversity: metadata.currentUniversity || null,
       currentDegreeLevel: metadata.currentDegreeLevel || null,
       availabilitySummary: metadata.availabilitySummary || null,
+      isOnboarded: counselor.isOnboarded,
+      documentUrl: counselor.documentUrl,
+      idCardUrl: counselor.idCardUrl,
+      selfieUrl: counselor.selfieUrl,
+      phoneNumber: counselor.phoneNumber,
+      countryOfResidence: counselor.countryOfResidence,
+      city: counselor.city,
+      specializedCountries: counselor.specializedCountries,
+      currentPosition: counselor.currentPosition,
+      organization: counselor.organization,
+      highestEducationLevel: counselor.highestEducationLevel,
+      universityName: counselor.universityName,
+      studyCountry: counselor.studyCountry,
+      languages: counselor.languages,
+      fieldsOfStudy: counselor.fieldsOfStudy,
+      weeklySchedule: counselor.weeklySchedule,
+      sessionDuration: counselor.sessionDuration,
+      profileImageUrl: counselor.profileImageUrl,
+      cvUrl: counselor.cvUrl,
+      certificateUrls: counselor.certificateUrls,
       createdAt: counselor.createdAt,
       updatedAt: counselor.updatedAt,
     };

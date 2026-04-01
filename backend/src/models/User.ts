@@ -8,12 +8,14 @@ import {
     Unique,
     Default,
     HasMany,
+    HasOne,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
 import { RefreshToken } from "./RefreshToken.js";
 import { PasswordResetToken } from "./PasswordResetToken.js";
 import { Consultation } from "./Consultation.js";
+import { Counselor } from "./Counselor.js";
 import { UserRole } from "../types/userTypes.js";
 
 @Table({
@@ -106,4 +108,7 @@ export class User extends Model {
 
     @HasMany(() => Consultation, 'counselor_id')
     consultationsAsCounselor!: Consultation[];
+
+    @HasOne(() => Counselor)
+    counselor!: Counselor;
 }
