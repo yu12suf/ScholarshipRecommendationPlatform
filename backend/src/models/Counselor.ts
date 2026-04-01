@@ -8,12 +8,22 @@ import {
     Default,
     CreatedAt,
     UpdatedAt,
+    HasMany,
 } from "sequelize-typescript";
 import { User } from "./User.js";
+import { AvailabilitySlot } from './AvailabilitySlot.js';
+import { Booking } from './Booking.js';
+import { CounselorReview } from './CounselorReview.js';
 
 @Table({
     tableName: "counselors",
     timestamps: true,
+    indexes: [
+        { fields: ["user_id"], unique: true },
+        { fields: ["verification_status"] },
+        { fields: ["is_active"] },
+        { fields: ["is_onboarded"] }
+    ]
 })
 export class Counselor extends Model {
     @Column({
@@ -45,6 +55,13 @@ export class Counselor extends Model {
     declare areasOfExpertise: string;
 
     @Column({
+        type: DataType.DECIMAL(10, 2),
+        allowNull: true,
+        field: 'hourly_rate'
+    })
+    declare hourlyRate: number;
+
+    @Column({
         type: DataType.INTEGER,
         allowNull: true,
         field: 'years_of_experience'
@@ -57,7 +74,31 @@ export class Counselor extends Model {
         defaultValue: 'pending',
         field: 'verification_status'
     })
-    declare verificationStatus: string;
+    declare verificationStatus: 'pending' | 'verified' | 'rejected';
+
+    @Default(true)
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        field: 'is_active'
+    })
+    declare isActive: boolean;
+
+    @Column({
+        type: DataType.DECIMAL(3, 2),
+        allowNull: true,
+        defaultValue: 0,
+        field: 'rating'
+    })
+    declare rating: number;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: 0,
+        field: 'total_sessions'
+    })
+    declare totalSessions: number;
 
     @Column({
         type: DataType.TEXT,
@@ -110,6 +151,123 @@ export class Counselor extends Model {
     })
     declare selfieUrl: string;
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'phone_number'
+    })
+    declare phoneNumber: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'country_of_residence'
+    })
+    declare countryOfResidence: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    declare city: string;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'specialized_countries'
+    })
+    declare specializedCountries: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'current_position'
+    })
+    declare currentPosition: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+    })
+    declare organization: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'highest_education_level'
+    })
+    declare highestEducationLevel: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'university_name'
+    })
+    declare universityName: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'study_country'
+    })
+    declare studyCountry: string;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+    })
+    declare languages: string;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'fields_of_study'
+    })
+    declare fieldsOfStudy: string;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'weekly_schedule'
+    })
+    declare weeklySchedule: string;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: 60,
+        field: 'session_duration'
+    })
+    declare sessionDuration: number;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'consultation_modes'
+    })
+    declare consultationModes: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'profile_image_url'
+    })
+    declare profileImageUrl: string;
+
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        field: 'cv_url'
+    })
+    declare cvUrl: string;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'certificate_urls'
+    })
+    declare certificateUrls: string;
+
     @CreatedAt
     @Column({
         type: DataType.DATE,
@@ -126,4 +284,13 @@ export class Counselor extends Model {
 
     @BelongsTo(() => User)
     user!: User;
+
+    @HasMany(() => AvailabilitySlot, { foreignKey: 'counselorId' })
+    availabilitySlots!: AvailabilitySlot[];
+
+    @HasMany(() => Booking, { foreignKey: 'counselorId' })
+    bookings!: Booking[];
+
+    @HasMany(() => CounselorReview, { foreignKey: 'counselorId' })
+    reviews!: CounselorReview[];
 }

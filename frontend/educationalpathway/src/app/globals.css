@@ -1,0 +1,300 @@
+@import "tailwindcss";
+
+/* ---------------- THEME TOKENS ---------------- */
+
+@theme {
+  /* Base Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Semantic */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  /* UI */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Radius Scale */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Typography */
+  --font-sans: var(--font-open-sans), "Open Sans", system-ui, sans-serif;
+  --font-serif: var(--font-playfair), "Playfair Display", Georgia, serif;
+}
+
+/* ---------------- LIGHT MODE ---------------- */
+
+:root {
+
+  /* Base */
+  --background: #ffffff;
+  --foreground: #111827;
+
+  /* Surfaces */
+  --card: #ffffff;
+  --card-foreground: #111827;
+
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+
+  /* Primary — Emerald Green (brand only) */
+  --primary: #059669;
+  --primary-foreground: #ffffff;
+
+  /* Secondary UI */
+  --secondary: #f3f4f6;
+  --secondary-foreground: #1f2937;
+
+  /* Muted Surfaces */
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+
+  /* Hover / subtle surfaces */
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+
+  /* Semantics */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+
+  /* Borders */
+  --border: #e5e7eb;
+  --input: #f3f4f6;
+  --input-bg: #f4f4f5;
+  --ring: #059669;
+
+  --radius: 0.25rem;
+}
+
+/* ---------------- DARK MODE ---------------- */
+
+.dark {
+
+  /* Base - True dark */
+  --background: #09090b;
+  --foreground: #fafafa;
+
+  /* Surfaces */
+  --card: #18181b;
+  --card-foreground: #fafafa;
+
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+
+  /* Primary - Keep brand colors */
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+
+  /* Sidebar / panels */
+  --secondary: #18181b;
+  --secondary-foreground: #fafafa;
+
+  /* Muted surfaces */
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+
+  /* Hover surfaces */
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+
+  /* Semantics */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+
+  /* Borders */
+  --border: #27272a;
+  --input: transparent;
+  --input-bg: #27272a;
+  --ring: #10b981;
+}
+
+/* ---------------- BASE STYLES ---------------- */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Unified form control styling — same look in light and dark */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select,
+textarea {
+  background-color: var(--input-bg) !important;
+  color: var(--foreground) !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+select:focus,
+textarea:focus {
+  background-color: var(--input-bg) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* ---------------- GRADIENT UTILITIES ---------------- */
+
+.primary-gradient {
+  background: linear-gradient(135deg, #059669 0%, #065f46 100%);
+}
+
+.secondary-gradient {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 70%, #059669 100%);
+}
+
+/* ---------------- GLASS MORPHISM ---------------- */
+
+.glass-morphism {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.dark .glass-morphism {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+/* ---------------- TYPOGRAPHY ---------------- */
+
+.h1 { @apply text-4xl font-extrabold tracking-tight md:text-5xl; font-family: var(--font-serif); }
+.h2 { @apply text-3xl font-bold tracking-tight md:text-4xl; font-family: var(--font-serif); }
+.h3 { @apply text-2xl font-semibold tracking-tight; font-family: var(--font-serif); }
+.h4 { @apply text-xl font-semibold tracking-tight; font-family: var(--font-serif); }
+
+.text-body { @apply text-base leading-relaxed text-foreground; }
+.text-small { @apply text-sm text-muted-foreground font-medium; }
+.text-label { @apply text-xs uppercase tracking-widest font-bold text-muted-foreground; }
+
+/* ---------------- REACT SELECT ---------------- */
+
+.react-select__control {
+  background: var(--muted) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--radius) !important;
+  min-height: 3rem !important;
+  font-size: 0.875rem !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-select__control--is-focused {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 20%, transparent) !important;
+}
+
+.react-select__input-container {
+  color: var(--foreground) !important;
+}
+
+.react-select__placeholder {
+  color: var(--muted-foreground) !important;
+}
+
+.react-select__single-value {
+  color: var(--foreground) !important;
+}
+
+.react-select__menu {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  margin-top: 4px !important;
+  z-index: 50 !important;
+}
+
+.react-select__option {
+  color: var(--foreground) !important;
+  background: transparent !important;
+  font-size: 0.875rem !important;
+  padding: 8px 12px !important;
+  cursor: pointer !important;
+}
+
+.react-select__option--is-focused {
+  background: var(--muted) !important;
+}
+
+.react-select__option--is-selected {
+  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+  color: var(--primary) !important;
+  font-weight: 600 !important;
+}
+
+.react-select__multi-value {
+  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+  border-radius: 6px !important;
+}
+
+.react-select__multi-value__label {
+  color: var(--primary) !important;
+  font-weight: 600 !important;
+}
+
+.react-select__multi-value__remove:hover {
+  background: var(--destructive) !important;
+  color: var(--destructive-foreground) !important;
+}
+
+/* ---------------- SCROLLBAR UTILITIES ---------------- */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

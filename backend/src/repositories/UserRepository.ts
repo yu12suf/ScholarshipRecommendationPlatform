@@ -1,4 +1,5 @@
 import { User } from "../models/User.js";
+import { Consultation } from "../models/Consultation.js";
 import { CreateUserDto, UpdateUserDto, UserRole } from "../types/userTypes.js";
 
 export class UserRepository {
@@ -103,6 +104,37 @@ export class UserRepository {
             limit,
             offset,
             order: [['createdAt', 'DESC']]
+        });
+    }
+
+    static async countAll(): Promise<number> {
+        return User.count();
+    }
+
+    static async countByRole(role: UserRole): Promise<number> {
+        return User.count({ where: { role } });
+    }
+
+    static async findBookedStudents(counselorId: number): Promise<User[]> {
+        return User.findAll({
+            include: [{
+                model: Consultation,
+                as: 'consultationsAsStudent', // Assuming default or specific alias
+                where: { counselorId },
+                required: true
+            }],
+            order: [['createdAt', 'DESC']]
+        });
+    }
+
+    static async countBookedStudents(counselorId: number): Promise<number> {
+        return User.count({
+            include: [{
+                model: Consultation,
+                as: 'consultationsAsStudent',
+                where: { counselorId },
+                required: true
+            }]
         });
     }
 }

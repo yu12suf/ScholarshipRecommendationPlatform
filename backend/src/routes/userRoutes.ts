@@ -18,7 +18,20 @@ router.put(
   UserController.updateProfile,
 );
 
+router.get(
+  "/booked-students",
+  authenticate,
+  authorize(UserRole.COUNSELOR),
+  UserController.getBookedStudents,
+);
+
 // Admin only routes
+router.get(
+  "/stats",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  UserController.getStats,
+);
 router.get(
   "/",
   authenticate,
@@ -28,7 +41,7 @@ router.get(
 router.get(
   "/role/:role",
   authenticate,
-  authorize(UserRole.ADMIN),
+  authorize(UserRole.ADMIN, UserRole.COUNSELOR),
   UserController.getUsersByRole,
 );
 router.get(

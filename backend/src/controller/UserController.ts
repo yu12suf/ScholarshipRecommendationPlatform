@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { UserService } from "../services/UserService.js";
+import { UserRepository } from "../repositories/UserRepository.js";
 import { UpdateUserDto, UserRole } from "../types/userTypes.js";
 
 export class UserController {
@@ -113,6 +114,28 @@ export class UserController {
         return;
       }
       res.json({ message: "User activated successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stats = await UserService.getAdminStats();
+      res.json(stats);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getBookedStudents(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      const students = await UserRepository.findBookedStudents(req.user.id);
+      res.json(students);
     } catch (error) {
       next(error);
     }
