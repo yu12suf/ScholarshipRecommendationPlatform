@@ -7,20 +7,24 @@ import '../providers/providers.dart';
 import '../utils/app_colors.dart';
 import '../widgets/auth_widgets.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key, this.role = 'student'});
+
+  final String role;
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _submitting = false;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -31,20 +35,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return error?.toString() ?? 'Something went wrong';
   }
 
-  Future<void> _signIn() async {
+  String get _roleForApi {
+    final r = widget.role.trim().toLowerCase();
+    if (r == 'counselor') return 'counselor';
+    return 'student';
+  }
+
+  Future<void> _createAccount() async {
     FocusScope.of(context).unfocus();
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    if (email.isEmpty || password.isEmpty) {
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password')),
+        const SnackBar(content: Text('Please fill in all fields')),
       );
       return;
     }
 
     setState(() => _submitting = true);
     try {
-      await ref.read(authProvider.notifier).login(email: email, password: password);
+      await ref.read(authProvider.notifier).register(
+            name: name,
+            email: email,
+            password: password,
+            role: _roleForApi,
+          );
       if (!mounted) return;
       final next = ref.read(authProvider);
       if (next.hasError) {
@@ -74,43 +90,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Welcome Back", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            const Text("Create Account", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            const Text("Log in to continue your journey.", style: TextStyle(color: AppColors.textLight)),
+            const Text("Join the EduPathway community today.", style: TextStyle(color: AppColors.textLight)),
             const SizedBox(height: 32),
-            
+
+            const Text("Full Name", style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            CustomTextField(hintText: "John Doe", prefixIcon: Icons.person_outline, controller: _nameController),
+
             const Text("Email Address", style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            CustomTextField(hintText: "Email Address", controller: _emailController),
-            
+            CustomTextField(hintText: "john@example.com", prefixIcon: Icons.email_outlined, controller: _emailController),
+
             const Text("Password", style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            CustomTextField(hintText: "Password", isPassword: true, controller: _passwordController),
-            
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {},
-                child: const Text("Forgot password?", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-              ),
-            ),
+            CustomTextField(hintText: "••••••••", prefixIcon: Icons.lock_outline, isPassword: true, controller: _passwordController),
+
             const SizedBox(height: 24),
-            
+
             PrimaryButton(
-              text: "Login",
+              text: "Create Account",
               isLoading: _submitting,
-              onPressed: _signIn,
+              onPressed: _createAccount,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            PrimaryButton(
+              text: "Continue with Google",
+              isOutlined: true,
+              // We use a local asset or icon for google. For now, a standard icon.
+              icon: const Icon(Icons.g_mobiledata, size: 32, color: AppColors.textDark),
+              onPressed: () {
+                // TODO: Add google_sign_in and/or Firebase Auth on mobile to obtain a Google ID token,
+                // then call: ref.read(authProvider.notifier).loginWithGoogle(idToken: idToken);
+              },
+            ),
+
+            const SizedBox(height: 32),
             Center(
               child: GestureDetector(
-                onTap: () => context.push('/register'),
+                onTap: () => context.push('/login'),
                 child: RichText(
                   text: const TextSpan(
-                    text: "Don't have an account? ",
+                    text: "Already have an account? ",
                     style: TextStyle(color: AppColors.textLight),
                     children: [
-                      TextSpan(text: "Register", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      TextSpan(text: "Login", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
