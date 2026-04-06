@@ -45,6 +45,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _submitting = true);
     try {
       await ref.read(authProvider.notifier).login(email: email, password: password);
+      // Logic: router_provider's redirect will catch the state change and move us to /home.
+      // But we can check for errors here if the state after login has an error.
       if (!mounted) return;
       final next = ref.read(authProvider);
       if (next.hasError) {
