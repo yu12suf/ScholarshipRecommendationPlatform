@@ -136,7 +136,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               text: "Continue with Google",
               isOutlined: true,
               icon: const Icon(Icons.g_mobiledata, size: 32, color: AppColors.textDark),
-              onPressed: _submitting ? null : _continueWithGoogle,
+              isLoading: _submitting,
+              onPressed: _continueWithGoogle,
             ),
 
             const SizedBox(height: 32),

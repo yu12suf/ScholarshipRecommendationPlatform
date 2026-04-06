@@ -12,7 +12,7 @@ class LearningPathNotifier extends AsyncNotifier<FormattedLearningPath?> {
   Future<FormattedLearningPath?> build() async {
     await ref.watch(authProvider.future);
     final auth = ref.read(authProvider).valueOrNull;
-    if (auth is! AuthSignedIn) return null;
+    if (auth == null) return null;
 
     return _api.fetchMyPath();
   }
@@ -22,7 +22,7 @@ class LearningPathNotifier extends AsyncNotifier<FormattedLearningPath?> {
     state = await AsyncValue.guard(() async {
       await ref.read(authProvider.future);
       final auth = ref.read(authProvider).valueOrNull;
-      if (auth is! AuthSignedIn) return null;
+      if (auth == null) return null;
       return _api.fetchMyPath();
     });
   }
@@ -41,7 +41,7 @@ class LearningPathNotifier extends AsyncNotifier<FormattedLearningPath?> {
       );
       await ref.read(authProvider.future);
       final auth = ref.read(authProvider).valueOrNull;
-      if (auth is! AuthSignedIn) return null;
+      if (auth == null) return null;
       return _api.fetchMyPath();
     });
   }

@@ -53,6 +53,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final googleSignIn = GoogleSignIn(
+        serverClientId: '1081388357543-2knkqaobgu0cst5boq1cqurbcvb3njnl.apps.googleusercontent.com', // Web Client ID
         scopes: [
           'email',
           'profile',

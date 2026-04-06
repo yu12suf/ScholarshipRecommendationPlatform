@@ -16,7 +16,7 @@ class ScholarshipMatchesNotifier extends AsyncNotifier<List<MatchedScholarship>>
   Future<List<MatchedScholarship>> build() async {
     await ref.watch(authProvider.future);
     final auth = ref.read(authProvider).valueOrNull;
-    if (auth is! AuthSignedIn) return [];
+    if (auth == null) return [];
 
     final filters = ref.watch(scholarshipMatchFiltersProvider);
     return _api.fetchMatches(filters: filters);
@@ -27,7 +27,7 @@ class ScholarshipMatchesNotifier extends AsyncNotifier<List<MatchedScholarship>>
     state = await AsyncValue.guard(() async {
       await ref.read(authProvider.future);
       final auth = ref.read(authProvider).valueOrNull;
-      if (auth is! AuthSignedIn) return <MatchedScholarship>[];
+      if (auth == null) return <MatchedScholarship>[];
       final filters = ref.read(scholarshipMatchFiltersProvider);
       return _api.fetchMatches(filters: filters);
     });
@@ -46,7 +46,7 @@ class ScholarshipDetailNotifier extends FamilyAsyncNotifier<MatchedScholarship, 
   Future<MatchedScholarship> build(int scholarshipId) async {
     await ref.watch(authProvider.future);
     final auth = ref.read(authProvider).valueOrNull;
-    if (auth is! AuthSignedIn) {
+    if (auth == null) {
       throw const UnauthorizedScholarshipAccess();
     }
     return _api.fetchScholarshipById(scholarshipId);
@@ -58,7 +58,7 @@ class ScholarshipDetailNotifier extends FamilyAsyncNotifier<MatchedScholarship, 
     state = await AsyncValue.guard(() async {
       await ref.read(authProvider.future);
       final auth = ref.read(authProvider).valueOrNull;
-      if (auth is! AuthSignedIn) throw const UnauthorizedScholarshipAccess();
+      if (auth == null) throw const UnauthorizedScholarshipAccess();
       return _api.fetchScholarshipById(id);
     });
   }
@@ -80,7 +80,7 @@ class ScholarshipWatchlistNotifier extends AsyncNotifier<List<TrackedScholarship
   Future<List<TrackedScholarship>> build() async {
     await ref.watch(authProvider.future);
     final auth = ref.read(authProvider).valueOrNull;
-    if (auth is! AuthSignedIn) return [];
+    if (auth == null) return [];
 
     return _api.fetchWatchlist();
   }
@@ -90,7 +90,7 @@ class ScholarshipWatchlistNotifier extends AsyncNotifier<List<TrackedScholarship
     state = await AsyncValue.guard(() async {
       await ref.read(authProvider.future);
       final auth = ref.read(authProvider).valueOrNull;
-      if (auth is! AuthSignedIn) return <TrackedScholarship>[];
+      if (auth == null) return <TrackedScholarship>[];
       return _api.fetchWatchlist();
     });
   }
