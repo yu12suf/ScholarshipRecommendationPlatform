@@ -46,7 +46,7 @@ class AuthApiService {
     final refresh = parseRefreshTokenFromHeaders(response.headers);
 
     return AuthSession(
-      user: AppUser.fromJson(userMap),
+      user: User.fromJson(userMap),
       accessToken: access,
       refreshToken: refresh,
     );
@@ -114,20 +114,20 @@ class AuthApiService {
     return session;
   }
 
-  Future<AppUser> fetchCurrentUser() async {
+  Future<User> fetchCurrentUser() async {
     final response = await _api.get('/api/auth/me');
     if (response.statusCode != 200) {
       throwForResponse(response, fallback: 'Failed to load profile');
     }
     final map = decodeJsonObject(response);
-    return AppUser.fromJson(map);
+    return User.fromJson(map);
   }
 
   Future<void> logout() async {
     try {
       final response = await _api.post('/api/auth/logout', auth: true);
       if (response.statusCode != 200) {
-        // Still clear local session if server returns error after auth drift.
+        // Still clear local session
       }
     } finally {
       await _tokens.clear();

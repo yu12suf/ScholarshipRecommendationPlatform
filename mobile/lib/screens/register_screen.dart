@@ -73,6 +73,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
+  Future<void> _continueWithGoogle() async {
+    setState(() => _submitting = true);
+    try {
+      await ref.read(authProvider.notifier).loginWithGoogle();
+      if (!mounted) return;
+      final next = ref.read(authProvider);
+      if (next.hasError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_messageForError(next.error))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,12 +135,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             PrimaryButton(
               text: "Continue with Google",
               isOutlined: true,
-              // We use a local asset or icon for google. For now, a standard icon.
               icon: const Icon(Icons.g_mobiledata, size: 32, color: AppColors.textDark),
-              onPressed: () {
-                // TODO: Add google_sign_in and/or Firebase Auth on mobile to obtain a Google ID token,
-                // then call: ref.read(authProvider.notifier).loginWithGoogle(idToken: idToken);
-              },
+              isLoading: _submitting,
+              onPressed: _continueWithGoogle,
             ),
 
             const SizedBox(height: 32),

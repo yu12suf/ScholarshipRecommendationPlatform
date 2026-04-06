@@ -30,6 +30,12 @@ function setConfigs() {
       process.env.JWT_REFRESH_EXPIRES_IN ||
       "7d",
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_ANDROID_CLIENT_ID: process.env.GOOGLE_ANDROID_CLIENT_ID,
+    GOOGLE_AUTH_AUDIENCES: [
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_ANDROID_CLIENT_ID,
+    ].filter((id): id is string => !!id),
+
 
     // Email SMTP Config
     SMTP_HOST: process.env.SMTP_HOST,

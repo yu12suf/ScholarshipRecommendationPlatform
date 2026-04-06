@@ -8,7 +8,7 @@ class AuthSession {
     this.refreshToken,
   });
 
-  final AppUser user;
+  final User user;
   final String accessToken;
 
   /// Present when parsed from Set-Cookie or a future API that returns it in JSON.

@@ -9,7 +9,10 @@ const router = express.Router();
 router.post("/trigger-discovery", ScholarshipController.triggerDiscovery);
 router.get("/sources", ScholarshipController.getSources);
 router.get("/match", authenticate, ScholarshipController.getMatches);
-router.get("/:id", authenticate, ScholarshipController.getDetails);
+
+// Static paths must be registered before `/:id` so they are not parsed as IDs.
+
+router.get("/calendar", authenticate, ScholarshipTrackingController.getCalendar);
 
 // Tracking & Deadline Management
 router.post("/track/:scholarshipId", authenticate, ScholarshipTrackingController.track);
@@ -20,6 +23,7 @@ router.patch("/track/status/:id", authenticate, ScholarshipTrackingController.up
 router.patch("/track/notification-settings/:id", authenticate, ScholarshipTrackingController.updateNotificationSettings);
 router.post("/track/milestones/:id", authenticate, ScholarshipTrackingController.addMilestone);
 router.patch("/track/milestones/toggle/:milestoneId", authenticate, ScholarshipTrackingController.toggleMilestone);
-router.get("/calendar", authenticate, ScholarshipTrackingController.getCalendar);
+
+router.get("/:id", authenticate, ScholarshipController.getDetails);
 
 export default router;
