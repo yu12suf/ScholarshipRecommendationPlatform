@@ -61,7 +61,7 @@ export class AuthService {
 
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: configs.GOOGLE_CLIENT_ID || "",
+      audience: configs.GOOGLE_AUTH_AUDIENCES,
     });
 
     const payload = ticket.getPayload() as GoogleTokenPayload | undefined;
