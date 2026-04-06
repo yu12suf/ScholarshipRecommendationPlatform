@@ -30,8 +30,11 @@ export class OnboardingService {
 
         if (!repository) throw new Error(`Invalid role: ${role}`);
 
-        const instance = await repository.findByUserId(userId);
-        if (!instance) throw new Error(`${role} record not found for user`);
+        let instance = await repository.findByUserId(userId);
+        if (!instance) {
+            console.log(`Creating missing ${role} record for user ${userId}`);
+            instance = await repository.create({ userId });
+        }
 
         // 3. Update repository with both URL and extracted JSON
         await repository.update(userId, {
