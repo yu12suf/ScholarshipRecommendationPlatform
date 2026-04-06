@@ -16,6 +16,7 @@ node_modules/
 #local testin gfiles
 backend/check-env.js
 backend/test-db.js
+backend/node_modules
 # IDE and System files
 .vscode/
 .idea/
