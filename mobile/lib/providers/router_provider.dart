@@ -2,11 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../screens/home_screen.dart';
-import '../screens/landing_screen.dart';
-import '../screens/login_screen.dart';
-import '../screens/register_screen.dart';
-import '../screens/role_selection_screen.dart';
+import '../screens/screens.dart';
 import 'auth_provider.dart';
 
 /// Notifies [GoRouter] when [authProvider] changes so top-level [redirect] runs again.
@@ -33,32 +29,32 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: refresh,
     redirect: (context, state) {
-      final auth = ref.read(authProvider);
+      final auth = ref.read(authProvider).valueOrNull;
       final loc = state.matchedLocation;
       
       final onLogin = loc == '/login';
       final onRegister = loc == '/register';
       final onRoleSelection = loc == '/role-selection';
       final onLanding = loc == '/';
+      final onOnboarding = loc == '/onboarding';
       final onGuestAuthFlow = onLogin || onRegister || onRoleSelection || onLanding;
 
-      return auth.when(
-        data: (user) {
-          final loggedIn = user != null;
-          
-          if (loggedIn && onGuestAuthFlow) {
-            return '/home';
-          }
-          
-          if (!loggedIn && !_publicPaths.contains(loc)) {
-            return '/login';
-          }
-          
-          return null;
-        },
-        loading: () => null,
-        error: (_, __) => !_publicPaths.contains(loc) ? '/login' : null,
-      );
+      final loggedIn = auth != null;
+      
+      if (loggedIn) {
+        if (!auth.isOnboarded && !onOnboarding) {
+          return '/onboarding';
+        }
+        if (auth.isOnboarded && (onGuestAuthFlow || onOnboarding)) {
+          return '/home';
+        }
+      } else {
+        if (!_publicPaths.contains(loc)) {
+          return '/login';
+        }
+      }
+      
+      return null;
     },
     routes: [
       GoRoute(
@@ -79,6 +75,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final role = state.extra as String? ?? 'student';
           return RegisterScreen(role: role);
         },
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const StudentOnboardingScreen(),
       ),
       GoRoute(
         path: '/home',
