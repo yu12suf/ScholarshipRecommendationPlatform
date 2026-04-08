@@ -2,6 +2,8 @@ import { LearningPathRepository } from "../repositories/LearningPathRepository.j
 import { VideoService } from "../services/VideoService.js";
 import { Video } from "../models/Video.js";
 import { LearningPathProgress } from "../models/LearningPathProgress.js";
+import { AIService } from "./AIService.js";
+import { AssessmentRepository } from "../repositories/AssessmentRepository.js";
 
 export class LearningPathService {
   /**
@@ -69,7 +71,7 @@ export class LearningPathService {
     const curriculumMap =
       evaluation.evaluation?.adaptive_curriculum_map || null;
 
-    // 5. Persist the learning path
+    // 5. Persist the learning path (resets all progress for fresh start)
     await LearningPathRepository.upsert(studentId, {
       videoSections,
       noteSections,
@@ -78,42 +80,39 @@ export class LearningPathService {
       curriculumMap,
       proficiencyLevel: level,
       examType: normalizedExamType,
+      currentProgressPercentage: 0,
     });
   }
 
-  /**
-   * Retrieves the learning path formatted for the frontend.
-   */
   static async getFormattedPath(studentId: number) {
     const path = await LearningPathRepository.findByStudentId(studentId);
     if (!path) return null;
 
     const skills = ["reading", "listening", "writing", "speaking"];
     const result: any = {};
-    let totalVideos = 0;
-    let completedVideos = 0;
+    const updatedLearningMode: any = {};
+    let totalItems = 0;
+    let completedItems = 0;
+
+    // Faster optimization: fetch all progress records at once for this student
+    const allProgress = await LearningPathProgress.findAll({
+      where: { studentId }
+    });
 
     for (const skill of skills) {
-      const videoIds = (path.videoSections as any)[skill] || [];
+      const sectionStr = skill.charAt(0).toUpperCase() + skill.slice(1);
+      const skillProgress = allProgress.filter(p => p.section === sectionStr && p.isCompleted);
 
-      // Fetch video details for each ID
+      // --- 1. Videos ---
+      const videoIds = (path.videoSections as any)[skill] || [];
       const videosProgress = await Promise.all(
         videoIds.map(async (id: number) => {
           const video = await VideoService.getById(id);
           if (!video) return null;
 
-          const progress = await LearningPathProgress.findOne({
-            where: {
-              studentId,
-              videoId: id,
-            },
-          });
-
-          const isCompleted = progress?.isCompleted || false;
-          totalVideos++;
-          if (isCompleted) {
-            completedVideos++;
-          }
+          const isCompleted = skillProgress.some(p => p.videoId === id);
+          totalItems++;
+          if (isCompleted) completedItems++;
 
           return {
             ...video.get({ plain: true }),
@@ -122,14 +121,53 @@ export class LearningPathService {
         }),
       );
 
+      // --- 2. Practice Questions ---
+      const skillData = (path.learningModeSections as any)[skill];
+      let skillQuestions: any[] = [];
+      let extraData: any = {};
+
+      if (Array.isArray(skillData)) {
+        skillQuestions = skillData;
+      } else if (skillData && Array.isArray(skillData.questions)) {
+        skillQuestions = skillData.questions;
+        // Preserve other data like script and audio_base64
+        const { questions, ...rest } = skillData;
+        extraData = rest;
+      }
+
+      const updatedQuestions = skillQuestions.map((q: any, index: number) => {
+        const isCompleted = skillProgress.some(
+          (p) => p.questionIndex === index,
+        );
+        totalItems++;
+        if (isCompleted) completedItems++;
+        return { ...q, isCompleted };
+      });
+
+      if (Object.keys(extraData).length > 0) {
+        updatedLearningMode[skill] = {
+          ...extraData,
+          questions: updatedQuestions,
+        };
+      } else {
+        updatedLearningMode[skill] = updatedQuestions;
+      }
+
+      // --- 3. Notes ---
+      const isNoteCompleted = skillProgress.some(p => p.isNote === true);
+      totalItems++; // 1 Note per skill section
+      if (isNoteCompleted) completedItems++;
+
       result[skill] = {
         videos: videosProgress.filter((v) => v !== null),
         notes: (path.noteSections as any)[skill] || "",
+        isNoteCompleted
       };
     }
 
     const progressPercentage =
-      totalVideos === 0 ? 0 : Math.round((completedVideos / totalVideos) * 100);
+      totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
+    
     // Update the record in the database
     if (path.currentProgressPercentage !== progressPercentage) {
       path.currentProgressPercentage = progressPercentage;
@@ -140,10 +178,55 @@ export class LearningPathService {
       proficiencyLevel: path.proficiencyLevel,
       examType: path.examType,
       skills: result,
-      learningMode: path.learningModeSections,
+      learningMode: updatedLearningMode,
       competencyGapAnalysis: path.competencyGapAnalysis,
       curriculumMap: path.curriculumMap,
       current_progress_percentage: progressPercentage,
     };
+  }
+
+  /**
+   * Evaluates a specific speaking practice question.
+   */
+  static async evaluateSpeakingPractice(
+    studentId: number,
+    questionIndex: number,
+    audioBase64: string,
+    mimeType: string,
+  ) {
+    const path = await LearningPathRepository.findByStudentId(studentId);
+    if (!path) throw new Error("Learning path not found.");
+
+    const speakingData = (path.learningModeSections as any).speaking;
+    const speakingPrompt = speakingData?.[questionIndex];
+
+    if (!speakingPrompt) {
+      throw new Error("Speaking prompt not found at this index.");
+    }
+
+    const promptText = speakingPrompt.prompt || speakingPrompt.question;
+
+    const evaluation = await AIService.evaluateSpeaking(
+      promptText,
+      audioBase64,
+      mimeType,
+      (path.examType as "IELTS" | "TOEFL") || "IELTS",
+    );
+
+    // Mark this specific speaking practice question as completed
+    await LearningPathProgress.findOrCreate({
+      where: {
+        studentId,
+        questionIndex,
+        section: "Speaking",
+      },
+      defaults: {
+        isCompleted: true,
+      },
+    }).then(([progress, created]) => {
+      if (!created) progress.update({ isCompleted: true });
+    });
+
+    return evaluation;
   }
 }

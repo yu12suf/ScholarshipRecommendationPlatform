@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AssessmentService } from "../services/AssessmentService.js";
 import { StudentRepository } from "../repositories/StudentRepository.js";
+import { LearningPathRepository } from "../repositories/LearningPathRepository.js";
 
 export class AssessmentController {
   static async generate(req: Request, res: Response, next: NextFunction) {
@@ -28,6 +29,21 @@ export class AssessmentController {
           .status(400)
           .json({ error: "difficulty must be Easy, Medium, or Hard" });
         return;
+      }
+
+      if (req.user?.id) {
+        const student = await StudentRepository.findByUserId(req.user.id);
+        if (student) {
+          const path = await LearningPathRepository.findByStudentId(student.id);
+          if (path && path.currentProgressPercentage < 100) {
+            res.status(403).json({
+              error: "Learning path completion required.",
+              message: "You must complete 100% of your learning path before generating a mock exam.",
+              currentProgress: path.currentProgressPercentage
+            });
+            return;
+          }
+        }
       }
 
       const result = await AssessmentService.generateExam(examType, difficulty);

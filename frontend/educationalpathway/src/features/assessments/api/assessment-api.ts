@@ -47,7 +47,24 @@ export const getLearningPath = async () => {
     return response.data;
 };
 
-export const trackProgress = async (videoId: number, section: string, isCompleted: boolean = true) => {
-    const response = await api.post('/learning-path/track', { videoId, section, isCompleted });
+export const trackProgress = async (params: { videoId?: number; questionIndex?: number; isNote?: boolean; section: string; isCompleted?: boolean }) => {
+    const { videoId, questionIndex, isNote, section, isCompleted = true } = params;
+    const response = await api.post('/learning-path/track', { videoId, questionIndex, isNote, section, isCompleted });
+    return response.data;
+};
+
+export const completeSection = async (section: string) => {
+    const response = await api.post('/learning-path/complete-section', { section });
+    return response.data;
+};
+
+export const evaluateSpeakingPractice = async (questionIndex: number, audio: Blob) => {
+    const formData = new FormData();
+    formData.append('questionIndex', questionIndex.toString());
+    formData.append('audio', audio, 'practice_recording.webm');
+
+    const response = await api.post('/learning-path/speaking/evaluate', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
 };

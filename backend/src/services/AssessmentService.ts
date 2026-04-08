@@ -252,75 +252,69 @@ export class AssessmentService {
     audioData?: { base64: string; mimetype: string },
   ) {
     // ... (existing code omitted for brevity but actually kept in full
+  
     const promptTemplate = PromptTemplate.fromTemplate(`
-            Role: Lead Adaptive Curriculum Architect
-            Task: Evaluate student responses, perform a Competency Gap Analysis, and create an Adaptive Curriculum Map for an Ethiopian student preparing for an international exam.
-            
-            Original Blueprint (Stripped for tokens): {blueprint}
-            Student Responses: {responses}
-            Audio Provided: {hasAudio}
-            
-            1. DIAGNOSTIC ASSESSMENT (GRADING):
-               - Reading/Listening: Match against the blueprint key.
-               - Writing: Provide real-time AI feedback focusing on coherence, task achievement, and grammatical accuracy. Use official exam rubrics (IELTS/TOEFL). Ensure you don't just "fix" grammar but provide "qualitative feedback" comments similar to a human counselor.
-               - Speaking: (If audio) Conduct AI mock-interview style analysis evaluating pronunciation, fluency, and coherence.
-            
-            2. COMPETENCY GAP ANALYSIS:
-               - Formulate a detailed 'Proficiency Profile' highlighting precise linguistic weaknesses (e.g., 'Lexical Resource', 'Grammatical Range').
-               - Provide section-wise results linking to CEFR standards.
-            
-            3. ADAPTIVE CURRICULUM MAP:
-               - Generate structured Daily/Weekly Goals (sprints).
-               - Decision Logic: If overall_band is > 80% mastery (e.g., > 7.0 IELTS or > 95 TOEFL), escalate sprint difficulty to the next CEFR level. If < 60%, generate remedial "Deep Dive" modules targeting specific gaps identified.
-               - Include targeted vocabulary packs.
-            
-            4. INSTRUCTIONAL NOTES & FEEDBACK:
-               - For EACH skill (Reading, Listening, Writing, Speaking), generate a highly detailed "Actionable Study Note" (min 500 characters).
-               - Tone: Professional and analytical.
-               - ETHIOPIAN CONTEXT: Incorporate Ethiopian analogies, real-world scenarios, or culturally relevant content to increase engagement without losing international testing rigor.
-            
-            5. LEARNING MODE PRACTICE:
-               - For EACH skill, generate 3-5 original practice questions based on weaknesses.
-            
-            Return JSON in the following schema:
-            {{
-              "evaluation": {{
-                "overall_band": 0.0,
-                "score_breakdown": {{ "reading": 0.0, "listening": 0.0, "writing": 0.0, "speaking": 0.0 }},
-                "competency_gap_analysis": {{
-                  "proficiency_profile": "string",
-                  "weaknesses": ["string"],
-                  "section_analysis": {{ "reading": "string", "listening": "string", "writing": "string", "speaking": "string" }}
-                }},
-                "adaptive_curriculum_map": {{
-                  "sprints": [{{ "week": 1, "goal": "string", "tasks": ["string"], "is_remedial": false }}],
-                  "vocabulary_packs": [{{ "topic": "string", "words": [{{ "word": "string", "meaning": "string", "example": "string" }}] }}]
-                }},
-                "feedback_report": "Overall feedback summary",
-                "section_notes": {{ 
-                 "reading": "Detailed 1000+ char note with examples for reading in Ethiopian context", 
-                 "listening": "Detailed 1000+ char note with examples for listening in Ethiopian context", 
-                  "writing": "Detailed 1000+ char note with examples for writing in Ethiopian context", 
-                  "speaking": "Detailed 1000+ char note with examples for speaking in Ethiopian context" 
-                }},
-                "learning_mode": {{
-                  "reading": [{{ "question": "string", "options": [], "answer": "string", "explanation": "string" }}],
-                  "listening": [{{ "question": "string", "options": [], "answer": "string", "explanation": "string" }}],
-                  "writing": [{{ "prompt": "string", "sample_answer": "string", "explanation": "string" }}],
-                  "speaking": [{{ "prompt": "string", "tips": "string", "sample_response": "string" }}]
-                }},
-                "adaptive_learning_tags": ["string"]
-              }}
-            }}
+    Role: Lead Adaptive Curriculum Architect
+    Task: Evaluate student responses, perform a Competency Gap Analysis, and create an Adaptive Curriculum Map for an Ethiopian student preparing for an international exam.
+    
+    Original Blueprint (Stripped for tokens): {blueprint}
+    Student Responses: {responses}
+    Audio Provided: {hasAudio}
+    
+    1. DIAGNOSTIC ASSESSMENT (GRADING):
+       - IELTS/TOEFL scoring logic...
+    
+    2. COMPETENCY GAP ANALYSIS:
+       - Proficiency Profile and CEFR standards...
+    
+    3. ADAPTIVE CURRICULUM MAP:
+       - Structured Sprints and Decision Logic...
+    
+    4. INSTRUCTIONAL NOTES & FEEDBACK:
+       - Skill-specific actionable notes (min 500 characters) in Ethiopian context.
+    
+    5. LEARNING MODE PRACTICE:
+       - Generate 3-5 original practice questions.
+    
+    Return JSON in the following schema:
+    {{
+      "evaluation": {{
+        "overall_band": 0.0,
+        "score_breakdown": {{ "reading": 0.0, "listening": 0.0, "writing": 0.0, "speaking": 0.0 }},
+        "competency_gap_analysis": {{
+          "proficiency_profile": "string",
+          "weaknesses": ["string"],
+          "section_analysis": {{ "reading": "string", "listening": "string", "writing": "string", "speaking": "string" }}
+        }},
+        "adaptive_curriculum_map": {{
+          "sprints": [ {{ "week": 1, "goal": "string", "tasks": ["string"], "is_remedial": false }} ],
+          "vocabulary_packs": [ {{ "topic": "string", "words": [ {{ "word": "string", "meaning": "string", "example": "string" }} ] }} ]
+        }},
+        "feedback_report": "Overall feedback summary",
+        "section_notes": {{ 
+          "reading": "string", 
+          "listening": "string", 
+          "writing": "string", 
+          "speaking": "string" 
+        }},
+        "learning_mode": {{
+          "reading": [ {{ "question": "string", "options": [], "answer": "string", "explanation": "string" }} ],
+          "listening": {{
+            "script": "string",
+            "questions": [ {{ "question": "string", "options": [], "answer": "string", "explanation": "string" }} ]
+          }},
+          "writing": [ {{ "prompt": "string", "sample_answer": "string", "explanation": "string" }} ],
+          "speaking": [ {{ "prompt": "string", "tips": "string", "sample_response": "string" }} ]
+        }},
+        "adaptive_learning_tags": ["string"]
+      }}
+    }}
 
-            CRITICAL JSON FORMATTING RULES:
-            - The output MUST be strictly valid JSON.
-            - Do NOT include literal newline characters (\\n), carriage returns (\\r), or tabs (\\t) unescaped inside JSON string values.
-            - If you need a line break inside a string, use the escaped sequence "\\n" instead of a real line break.
-            - Double quotes inside string values MUST be escaped as "\\"".
-            - NEVER use single quotes for property names or values. ONLY use double quotes ("key": "value").
-            - Do NOT add trailing commas at the end of lists or objects.
-        `);
+    CRITICAL JSON FORMATTING RULES:
+    - Return ONLY valid JSON.
+    - Escape newlines as \\n.
+`);
+
 
     // OPTIMIZATION: Stripping blueprint text to save input tokens (~90% reduction)
     const strippedBlueprint =
@@ -369,24 +363,21 @@ export class AssessmentService {
       );
     }
 
-    // Generate audio for learning mode listening questions
-    if (evaluation.evaluation?.learning_mode?.listening) {
-      for (const q of evaluation.evaluation.learning_mode.listening) {
-        if (q.question) {
-          try {
-            const audioBase64 = await TTSService.generateAudioBase64(
-              q.question,
-            );
-            if (audioBase64) {
-              q.audio_base64 = audioBase64;
-            }
-          } catch (ttsErr) {
-            console.error(
-              "Failed to generate audio for learning mode question:",
-              ttsErr,
-            );
-          }
+    // Generate audio for learning mode listening script
+    const learningModeListening = evaluation.evaluation?.learning_mode?.listening;
+    if (learningModeListening && learningModeListening.script) {
+      try {
+        const audioBase64 = await TTSService.generateAudioBase64(
+          learningModeListening.script,
+        );
+        if (audioBase64) {
+          learningModeListening.audio_base64 = audioBase64;
         }
+      } catch (ttsErr) {
+        console.error(
+          "Failed to generate audio for learning mode listening script:",
+          ttsErr,
+        );
       }
     }
 

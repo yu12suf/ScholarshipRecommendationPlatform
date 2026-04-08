@@ -13,6 +13,13 @@ import {
   Mic,
   TrendingUp,
   Award,
+  Sparkles,
+  BarChart3,
+  BookMarked,
+  Map,
+  List,
+  ChevronRight,
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -121,10 +128,15 @@ export function AssessmentResultView({
     );
   }
 
+  const isTOEFL = examType === "TOEFL";
+  const maxScore = isTOEFL ? 120 : 9;
+  const maxSectionScore = isTOEFL ? 30 : 9;
+  const threshold = isTOEFL ? 90 : 6.5;
+
   const evaluation = resultData.evaluation || resultData;
-  const subs = evaluation.subscores || {};
+  const subs = evaluation.score_breakdown || {};
   const band = parseFloat(evaluation.overall_band || 0);
-  const bandPercent = Math.min(100, (band / 9) * 100);
+  const bandPercent = Math.min(100, (band / maxScore) * 100);
 
   const subscoredItems = [
     { name: "Reading", val: subs.reading },
@@ -134,6 +146,12 @@ export function AssessmentResultView({
   ];
 
   const getBandColor = (b: number) => {
+    if (isTOEFL) {
+      if (b >= 100) return "text-success";
+      if (b >= 85) return "text-primary";
+      if (b >= 70) return "text-warning";
+      return "text-destructive";
+    }
     if (b >= 7.5) return "text-success";
     if (b >= 6.5) return "text-primary";
     if (b >= 5.5) return "text-warning";
@@ -175,12 +193,12 @@ export function AssessmentResultView({
                 <CheckCircle2 className="size-8 text-success" />
               </div>
               <p className="text-label text-muted-foreground mb-2">
-                Overall Band Score
+                Overall {isTOEFL ? "Score" : "Band Score"}
               </p>
               <h2 className={`text-7xl font-black ${getBandColor(band)}`}>
-                {evaluation.overall_band || "0.0"}
+                {evaluation.overall_band || "0"}
               </h2>
-              <p className="text-sm text-muted-foreground mt-3">out of 9.0</p>
+              <p className="text-sm text-muted-foreground mt-3">out of {maxScore}</p>
 
               {/* Progress bar */}
               <div className="w-full mt-5 bg-muted h-2.5 rounded-full overflow-hidden">
@@ -192,7 +210,7 @@ export function AssessmentResultView({
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {bandPercent.toFixed(0)}% of target band 9.0
+                {bandPercent.toFixed(0)}% of target {isTOEFL ? "score" : "band"} {maxScore}
               </p>
             </CardBody>
           </Card>
@@ -207,7 +225,7 @@ export function AssessmentResultView({
             <div className="space-y-5">
               {subscoredItems.map((s, idx) => {
                 const val = parseFloat(s.val || 0);
-                const pct = Math.min(100, (val / 9) * 100);
+                const pct = Math.min(100, (val / maxSectionScore) * 100);
                 return (
                   <motion.div
                     key={s.name}
@@ -243,7 +261,7 @@ export function AssessmentResultView({
       </div>
 
       {/* Scholarship Goal */}
-      {band >= 6.5 && (
+      {band >= threshold && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -260,7 +278,7 @@ export function AssessmentResultView({
                     Scholarship Threshold Achieved! 🎉
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Your band score of {evaluation.overall_band} meets the 6.5+
+                    Your {isTOEFL ? "score" : "band score"} of {evaluation.overall_band} meets the {threshold}+
                     threshold required for most scholarships.
                   </p>
                 </div>
@@ -273,7 +291,9 @@ export function AssessmentResultView({
       {/* Feedback Report */}
       <Card className="border border-border">
         <CardBody className="p-6">
-          <h3 className="h4 mb-4">AI Feedback Report</h3>
+          <h3 className="h4 mb-4 flex items-center gap-2">
+            <Sparkles className="text-primary size-5" /> AI Feedback Report
+          </h3>
           <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-lg border border-border/50">
             <p className="whitespace-pre-wrap leading-relaxed text-sm">
               {evaluation.feedback_report || "No detailed feedback available."}
@@ -303,6 +323,128 @@ export function AssessmentResultView({
             )}
         </CardBody>
       </Card>
+
+      {/* Competency Gap Analysis */}
+      {evaluation.competency_gap_analysis && (
+        <Card className="border border-primary/20 bg-linear-to-br from-background to-primary/5">
+          <CardBody className="p-6 space-y-6">
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+               <div className="p-2 bg-primary/10 rounded-lg">
+                  <BarChart3 className="size-5 text-primary" />
+               </div>
+               <div>
+                  <h3 className="font-bold">Competency Gap Analysis</h3>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Diagnostic Profile</p>
+               </div>
+            </div>
+
+            <div className="space-y-4">
+               <div className="p-4 bg-muted/30 rounded-xl border border-border/50 italic text-sm leading-relaxed">
+                  "{evaluation.competency_gap_analysis.proficiency_profile}"
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {evaluation.competency_gap_analysis.section_analysis && 
+                    Object.entries(evaluation.competency_gap_analysis.section_analysis).map(([skill, analysis]: [any, any]) => (
+                     <div key={skill} className="p-4 rounded-xl border border-border bg-card">
+                        <p className="font-bold text-xs uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
+                           {sectionIcons[skill.charAt(0).toUpperCase() + skill.slice(1)]} {skill}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{analysis}</p>
+                     </div>
+                  ))}
+               </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Specialized Section Notes (Ethiopian Context) */}
+      {evaluation.section_notes && (
+        <Card className="border border-info/20">
+          <CardBody className="p-6">
+             <div className="flex items-center gap-3 mb-6">
+               <div className="p-2 bg-info/10 rounded-lg text-info">
+                  <BookMarked className="size-5" />
+               </div>
+               <h3 className="font-bold">Skill-Specific Actionable Notes</h3>
+            </div>
+            
+            <div className="space-y-4">
+               {Object.entries(evaluation.section_notes).map(([skill, note]: [any, any]) => (
+                  <div key={skill} className="flex gap-4 p-4 rounded-xl hover:bg-muted/30 transition-colors border border-transparent hover:border-border">
+                     <div className="shrink-0 pt-1">
+                        {sectionIcons[skill.charAt(0).toUpperCase() + skill.slice(1)]}
+                     </div>
+                     <div>
+                        <p className="font-bold text-sm uppercase tracking-widest mb-1">{skill}</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{note}</p>
+                     </div>
+                  </div>
+               ))}
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Adaptive Curriculum map */}
+      {evaluation.adaptive_curriculum_map && (
+        <div className="space-y-6">
+           <div className="flex items-center gap-3 px-2">
+              <Map className="size-5 text-accent" />
+              <h3 className="h4">Personalized Curriculum Matrix</h3>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+              {/* Sprints */}
+              <div className="md:col-span-3 space-y-4">
+                 {evaluation.adaptive_curriculum_map.sprints?.map((sprint: any, i: number) => (
+                    <Card key={i} className={`border border-border ${sprint.is_remedial ? 'bg-destructive/5 border-destructive/20' : ''}`}>
+                       <CardBody className="p-5 flex gap-4">
+                          <div className="flex flex-col items-center gap-2">
+                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${sprint.is_remedial ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
+                                W{sprint.week}
+                             </div>
+                             {sprint.is_remedial && <span className="text-[8px] font-bold text-destructive uppercase tracking-widest">Remedial</span>}
+                          </div>
+                          <div className="space-y-2 flex-1">
+                             <p className="font-bold text-sm">{sprint.goal}</p>
+                             <ul className="space-y-1">
+                                {sprint.tasks?.map((task: string, j: number) => (
+                                   <li key={j} className="text-xs text-muted-foreground flex items-center gap-2">
+                                      <div className="size-1 bg-muted-foreground/30 rounded-full" /> {task}
+                                   </li>
+                                ))}
+                             </ul>
+                          </div>
+                       </CardBody>
+                    </Card>
+                 ))}
+              </div>
+
+              {/* Vocab Packs */}
+              <div className="md:col-span-2 space-y-4">
+                 <h4 className="text-[10px] font-bold uppercase tracking-widest px-2 text-muted-foreground opacity-50">Target Vocabulary</h4>
+                 {evaluation.adaptive_curriculum_map.vocabulary_packs?.map((pack: any, i: number) => (
+                    <Card key={i} className="border border-border bg-card">
+                       <CardBody className="p-4 space-y-3">
+                          <p className="text-xs font-bold border-b border-border pb-2">{pack.topic}</p>
+                          <div className="space-y-3">
+                             {pack.words?.map((w: any, j: number) => (
+                                <div key={j} className="space-y-0.5">
+                                   <p className="text-xs font-bold text-primary">{w.word}</p>
+                                   <p className="text-[10px] text-muted-foreground leading-tight">{w.meaning}</p>
+                                   <p className="text-[9px] italic text-muted-foreground/60">"{w.example}"</p>
+                                </div>
+                             ))}
+                          </div>
+                       </CardBody>
+                    </Card>
+                 ))}
+              </div>
+           </div>
+        </div>
+      )}
 
       {/* Personalized Learning Path */}
       <motion.div

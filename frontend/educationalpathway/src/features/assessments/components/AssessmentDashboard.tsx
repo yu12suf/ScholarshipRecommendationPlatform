@@ -14,6 +14,8 @@ import {
   BarChart2,
   ChevronRight,
   Sparkles,
+  ArrowRight,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -22,6 +24,7 @@ import {
   getAssessmentProgress,
 } from "../api/assessment-api";
 import { toast } from "react-hot-toast";
+import Link from "next/link";
 
 interface ProgressItem {
   id: number;
@@ -52,6 +55,8 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
   );
   const [progressData, setProgressData] = useState<ProgressItem[]>([]);
 
+  const [learningPathError, setLearningPathError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchStats();
   }, []);
@@ -75,6 +80,7 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
 
   const handleStartExam = async () => {
     try {
+      setLearningPathError(null);
       setLoading(true);
       toast.loading("Generating your personalized assessment...", {
         id: "generating",
@@ -83,35 +89,49 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
       toast.dismiss("generating");
       toast.success("Assessment ready!");
       onStartTest(res);
-    } catch (error) {
+    } catch (error: any) {
       toast.dismiss("generating");
-      toast.error("Failed to generate assessment. Please try again.");
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.error || error?.response?.data?.message;
+      if (status === 403) {
+        // Learning path not 100% complete
+        const progress = error?.response?.data?.currentProgress ?? null;
+        const msg = progress !== null
+          ? `Your learning path is only ${progress}% complete. You must reach 100% across all sections (Reading, Writing, Listening, Speaking) before generating a mock exam.`
+          : "You must complete 100% of your learning path (Reading, Writing, Listening & Speaking) before generating a mock exam.";
+        setLearningPathError(msg);
+      } else {
+        toast.error(serverMessage || "Failed to generate assessment. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const getOverallAverages = () => {
-    if (progressData.length === 0)
-      return { band: "0.0", tests: 0, best: "0.0" };
-    const numericBands = progressData.map((d) =>
+    const filtered = progressData.filter((d) => d.examType === examType);
+    if (filtered.length === 0)
+      return { band: "0", tests: 0, best: "0" };
+    const numericBands = filtered.map((d) =>
       parseFloat(String(d.overallBand)),
     );
     const sum = numericBands.reduce((a, b) => a + b, 0);
     const best = Math.max(...numericBands);
     return {
-      band: (sum / progressData.length).toFixed(1),
-      tests: progressData.length,
-      best: best.toFixed(1),
+      band: (sum / filtered.length).toFixed(isTOEFL ? 0 : 1),
+      tests: filtered.length,
+      best: best.toFixed(isTOEFL ? 0 : 1),
     };
   };
 
+  const isTOEFL = examType === "TOEFL";
+  const maxScore = isTOEFL ? 120 : 9;
+  const thresholdBand = isTOEFL ? 90 : 6.5;
   const averages = getOverallAverages();
-  const thresholdBand = 6.5;
-  const bandPercent = Math.min(100, (parseFloat(averages.band) / 9) * 100);
+  const bandPercent = Math.min(100, (parseFloat(averages.band) / maxScore) * 100);
 
-  // Last 5 items for chart (most recent)
-  const chartData = [...progressData].slice(-7);
+  // Last 7 items for chart (filtered by type)
+  const chartData = progressData.filter((d) => d.examType === examType).slice(-7);
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 pb-20">
@@ -144,7 +164,7 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-label text-muted-foreground">
-                  Avg Band Score
+                  Avg {isTOEFL ? "Score" : "Band Score"}
                 </p>
                 <h3 className="text-4xl font-black mt-2 text-primary">
                   {averages.band}
@@ -187,16 +207,16 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                 <Award className="text-accent size-4" /> Scholarship Goal
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Target Band:{" "}
+                Target {isTOEFL ? "Score" : "Band"}:{" "}
                 <span className="font-bold text-foreground">
-                  {thresholdBand}+
+                  {thresholdBand}{!isTOEFL && ".0"}+
                 </span>
               </p>
             </div>
             <div>
               <div className="flex justify-between text-xs mb-1.5">
                 <span className="text-muted-foreground">Your average</span>
-                <span className="font-bold">{averages.band} / 9.0</span>
+                <span className="font-bold">{averages.band} / {maxScore}{!isTOEFL && ".0"}</span>
               </div>
               <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden">
                 <motion.div
@@ -277,6 +297,23 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                 </div>
               </div>
 
+              {/* Learning Path Error Banner */}
+              {learningPathError && (
+                <div className="flex items-start gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5 text-sm">
+                  <XCircle className="text-destructive shrink-0 mt-0.5" size={18} />
+                  <div className="flex-1 space-y-2">
+                    <p className="font-semibold text-destructive">Mock Exam Generation Failed</p>
+                    <p className="text-muted-foreground leading-relaxed">{learningPathError}</p>
+                    <Link
+                      href="/dashboard/learning-path"
+                      className="inline-flex items-center gap-1.5 text-primary font-semibold text-xs hover:underline mt-1"
+                    >
+                      Go to Learning Path <ArrowRight size={12} />
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               <Button
                 onClick={handleStartExam}
                 disabled={loading}
@@ -307,7 +344,7 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                   {chartData.map((item, i) => {
                     const h = Math.max(
                       8,
-                      (parseFloat(String(item.overallBand)) / 9) * 96,
+                      (parseFloat(String(item.overallBand)) / maxScore) * 96,
                     );
                     return (
                       <motion.div

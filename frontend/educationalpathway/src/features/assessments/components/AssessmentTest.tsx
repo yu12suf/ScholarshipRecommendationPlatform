@@ -16,6 +16,11 @@ import {
   BookOpen,
   Headphones,
   PenLine,
+  Sparkles,
+  BarChart3,
+  BookMarked,
+  Map,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { submitAssessment, getAssessmentResult } from "../api/assessment-api";
@@ -315,7 +320,7 @@ export function AssessmentTest({ examData, onComplete }: Props) {
   // ============ RESULT VIEW ============
   if (result) {
     const evaluation = result.evaluation || result;
-    const subs = evaluation.subscores || {};
+    const subs = evaluation.score_breakdown || {};
 
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -396,11 +401,12 @@ export function AssessmentTest({ examData, onComplete }: Props) {
 
         <Card className="border border-border">
           <CardBody className="p-6">
-            <h3 className="h4 mb-4">AI Feedback Report</h3>
+            <h3 className="h4 mb-4 flex items-center gap-2">
+              <Sparkles className="size-5 text-primary" /> AI Feedback Report
+            </h3>
             <div className="prose prose-sm max-w-none text-foreground bg-muted/30 p-6 rounded-lg border border-border/50">
               <p className="whitespace-pre-wrap leading-relaxed text-sm">
-                {evaluation.feedback_report ||
-                  "No detailed feedback generated."}
+                {evaluation.feedback_report || "No detailed feedback generated."}
               </p>
             </div>
 
@@ -427,6 +433,68 @@ export function AssessmentTest({ examData, onComplete }: Props) {
               )}
           </CardBody>
         </Card>
+
+        {/* Competency Gap Analysis */}
+        {evaluation.competency_gap_analysis && (
+          <Card className="border border-primary/20 bg-linear-to-br from-background to-primary/5">
+            <CardBody className="p-6 space-y-6">
+              <div className="flex items-center gap-3 border-b border-border pb-4">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <BarChart3 className="size-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-bold">Competency Gap Analysis</h3>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest">
+                    Diagnostic Profile
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/30 rounded-xl border border-border/50 italic text-sm leading-relaxed">
+                  "{evaluation.competency_gap_analysis.proficiency_profile}"
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Adaptive Curriculum map */}
+        {evaluation.adaptive_curriculum_map && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 px-2">
+              <Map className="size-5 text-accent" />
+              <h3 className="h4">Post-Exam Curriculum Roadmap</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {evaluation.adaptive_curriculum_map.sprints
+                ?.slice(0, 2)
+                .map((sprint: any, i: number) => (
+                  <Card
+                    key={i}
+                    className={`border border-border ${sprint.is_remedial ? "bg-destructive/5 border-destructive/20" : ""}`}
+                  >
+                    <CardBody className="p-4 flex gap-4">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm bg-primary/10 text-primary shrink-0">
+                        W{sprint.week}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-bold text-xs">{sprint.goal}</p>
+                        <p className="text-[10px] text-muted-foreground line-clamp-2">
+                          {sprint.tasks?.[0]} and {sprint.tasks?.length - 1} more
+                          tasks.
+                        </p>
+                      </div>
+                    </CardBody>
+                  </Card>
+                ))}
+            </div>
+            <p className="text-center text-[10px] text-muted-foreground italic">
+              Full curriculum map available in your Learning Path dashboard.
+            </p>
+          </div>
+        )}
 
         <div className="text-center pt-4">
           <Button
