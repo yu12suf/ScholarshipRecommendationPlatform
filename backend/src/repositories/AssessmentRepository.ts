@@ -28,4 +28,13 @@ export class AssessmentRepository {
         console.log(`Found ${results.length} results`);
         return results;
     }
+
+    /**
+     * Find a specific assessment result by its UUID.
+     */
+    static async findByTestId(testId: string): Promise<AssessmentResult | null> {
+        return await AssessmentResult.findOne({
+            where: { testId }
+        });
+    }
 }

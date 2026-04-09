@@ -176,4 +176,60 @@ export class AIService {
       throw error;
     }
   }
+
+  /**
+   * Evaluates a speaking response using Gemini's multimodal capabilities.
+   */
+  static async evaluateSpeaking(
+    prompt: string,
+    audioBase64: string,
+    mimeType: string,
+    examType: "IELTS" | "TOEFL" = "IELTS",
+  ) {
+    const model = genAI.getGenerativeModel({
+      model: geminiModelName,
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const scoringRange = examType === "IELTS" ? "0.0 to 9.0" : "0 to 30";
+
+    const aiPrompt = `
+            Role: Senior ${examType} Speaking Examiner.
+            Task: Evaluate the student's speaking response to the following prompt.
+            
+            Speaking Prompt: "${prompt}"
+            Exam Type: ${examType}
+            
+            Evaluation Criteria:
+            1. Pronunciation: Clarity, intonation, and rhythm.
+            2. Fluency: Speed, hesitation, and flow.
+            3. Coherence: Logic, structure, and relevance.
+            4. Vocabulary & Grammar: Accuracy and range.
+            
+            Scoring: Provide a score from ${scoringRange} based on the ${examType} rubric.
+            
+            Return JSON in this schema:
+            {
+              "score": number,
+              "pronunciation": "string",
+              "fluency": "string",
+              "coherence": "string",
+              "overall_feedback": "detailed summary string"
+            }
+        `;
+
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: audioBase64,
+          mimeType: mimeType,
+        },
+      },
+      aiPrompt,
+    ]);
+
+    return JSON.parse(result.response.text());
+  }
 }

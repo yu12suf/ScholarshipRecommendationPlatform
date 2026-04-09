@@ -41,10 +41,32 @@ export class LearningPathProgress extends Model {
     declare videoId: number;
 
     @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        field: 'question_index'
+    })
+    declare questionIndex: number;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'is_note'
+    })
+    declare isNote: boolean;
+
+    @Column({
         type: DataType.STRING(20),
         allowNull: false,
     })
     declare section: 'Reading' | 'Listening' | 'Writing' | 'Speaking';
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'answer_text'
+    })
+    declare answerText: string;
 
     @Column({
         type: DataType.BOOLEAN,
