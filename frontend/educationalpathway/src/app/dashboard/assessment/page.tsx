@@ -9,10 +9,12 @@ type View = "dashboard" | "test" | "result";
 
 interface ProgressItem {
   id: number;
-  testId: string;
+  testId?: string;
+  test_id?: string;
   examType: string;
   difficulty: string;
   overallBand: number | string;
+  evaluation?: any;
   createdAt: string;
 }
 
@@ -36,9 +38,10 @@ export default function AssessmentPage() {
   if (view === "result" && selectedResult) {
     return (
       <AssessmentResultView
-        testId={selectedResult.testId}
+        testId={selectedResult.testId || selectedResult.test_id || ""}
         examType={selectedResult.examType}
         difficulty={selectedResult.difficulty}
+        initialData={selectedResult.evaluation}
         onBack={() => {
           setSelectedResult(null);
           setView("dashboard");

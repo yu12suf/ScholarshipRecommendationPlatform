@@ -456,6 +456,15 @@ export class AssessmentService {
       return { status: "failed", reason: job.failedReason };
     }
 
+    // Try database fallback if not in Redis or active queue
+    const persistentResult = await AssessmentRepository.findByTestId(testId);
+    if (persistentResult) {
+      return {
+        status: "success",
+        data: persistentResult.evaluation,
+      };
+    }
+
     // Return the current state (waiting or active) instead of null
     return { status: state };
   }

@@ -47,9 +47,9 @@ export const getLearningPath = async () => {
     return response.data;
 };
 
-export const trackProgress = async (params: { videoId?: number; questionIndex?: number; isNote?: boolean; section: string; isCompleted?: boolean }) => {
-    const { videoId, questionIndex, isNote, section, isCompleted = true } = params;
-    const response = await api.post('/learning-path/track', { videoId, questionIndex, isNote, section, isCompleted });
+export const trackProgress = async (params: { videoId?: number; questionIndex?: number; isNote?: boolean; section: string; isCompleted?: boolean; answer?: string }) => {
+    const { videoId, questionIndex, isNote, section, isCompleted = true, answer } = params;
+    const response = await api.post('/learning-path/track', { videoId, questionIndex, isNote, section, isCompleted, answer });
     return response.data;
 };
 

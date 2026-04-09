@@ -28,10 +28,12 @@ import Link from "next/link";
 
 interface ProgressItem {
   id: number;
-  testId: string;
+  testId?: string;
+  test_id?: string;
   examType: string;
   difficulty: string;
   overallBand: number | string;
+  evaluation?: any;
   createdAt: string;
 }
 
@@ -443,7 +445,13 @@ export function AssessmentDashboard({ onStartTest, onViewResult }: Props) {
                       </div>
 
                       <Button
-                        onClick={() => onViewResult(item)}
+                        onClick={() => {
+                          const normalizedItem = {
+                            ...item,
+                            testId: item.testId || item.test_id
+                          };
+                          onViewResult(normalizedItem);
+                        }}
                         variant="ghost"
                         size="sm"
                         className="gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity shrink-0"

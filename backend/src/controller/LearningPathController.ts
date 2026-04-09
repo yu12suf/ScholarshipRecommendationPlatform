@@ -40,7 +40,7 @@ export class LearningPathController {
     static async markComplete(req: Request, res: Response) {
         try {
             const userId = req.user?.id;
-            const { videoId, questionIndex, isNote, section, isCompleted } = req.body;
+            const { videoId, questionIndex, isNote, section, isCompleted, answer } = req.body;
 
             if (!userId) {
                 return res.status(401).json({ success: false, error: "Unauthorized" });
@@ -57,15 +57,19 @@ export class LearningPathController {
                     videoId: videoId ?? null,
                     questionIndex: questionIndex ?? null,
                     isNote: isNote ?? false,
-                    section
+                    section: section ? (section.charAt(0).toUpperCase() + section.slice(1).toLowerCase()) : section
                 },
                 defaults: {
-                    isCompleted: isCompleted ?? true
+                    isCompleted: isCompleted ?? true,
+                    answerText: answer ?? null
                 }
             });
 
             if (!created) {
-                await progress.update({ isCompleted: isCompleted ?? true });
+                await progress.update({ 
+                    isCompleted: isCompleted ?? true,
+                    answerText: answer ?? progress.answerText
+                });
             }
 
             return res.status(200).json({

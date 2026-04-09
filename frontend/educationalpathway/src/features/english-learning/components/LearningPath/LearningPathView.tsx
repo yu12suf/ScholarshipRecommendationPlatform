@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -29,13 +30,15 @@ import {
   ChevronRight,
   Map as MapIcon,
   StopCircle,
-  AlertCircle
+  AlertCircle,
+  Send
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { 
   getLearningPath, 
   completeSection, 
-  evaluateSpeakingPractice 
+  evaluateSpeakingPractice,
+  trackProgress
 } from "@/features/assessments/api/assessment-api";
 import Link from "next/link";
 
@@ -60,8 +63,8 @@ interface LearningPathData {
   competencyGapAnalysis?: any;
   curriculumMap?: any;
   current_progress_percentage?: number;
-   examType?: string;
-   exam_type?: string;
+  examType?: string;
+  exam_type?: string;
 }
 
 const levelConfig: Record<string, { label: string; color: string; border: string; bg: string }> = {
@@ -142,7 +145,7 @@ const getSkillQuestions = (learningMode: LearningPathData["learningMode"], skill
    return Array.isArray(modeData) ? modeData : (modeData as any)?.questions || [];
 };
 
-const isSkillLocallyComplete = (pathData: LearningPathData, skill: string) => {
+const isSkillLocallyComplete = (pathData: LearningPathData, skill: string, practiceAnswers?: Record<string, Record<number, string>>) => {
    const skillData = pathData.skills?.[skill];
    if (!skillData) return false;
 
@@ -151,12 +154,16 @@ const isSkillLocallyComplete = (pathData: LearningPathData, skill: string) => {
    const noteComplete = !!skillData.isNoteCompleted;
 
    const questions = getSkillQuestions(pathData.learningMode, skill);
-   const questionsComplete = questions.length === 0 || questions.every((q: any) => !!q.isCompleted);
+   const questionsComplete = questions.length === 0 || questions.every((q: any, idx: number) => {
+      if (q.isCompleted) return true;
+      if (practiceAnswers && practiceAnswers[skill]?.[idx] !== undefined && String(practiceAnswers[skill][idx]).trim().length > 0) return true;
+      return false;
+   });
 
    return videosComplete && noteComplete && questionsComplete;
 };
 
-const getSkillCompletionStatus = (pathData: LearningPathData, skill: string) => {
+const getSkillCompletionStatus = (pathData: LearningPathData, skill: string, practiceAnswers?: Record<string, Record<number, string>>) => {
    const skillData = pathData.skills?.[skill];
    if (!skillData) {
       return {
@@ -178,7 +185,11 @@ const getSkillCompletionStatus = (pathData: LearningPathData, skill: string) => 
    const videosComplete = videosTotal === 0 || videosDone === videosTotal;
 
    const questions = getSkillQuestions(pathData.learningMode, skill);
-   const questionsDone = questions.filter((q: any) => !!q.isCompleted).length;
+   const questionsDone = questions.filter((q: any, idx: number) => {
+      if (q.isCompleted) return true;
+      if (practiceAnswers && practiceAnswers[skill]?.[idx] !== undefined && String(practiceAnswers[skill][idx]).trim().length > 0) return true;
+      return false;
+   }).length;
    const questionsTotal = questions.length;
    const questionsComplete = questionsTotal === 0 || questionsDone === questionsTotal;
 
@@ -233,9 +244,9 @@ export function LearningPathView() {
   const [activeTab, setActiveTab] = useState<string>("reading");
   const [error, setError] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
-   const [syncingAll, setSyncingAll] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
   const [completedSections, setCompletedSections] = useState<Record<string, boolean>>({});
-   const [syncHint, setSyncHint] = useState<string | null>(null);
+  const [syncHint, setSyncHint] = useState<string | null>(null);
 
   const [practiceAnswers, setPracticeAnswers] = useState<Record<string, Record<number, string>>>({});
   const [showExplanation, setShowExplanation] = useState<Record<string, Record<number, boolean>>>({});
@@ -256,6 +267,37 @@ export function LearningPathView() {
       const pathData = res?.skills ? res : (res?.data?.skills ? res.data : null);
       if (pathData) {
         setData(pathData);
+
+        // --- NEW FIX: Rebuild local UI State from the Backend ---
+        const initialExplanations: Record<string, Record<number, boolean>> = {};
+        const initialAnswers: Record<string, Record<number, string>> = {};
+
+        Object.keys(pathData.skills).forEach((skill) => {
+          initialExplanations[skill] = {};
+          initialAnswers[skill] = {};
+          
+          const modeData = pathData.learningMode?.[skill];
+          const questions = Array.isArray(modeData) ? modeData : modeData?.questions || [];
+          
+          questions.forEach((q: any, i: number) => {
+            if (q.isCompleted) {
+              // Lock the UI for completed questions
+              initialExplanations[skill][i] = true;
+              
+              // Try to populate past answers if the backend provides them
+              const pastAnswer = q.user_answer || q.userAnswer || q.answer_text;
+              if (pastAnswer) {
+                initialAnswers[skill][i] = pastAnswer;
+              }
+            }
+          });
+        });
+
+        // Merge with existing state so we don't accidentally wipe out unsaved typing during a sync
+        setPracticeAnswers(prev => ({ ...prev, ...initialAnswers }));
+        setShowExplanation(prev => ({ ...prev, ...initialExplanations }));
+        // --------------------------------------------------------
+
         const skills = Object.keys(pathData.skills);
         if (skills.length > 0 && !skills.includes(activeTab)) setActiveTab(skills[0]);
       } else {
@@ -270,41 +312,89 @@ export function LearningPathView() {
 
   useEffect(() => { load(); }, []);
 
-  // Local-only visual toggle for videos
-  const handleToggleVideo = (videoId: number) => {
-    if (!data) return;
-    const newData = { ...data };
-    const video = newData.skills[activeTab].videos.find(v => v.id === videoId);
-    if (video) {
-      video.isCompleted = !video.isCompleted;
-      setData({ ...newData });
+  const handleToggleVideo = async (videoId: number) => {
+    setData(prev => {
+      if (!prev) return prev;
+      const newData = JSON.parse(JSON.stringify(prev));
+      const video = newData.skills[activeTab].videos.find((v: any) => v.id === videoId);
+      if (video) {
+        video.isCompleted = !video.isCompleted;
+      }
+      return newData;
+    });
+
+    const currentVideoStatus = data?.skills[activeTab]?.videos.find(v => v.id === videoId)?.isCompleted;
+    try {
+      await trackProgress({ videoId, section: activeTab, isCompleted: !currentVideoStatus });
+    } catch (error) {
+      console.error("Failed to track video progress", error);
     }
   };
 
-  // Local-only visual toggle for note
-  const handleToggleNote = () => {
-    if (!data) return;
-    const newData = { ...data };
-    newData.skills[activeTab].isNoteCompleted = !newData.skills[activeTab].isNoteCompleted;
-    setData({ ...newData });
+  const handleToggleNote = async () => {
+    setData(prev => {
+      if (!prev) return prev;
+      const newData = JSON.parse(JSON.stringify(prev));
+      newData.skills[activeTab].isNoteCompleted = !newData.skills[activeTab].isNoteCompleted;
+      return newData;
+    });
+
+    const currentNoteStatus = data?.skills[activeTab]?.isNoteCompleted;
+    try {
+      await trackProgress({ isNote: true, section: activeTab, isCompleted: !currentNoteStatus });
+    } catch (error) {
+      console.error("Failed to track note progress", error);
+    }
   };
 
-  // Local-only toggle for practice questions
-  const handleSelectAnswer = (skill: string, qIndex: number, answer: string) => {
+  const handleSelectAnswer = async (skill: string, qIndex: number, answer: string) => {
     setPracticeAnswers(prev => ({ ...prev, [skill]: { ...(prev[skill] || {}), [qIndex]: answer } }));
     setShowExplanation(prev => ({ ...prev, [skill]: { ...(prev[skill] || {}), [qIndex]: true } }));
     
-    // Safety check for complex learningMode structures (like listening)
-    const modeData = data?.learningMode?.[skill];
-    const questions = Array.isArray(modeData) ? modeData : (modeData as any)?.questions || [];
-    
-    if (questions[qIndex]) {
-      questions[qIndex].isCompleted = true;
-      setData({ ...data! });
+    setData(prev => {
+      if (!prev) return prev;
+      const newData = JSON.parse(JSON.stringify(prev));
+      const modeData = newData?.learningMode?.[skill];
+      const questions = Array.isArray(modeData) ? modeData : (modeData as any)?.questions || [];
+      if (questions[qIndex]) questions[qIndex].isCompleted = true;
+      return newData;
+    });
+
+    try {
+      // NEW FIX: Pass the `answer` payload
+      await trackProgress({ questionIndex: qIndex, section: skill, isCompleted: true, answer: answer });
+    } catch (error) {
+      console.error("Failed to track question progress", error);
     }
   };
 
-  // Speaking Practice Logic
+  const handleTextareaChange = (skill: string, qIndex: number, answer: string) => {
+    setPracticeAnswers(prev => ({ ...prev, [skill]: { ...(prev[skill] || {}), [qIndex]: answer } }));
+  };
+
+  const handleSubmitTextAnswer = async (skill: string, qIndex: number) => {
+    const answer = practiceAnswers[skill]?.[qIndex] || "";
+    if (answer.trim().length > 0) {
+      setShowExplanation(prev => ({ ...prev, [skill]: { ...(prev[skill] || {}), [qIndex]: true } }));
+      
+      setData(prev => {
+        if (!prev) return prev;
+        const newData = JSON.parse(JSON.stringify(prev));
+        const modeData = newData?.learningMode?.[skill];
+        const questions = Array.isArray(modeData) ? modeData : (modeData as any)?.questions || [];
+        if (questions[qIndex]) questions[qIndex].isCompleted = true;
+        return newData;
+      });
+
+      try {
+        // NEW FIX: Pass the `answer` payload to the backend
+        await trackProgress({ questionIndex: qIndex, section: skill, isCompleted: true, answer: answer });
+      } catch (error) {
+        console.error("Failed to track textarea progress", error);
+      }
+    }
+  };
+
   const startRecording = async (qIndex: number) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -340,16 +430,14 @@ export function LearningPathView() {
     try {
       setEvaluating(prev => ({ ...prev, [qIndex]: true }));
       const result = await evaluateSpeakingPractice(qIndex, blob);
-         // Support both wrapped ({ success, data }) and direct payload responses.
-         const normalizedResult = (result && typeof result === 'object' && 'data' in result)
-            ? (result as { data?: any }).data
-            : result;
+      const normalizedResult = (result && typeof result === 'object' && 'data' in result)
+        ? (result as { data?: any }).data
+        : result;
 
-         if (normalizedResult) {
-            setEvaluationResults(prev => ({ ...prev, [qIndex]: normalizedResult }));
+      if (normalizedResult) {
+        setEvaluationResults(prev => ({ ...prev, [qIndex]: normalizedResult }));
         setShowExplanation(prev => ({ ...prev, [activeTab]: { ...(prev[activeTab] || {}), [qIndex]: true } }));
         
-        // Mark as completed locally
         const modeData = data?.learningMode?.[activeTab];
         const questions = Array.isArray(modeData) ? modeData : (modeData as any)?.questions || [];
         if (questions[qIndex]) {
@@ -364,18 +452,31 @@ export function LearningPathView() {
     }
   };
 
-  // THE KEY ACTION: Save an entire section to the backend at once
   const handleCompleteSection = async (section: string) => {
     try {
       setCompleting(true);
-         setSyncHint(null);
+      setSyncHint(null);
+
+      const localAnswers = practiceAnswers[section];
+      if (localAnswers) {
+         for (const [qIndex, answerText] of Object.entries(localAnswers)) {
+            if (answerText.trim().length > 0 && !showExplanation[section]?.[Number(qIndex)]) {
+               // NEW FIX: Also pass `answer` in the failsafe sync
+               await trackProgress({ questionIndex: Number(qIndex), section, isCompleted: true, answer: answerText }).catch(() => {});
+            }
+         }
+      }
+
+      if (data?.skills[section] && !data.skills[section].isNoteCompleted) {
+         await trackProgress({ isNote: true, section, isCompleted: true }).catch(() => {});
+      }
+
       await completeSection(section);
       setCompletedSections(prev => ({ ...prev, [section]: true }));
-      // Reload to get the updated global progress percentage
-      await load();
+      await load(); // <-- Re-fetches the UI, which will now rebuild perfectly due to our update in load()
     } catch (err) {
       console.error("Failed to complete section", err);
-         setSyncHint("Could not sync section right now. Please try again.");
+      setSyncHint("Could not sync section right now. Please try again.");
     } finally {
       setCompleting(false);
     }
@@ -388,7 +489,7 @@ export function LearningPathView() {
          setSyncHint(null);
 
          const skillNames = Object.keys(data.skills);
-         const completedSkills = skillNames.filter((skill) => isSkillLocallyComplete(data, skill));
+         const completedSkills = skillNames.filter((skill) => isSkillLocallyComplete(data, skill, practiceAnswers));
 
          for (const skill of completedSkills) {
             await completeSection(skill);
@@ -443,7 +544,7 @@ export function LearningPathView() {
   const currentSkill = data.skills[activeTab];
   const progress = data.current_progress_percentage || 0;
    const skillNames = Object.keys(data.skills);
-   const skillStatusList = skillNames.map((skill) => getSkillCompletionStatus(data, skill));
+   const skillStatusList = skillNames.map((skill) => getSkillCompletionStatus(data, skill, practiceAnswers));
    const locallyCompletedSkillCount = skillStatusList.filter((s) => s.complete).length;
    const localUnitsTotal = skillNames.length;
    const localUnitsCompleted = locallyCompletedSkillCount;
@@ -455,14 +556,18 @@ export function LearningPathView() {
       data.examType || data.exam_type || data.competencyGapAnalysis?.exam_type || data.competencyGapAnalysis?.examType,
    );
 
-  // Normalize learning mode questions (handle both array and object-with-questions formats)
   const modeData = data.learningMode?.[activeTab];
   const pQues = Array.isArray(modeData) ? modeData : (modeData as any)?.questions || [];
   const listeningScript = (modeData as any)?.script || null;
   const listeningAudio = (modeData as any)?.audio_base64 || null;
 
   const pTotal = pQues.length;
-  const pComp = pQues.filter((q: any) => q.isCompleted).length;
+  const pComp = pQues.filter((q: any, idx: number) => {
+    if (q.isCompleted) return true;
+    const answer = practiceAnswers[activeTab]?.[idx];
+    if (answer !== undefined && String(answer).trim().length > 0) return true;
+    return false;
+  }).length;
 
   const vTotal = currentSkill?.videos?.length || 0;
   const vComp = currentSkill?.videos?.filter(v => v.isCompleted).length || 0;
@@ -697,7 +802,7 @@ export function LearningPathView() {
                                         <h5 className="text-xl font-medium tracking-tight leading-tight italic text-foreground/80">"{String(q.question || q.prompt)}"</h5>
                                      </div>
 
-                                     {/* LISTENING SCRIPT (New feature) */}
+                                     {/* LISTENING SCRIPT */}
                                      {activeTab === 'listening' && listeningScript && (
                                        <div className="space-y-4">
                                          <div className="p-6 bg-muted/30 rounded-2xl border border-border/50">
@@ -707,30 +812,35 @@ export function LearningPathView() {
                                        </div>
                                      )}
 
-                                     {/* AUDIO PLAYER FOR LISTENING SECTION (Enhanced) */}
+                                     {/* AUDIO PLAYER WITH ON-ENDED TRACKING */}
                                      {(q.audio_base64 || listeningAudio) && (
                                        <div className="p-5 bg-linear-to-r from-primary/5 to-accent/5 border border-primary/10 rounded-2xl space-y-3 max-w-2xl">
                                           <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-widest text-primary/60">
                                              <Headphones size={12} /> Listening Stimulus
                                           </div>
-                                          <audio controls className="w-full h-10" src={`data:audio/mp3;base64,${q.audio_base64 || listeningAudio}`}>
+                                          <audio 
+                                            controls 
+                                            className="w-full h-10" 
+                                            src={`data:audio/mp3;base64,${q.audio_base64 || listeningAudio}`}
+                                          >
                                              Your browser does not support the audio element.
                                           </audio>
                                        </div>
                                      )}
 
-                                     {q.options ? (
+                                     {/* RENDER QUESTIONS */}
+                                     {(q.options || q.choices) ? (
                                        <div className="grid md:grid-cols-2 gap-3 max-w-3xl pt-2">
-                                          {q.options.map((opt: string) => {
+                                          {(q.options || q.choices).map((opt: string) => {
                                             const rev = showExplanation[activeTab]?.[idx];
-                                               const correct = isCorrectOption(q.answer, opt, q.options);
+                                            const correct = isCorrectOption(q.answer || q.correct_answer || q.correctAnswer, opt, q.options || q.choices);
                                             const selected = practiceAnswers[activeTab]?.[idx] === opt;
                                             return (
                                                <button key={opt} disabled={rev} onClick={() => handleSelectAnswer(activeTab, idx, opt)}
-                                                                                  className={`text-left p-4 rounded-xl text-sm font-medium transition-all border tracking-tight flex items-center justify-between gap-3 ${rev ? correct ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : selected ? 'bg-red-50 border-red-300 text-red-700' : 'bg-muted border-transparent opacity-50' : 'bg-muted/20 border-transparent hover:border-primary/40'}`}>
-                                                                           <span>{opt}</span>
-                                                                           {rev && correct && <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />}
-                                                                           {rev && selected && !correct && <AlertCircle size={16} className="shrink-0 text-red-600" />}
+                                                       className={`text-left p-4 rounded-xl text-sm font-medium transition-all border tracking-tight flex items-center justify-between gap-3 ${rev ? correct ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : selected ? 'bg-red-50 border-red-300 text-red-700' : 'bg-muted border-transparent opacity-50' : 'bg-muted/20 border-transparent hover:border-primary/40'}`}>
+                                                  <span>{opt}</span>
+                                                  {rev && correct && <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />}
+                                                  {rev && selected && !correct && <AlertCircle size={16} className="shrink-0 text-red-600" />}
                                                </button>
                                             );
                                           })}
@@ -738,42 +848,42 @@ export function LearningPathView() {
                                      ) : activeTab === 'speaking' ? (
                                        <div className="space-y-6 max-w-2xl">
                                           {evaluationResults[idx] ? (
-                                                                  (() => {
-                                                                     const scoreMeta = getSpeakingScoreMeta(evaluationResults[idx], currentExamType);
-                                                                     return (
-                                                                        <div className="space-y-4">
-                                                                           <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-2">
-                                                                              <div className="flex items-center justify-between gap-3">
-                                                                                 <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">Speaking {scoreMeta.label}</p>
-                                                                                 <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-700/80">{scoreMeta.examType}</span>
-                                                                              </div>
-                                                                              <p className="text-2xl font-semibold text-emerald-700 leading-none">
-                                                                                 {scoreMeta.displayScore}
-                                                                                 <span className="text-sm font-medium text-emerald-700/70"> / {scoreMeta.max}</span>
-                                                                              </p>
-                                                                              <div className="w-full h-2 bg-emerald-100 rounded-full overflow-hidden">
-                                                                                 <div className="h-full bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${scoreMeta.percent}%` }} />
-                                                                              </div>
-                                                                              {scoreMeta.score === null && (
-                                                                                 <p className="text-[10px] text-emerald-800/80">Numeric score is unavailable in this response. Feedback is shown below.</p>
-                                                                              )}
-                                                                           </div>
+                                             (() => {
+                                                const scoreMeta = getSpeakingScoreMeta(evaluationResults[idx], currentExamType);
+                                                return (
+                                                   <div className="space-y-4">
+                                                      <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+                                                         <div className="flex items-center justify-between gap-3">
+                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">Speaking {scoreMeta.label}</p>
+                                                            <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-700/80">{scoreMeta.examType}</span>
+                                                         </div>
+                                                         <p className="text-2xl font-semibold text-emerald-700 leading-none">
+                                                            {scoreMeta.displayScore}
+                                                            <span className="text-sm font-medium text-emerald-700/70"> / {scoreMeta.max}</span>
+                                                         </p>
+                                                         <div className="w-full h-2 bg-emerald-100 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${scoreMeta.percent}%` }} />
+                                                         </div>
+                                                         {scoreMeta.score === null && (
+                                                            <p className="text-[10px] text-emerald-800/80">Numeric score is unavailable in this response. Feedback is shown below.</p>
+                                                         )}
+                                                      </div>
 
-                                                                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                                               {[
-                                                                                  { label: 'Pronunciation', val: evaluationResults[idx].pronunciation },
-                                                                                  { label: 'Fluency', val: evaluationResults[idx].fluency },
-                                                                                  { label: 'Coherence', val: evaluationResults[idx].coherence },
-                                                                               ].map((stat, i) => (
-                                                                                  <div key={i} className="p-3 rounded-xl bg-card border border-border space-y-1">
-                                                                                       <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</p>
-                                                                                       <p className="text-[10px] leading-tight text-foreground/80 line-clamp-3">{stat.val || "No detailed feedback"}</p>
-                                                                                  </div>
-                                                                               ))}
-                                                                           </div>
-                                                                        </div>
-                                                                     );
-                                                                  })()
+                                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                          {[
+                                                             { label: 'Pronunciation', val: evaluationResults[idx].pronunciation },
+                                                             { label: 'Fluency', val: evaluationResults[idx].fluency },
+                                                             { label: 'Coherence', val: evaluationResults[idx].coherence },
+                                                          ].map((stat, i) => (
+                                                             <div key={i} className="p-3 rounded-xl bg-card border border-border space-y-1">
+                                                                  <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</p>
+                                                                  <p className="text-[10px] leading-tight text-foreground/80 line-clamp-3">{stat.val || "No detailed feedback"}</p>
+                                                             </div>
+                                                          ))}
+                                                      </div>
+                                                   </div>
+                                                );
+                                             })()
                                           ) : (
                                              <div className="flex flex-col items-center gap-4 p-8 rounded-3xl bg-muted/20 border border-dashed border-border/60">
                                                {isRecording[idx] ? (
@@ -804,9 +914,33 @@ export function LearningPathView() {
                                           )}
                                        </div>
                                      ) : (
-                                       <div className="p-8 bg-slate-50/50 border border-border/60 rounded-2xl">
-                                          <textarea className="w-full bg-transparent text-lg font-normal placeholder:text-muted-foreground/20 focus:outline-none min-h-[120px] tracking-tight"
-                                                    placeholder="Input formalized response transcript..." onBlur={(e) => handleSelectAnswer(activeTab, idx, e.target.value)} />
+                                       // TEXTAREA + EXPLICIT SUBMIT BUTTON
+                                       <div className="p-6 bg-slate-50/50 border border-border/60 rounded-2xl space-y-4">
+                                          <textarea 
+                                             className="w-full bg-transparent text-lg font-normal placeholder:text-muted-foreground/20 focus:outline-none min-h-[120px] tracking-tight resize-y"
+                                             placeholder="Input formalized response transcript..." 
+                                             // NEW FIX: Show a clear message if the backend says it's saved but we don't have the text available
+                                             value={practiceAnswers[activeTab]?.[idx] ?? (q.isCompleted ? "(Answer locked and saved.)" : "")}
+                                             disabled={showExplanation[activeTab]?.[idx]}
+                                             onChange={(e) => handleTextareaChange(activeTab, idx, e.target.value)} 
+                                          />
+                                          {!showExplanation[activeTab]?.[idx] ? (
+                                             <div className="flex justify-end pt-2 border-t border-border/40">
+                                                <Button 
+                                                   onClick={() => handleSubmitTextAnswer(activeTab, idx)}
+                                                   disabled={!practiceAnswers[activeTab]?.[idx]?.trim()}
+                                                   className="gap-2 px-6 bg-primary text-white hover:bg-primary/90 rounded-xl"
+                                                >
+                                                   <Send size={16} /> Submit Answer
+                                                </Button>
+                                             </div>
+                                          ) : (
+                                             <div className="flex justify-end pt-2 border-t border-border/40">
+                                                <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
+                                                   <CheckCircle2 size={16} /> Answer Locked
+                                                </div>
+                                             </div>
+                                          )}
                                        </div>
                                      )}
 

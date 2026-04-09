@@ -30,6 +30,7 @@ interface AssessmentResultViewProps {
   testId: string;
   examType: string;
   difficulty: string;
+  initialData?: any;
   onBack: () => void;
 }
 
@@ -70,13 +71,16 @@ export function AssessmentResultView({
   testId,
   examType,
   difficulty,
+  initialData,
   onBack,
 }: AssessmentResultViewProps) {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [resultData, setResultData] = useState<any>(null);
+  const [resultData, setResultData] = useState<any>(normalizeAssessmentResult(initialData));
 
   useEffect(() => {
+    if (initialData) return;
+
     const fetchResult = async () => {
       try {
         setLoading(true);
@@ -99,7 +103,7 @@ export function AssessmentResultView({
     };
 
     fetchResult();
-  }, [testId]);
+  }, [testId, initialData]);
 
   if (loading) {
     return (
@@ -134,8 +138,8 @@ export function AssessmentResultView({
   const threshold = isTOEFL ? 90 : 6.5;
 
   const evaluation = resultData.evaluation || resultData;
-  const subs = evaluation.score_breakdown || {};
-  const band = parseFloat(evaluation.overall_band || 0);
+  const subs = evaluation.score_breakdown || evaluation.subscores || {};
+  const band = parseFloat(evaluation.overall_band || evaluation.overallBand || 0);
   const bandPercent = Math.min(100, (band / maxScore) * 100);
 
   const subscoredItems = [

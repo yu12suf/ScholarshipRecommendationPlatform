@@ -136,12 +136,17 @@ export class LearningPathService {
       }
 
       const updatedQuestions = skillQuestions.map((q: any, index: number) => {
-        const isCompleted = skillProgress.some(
-          (p) => p.questionIndex === index,
-        );
+        const savedProgress = skillProgress.find(p => p.questionIndex === index);
+        const isCompleted = !!savedProgress;
+        
         totalItems++;
         if (isCompleted) completedItems++;
-        return { ...q, isCompleted };
+        
+        return { 
+          ...q, 
+          isCompleted,
+          userAnswer: savedProgress?.answerText || null
+        };
       });
 
       if (Object.keys(extraData).length > 0) {

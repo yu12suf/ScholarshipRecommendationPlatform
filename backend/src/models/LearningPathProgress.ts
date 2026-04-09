@@ -62,6 +62,13 @@ export class LearningPathProgress extends Model {
     declare section: 'Reading' | 'Listening' | 'Writing' | 'Speaking';
 
     @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'answer_text'
+    })
+    declare answerText: string;
+
+    @Column({
         type: DataType.BOOLEAN,
         allowNull: false,
         defaultValue: false,
