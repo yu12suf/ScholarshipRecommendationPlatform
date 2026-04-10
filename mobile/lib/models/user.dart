@@ -1,4 +1,4 @@
-import 'json_utils.dart';
+import 'package:mobile/models/json_utils.dart';
 
 /// Mirrors `/api/auth/me` — user row merged with student/counselor profile fields.
 /// Synchronized with @frontend User interface.
@@ -81,3 +81,10 @@ class User {
     );
   }
 }
+
+
+
+
+
+
+
