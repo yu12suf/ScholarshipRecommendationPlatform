@@ -159,15 +159,45 @@ export class AssessmentService {
     }
 
     static async submitAssessment(testId: string, responses: any, studentId: number, audioData?: { buffer: Buffer; mimetype: string }) {
-        // Fetch blueprint from Redis
         const blueprintData = await redisConnection.get(`test_id:${testId}`);
         if (!blueprintData) {
-            throw new Error("Assessment not found or expired.");
+            const existingResult = await AssessmentRepository.findByTestId(testId);
+            if (existingResult) {
+                return { status: "already_completed", testId, message: "Assessment already evaluated" };
+            }
+            throw new Error("Assessment not found or expired. Please start a new assessment.");
         }
+
+        const blueprint = JSON.parse(blueprintData);
+        
+        // Use synchronous processing if queue is disabled
+        if (!configs.ASSESSMENT_USE_QUEUE) {
+            console.log(`[Assessment] Running synchronous evaluation for test_id: ${testId}`);
+            try {
+                const evaluation = await AssessmentService.evaluateAssessment(
+                    testId,
+                    blueprint,
+                    responses,
+                    studentId,
+                    audioData ? {
+                        base64: audioData.buffer.toString("base64"),
+                        mimetype: audioData.mimetype
+                    } : null
+                );
+                console.log(`[Assessment] Synchronous evaluation complete for test_id: ${testId}`);
+                return { status: "completed", testId, evaluation };
+            } catch (evalError: any) {
+                console.error(`[Assessment] Synchronous evaluation failed:`, evalError.message);
+                throw new Error("Assessment evaluation failed: " + evalError.message);
+            }
+        }
+
+        // Use queue-based processing
+        const uniqueJobId = `${testId}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
         const job = await assessmentQueue.add("assessment-queue", {
             testId,
-            blueprint: JSON.parse(blueprintData),
+            blueprint,
             responses,
             studentId,
             audioData: audioData ? {
@@ -175,8 +205,8 @@ export class AssessmentService {
                 mimetype: audioData.mimetype
             } : null
         }, {
-            jobId: testId,
-            removeOnComplete: false,
+            jobId: uniqueJobId,
+            removeOnComplete: { age: 24 * 3600 },
             removeOnFail: { age: 24 * 3600 }
         });
 
@@ -339,36 +369,39 @@ console.error("Sanitized JSON that failed parsing:", AssessmentService.sanitizeJ
     }
 
     static async getAssessmentResult(testId: string) {
-        // ... (existing code)
-        // Note: keeping existing logic for fetching from Redis/Queue for immediate result
-        // Try explicit Redis key first
         const storedResult = await redisConnection.get(`evaluation:${testId}`);
         if (storedResult) {
             return { status: "success", data: JSON.parse(storedResult) };
         }
 
-        const job = await assessmentQueue.getJob(testId);
+        const existingResult = await AssessmentRepository.findByTestId(testId);
+        if (existingResult) {
+            return { status: "success", data: { evaluation: existingResult.evaluation } };
+        }
 
-        if (!job) {
+        try {
+            const jobs = await assessmentQueue.getJobs(["waiting", "active", "completed", "failed"]);
+            const matchingJob = jobs.find((job) => job.data.testId === testId);
+            
+            if (!matchingJob) {
+                return { status: "not_found", message: "Assessment not found or expired" };
+            }
+
+            const state = await matchingJob.getState();
+
+            if (state === "completed" && matchingJob.returnvalue) {
+                return { status: "success", data: matchingJob.returnvalue };
+            }
+
+            if (state === "failed") {
+                return { status: "failed", reason: matchingJob.failedReason };
+            }
+
+            return { status: state };
+        } catch (err) {
+            console.warn("Error fetching assessment result:", err);
             return { status: "not_found", message: "Assessment not found or expired" };
         }
-
-        const state = await job.getState(); // 'completed', 'failed', 'active', 'waiting'
-
-        if (state === "completed") {
-            return {
-                status: "success",
-                // This is where BullMQ stores the result of the worker's return statement
-                data: job.returnvalue
-            };
-        }
-
-        if (state === "failed") {
-            return { status: "failed", reason: job.failedReason };
-        }
-
-        // Return the current state (waiting or active) instead of null
-        return { status: state };
     }
 
     static async getStudentProgress(studentId: number, examType?: string) {

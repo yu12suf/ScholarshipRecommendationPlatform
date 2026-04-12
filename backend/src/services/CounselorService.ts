@@ -227,7 +227,7 @@ export class CounselorService {
         : filteredRows;
 
     const payload = availabilityFilteredRows.map((c) => {
-      const base = this.formatCounselorResponse(c, (c as any).user || null);
+      const base = this.formatCounselorResponse(c, c.get('user') as User | null);
       const availableSlots = slotsByCounselor.get(c.id) || [];
       return {
         ...base,
@@ -246,53 +246,79 @@ export class CounselorService {
   }
 
   static async recommendForStudent(userId: number): Promise<CounselorRecommendationResponse[]> {
+    console.log('[recommendForStudent] userId:', userId);
+    
     const student = await Student.findOne({ where: { userId } });
-    if (!student) throw httpError(404, "Student profile not found");
-
-    const studentProfileSignal = [
-      student.studyPreferences,
-      student.academicHistory,
-      student.countryInterest,
-      student.academicStatus,
-      student.extractedData,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+    console.log('[recommendForStudent] student found:', !!student);
+    
+    let studentProfileSignal = "";
+    if (student) {
+      studentProfileSignal = [
+        student.studyPreferences,
+        student.academicHistory,
+        student.countryInterest,
+        student.academicStatus,
+        student.extractedData,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+    }
+    console.log('[recommendForStudent] studentProfileSignal:', studentProfileSignal);
 
     const candidates = await Counselor.findAll({
       where: { verificationStatus: "verified", isActive: true },
       include: [{ model: User, as: "user", attributes: ["name", "email"] }],
       order: [["rating", "DESC"]],
     });
+    console.log('[recommendForStudent] verified & active counselors found:', candidates.length);
 
-    return candidates
-      .map((counselor) => {
-        const metadata = this.parseMetadata(counselor.extractedData);
-        const matchReasons: string[] = [];
-        let recommendationScore = Number(counselor.rating || 0);
+    let results: CounselorRecommendationResponse[] = [];
+    
+    if (!student || !studentProfileSignal.trim()) {
+      results = candidates
+        .slice(0, 10)
+        .map((counselor) => {
+          const metadata = this.parseMetadata(counselor.extractedData);
+          const base = this.formatCounselorResponse(counselor, counselor.get('user') as User | null);
+          return { 
+            ...base, 
+            recommendationScore: Number(counselor.rating || 0), 
+            matchReasons: ["Available for consultation"] 
+          };
+        });
+    } else {
+      results = candidates
+        .map((counselor) => {
+          const metadata = this.parseMetadata(counselor.extractedData);
+          const matchReasons: string[] = [];
+          let recommendationScore = Number(counselor.rating || 0);
 
-        const expertiseText = (counselor.areasOfExpertise || "").toLowerCase();
-        if (expertiseText && this.hasTokenOverlap(expertiseText, studentProfileSignal)) {
-          recommendationScore += 2;
-          matchReasons.push("specialization aligns with student profile");
-        }
+          const expertiseText = (counselor.areasOfExpertise || "").toLowerCase();
+          if (expertiseText && this.hasTokenOverlap(expertiseText, studentProfileSignal)) {
+            recommendationScore += 2;
+            matchReasons.push("specialization aligns with student profile");
+          }
 
-        if (metadata.currentUniversity && studentProfileSignal.includes(metadata.currentUniversity.toLowerCase())) {
-          recommendationScore += 2;
-          matchReasons.push("same target/current university context");
-        }
+          if (metadata.currentUniversity && studentProfileSignal.includes(metadata.currentUniversity.toLowerCase())) {
+            recommendationScore += 2;
+            matchReasons.push("same target/current university context");
+          }
 
-        if (metadata.currentDegreeLevel && studentProfileSignal.includes(metadata.currentDegreeLevel.toLowerCase())) {
-          recommendationScore += 1;
-          matchReasons.push("degree level alignment");
-        }
+          if (metadata.currentDegreeLevel && studentProfileSignal.includes(metadata.currentDegreeLevel.toLowerCase())) {
+            recommendationScore += 1;
+            matchReasons.push("degree level alignment");
+          }
 
-        const base = this.formatCounselorResponse(counselor, (counselor as any).user || null);
-        return { ...base, recommendationScore, matchReasons };
-      })
-      .sort((a, b) => b.recommendationScore - a.recommendationScore)
-      .slice(0, 10);
+          const base = this.formatCounselorResponse(counselor, counselor.get('user') as User | null);
+          return { ...base, recommendationScore, matchReasons };
+        })
+        .sort((a, b) => b.recommendationScore - a.recommendationScore)
+        .slice(0, 10);
+    }
+
+    console.log('[recommendForStudent] returning results:', JSON.stringify(results).substring(0, 500));
+    return results;
   }
 
   static async getReviews(counselorId: number): Promise<ReviewsSummaryResponse> {
@@ -362,32 +388,69 @@ export class CounselorService {
     if (slots.length === 0) throw httpError(400, "Slots array is required");
     const now = new Date();
 
+    // Expand slots to recur weekly for 12 weeks (3 months)
+    const expandedSlots: { counselorId: number; startTime: Date; endTime: Date; status: string }[] = [];
+    const weeksToCreate = 12;
+
     for (const slot of slots) {
       const start = new Date(slot.startTime);
       const end = new Date(slot.endTime);
+      
       if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
         throw httpError(400, "Invalid slot time range");
       }
       if (start < now) throw httpError(400, "Cannot create slot in the past");
-      const overlap = await AvailabilitySlotRepository.findOverlappingSlots(counselorId, start, end);
-      if (overlap) throw httpError(409, "Slot overlaps with existing slot");
+
+      // Create recurring slots for the next N weeks
+      for (let week = 0; week < weeksToCreate; week++) {
+        const weekStart = new Date(start);
+        weekStart.setDate(weekStart.getDate() + (week * 7));
+        const weekEnd = new Date(end);
+        weekEnd.setDate(weekEnd.getDate() + (week * 7));
+        
+        expandedSlots.push({
+          counselorId,
+          startTime: weekStart,
+          endTime: weekEnd,
+          status: 'available'
+        });
+      }
     }
 
-    const created = await AvailabilitySlotRepository.bulkCreate(
-      slots.map((slot) => ({
-        counselorId,
-        startTime: new Date(slot.startTime),
-        endTime: new Date(slot.endTime),
-      })),
-    );
+    // Try to create all slots - database will handle duplicates gracefully
+    // Use ignoreDuplicates option to skip duplicate errors
+    const created = await AvailabilitySlotRepository.bulkCreate(expandedSlots, { 
+      ignoreDuplicates: true 
+    });
+    
     return created.map((slot) => this.formatSlotResponse(slot));
   }
 
   static async getSlots(counselorId: number, fromDate?: string, toDate?: string, status?: string): Promise<SlotResponse[]> {
+    // Default to fetching slots starting from today if no fromDate provided
+    const effectiveFromDate = fromDate ? new Date(fromDate) : new Date();
     const filters = {
-      ...(fromDate ? { fromDate: new Date(fromDate) } : {}),
+      fromDate: effectiveFromDate,
       ...(toDate ? { toDate: new Date(toDate) } : {}),
       ...(status ? { status } : {}),
+    };
+    const slots = await AvailabilitySlotRepository.findAllByCounselor(counselorId, filters);
+    return slots.map((slot) => this.formatSlotResponse(slot));
+  }
+
+  static async getCounselorSlots(counselorId: number): Promise<SlotResponse[]> {
+    const filters = { 
+      status: 'available',
+      fromDate: new Date() // Only show future available slots
+    };
+    const slots = await AvailabilitySlotRepository.findAllByCounselor(counselorId, filters);
+    return slots.map((slot) => this.formatSlotResponse(slot));
+  }
+
+  static async getCounselorSlotsPublic(counselorId: number): Promise<SlotResponse[]> {
+    const filters = { 
+      status: 'available',
+      fromDate: new Date() // Only show future available slots
     };
     const slots = await AvailabilitySlotRepository.findAllByCounselor(counselorId, filters);
     return slots.map((slot) => this.formatSlotResponse(slot));
@@ -426,7 +489,7 @@ export class CounselorService {
       throw httpError(403, "Counselor is not available for booking");
     }
 
-    const meetingLink = slot.meetingLink || `https://meet.edu-pathway.com/session-${slot.id}`;
+    const meetingLink = slot.meetingLink || `/dashboard/student/session/${slot.id}`;
     const booking = await BookingRepository.create({
       studentId: student.id,
       counselorId: slot.counselorId,
@@ -434,13 +497,46 @@ export class CounselorService {
       status: "confirmed",
       meetingLink,
     });
+    
+    // Fetch the booking with all associations for proper response formatting
+    const bookingWithAssociations = await BookingRepository.findByIdWithAssociations(booking.id);
+    if (!bookingWithAssociations) {
+      throw httpError(500, "Failed to retrieve booking details");
+    }
+    
     this.queueSessionReminder(booking.id, slot.startTime);
     await AvailabilitySlotRepository.update(slot.id, {
       status: "booked",
       reservedStudentId: student.id,
       meetingLink,
     });
-    return this.formatBookingResponse(booking);
+
+    try {
+      const studentUser = await User.findByPk(userId);
+      const counselorUser = await User.findByPk(counselor.userId);
+
+      if (studentUser) {
+        await NotificationService.createNotification(
+          studentUser.id,
+          'Session Booked',
+          `Your session with ${counselorUser?.name || 'the counselor'} has been confirmed for ${new Date(slot.startTime).toLocaleString()}`,
+          'booking_confirmation'
+        );
+      }
+
+      if (counselorUser) {
+        await NotificationService.createNotification(
+          counselorUser.id,
+          'New Booking',
+          `${studentUser?.name || 'A student'} has booked a session with you for ${new Date(slot.startTime).toLocaleString()}`,
+          'new_booking'
+        );
+      }
+    } catch (notifError) {
+      console.error('[createBooking] Failed to send notifications:', notifError);
+    }
+
+    return this.formatBookingResponse(bookingWithAssociations);
   }
 
   static async rescheduleBooking(userId: number, bookingId: number, dto: RescheduleBookingDto): Promise<BookingResponse> {
@@ -494,11 +590,14 @@ export class CounselorService {
     const uniqueStudents = new Map<number, any>();
     bookings.forEach((booking) => {
       if (!uniqueStudents.has(booking.studentId)) {
+        const student = (booking as any).student;
+        if (!student) return;
+        
         uniqueStudents.set(booking.studentId, {
-          studentId: booking.student.id,
-          userId: booking.student.userId,
-          name: (booking as any).student?.user?.name || "Unknown",
-          email: (booking as any).student?.user?.email || "Unknown",
+          studentId: student.id || booking.studentId,
+          userId: student.userId,
+          name: student.user?.name || "Unknown",
+          email: student.user?.email || "Unknown",
           lastBookingDate: booking.createdAt,
           lastBookingStatus: booking.status,
         });
@@ -651,15 +750,90 @@ export class CounselorService {
     if ((start.getTime() - now.getTime()) / 60000 > 10) throw httpError(403, "Meeting link is only available 10 minutes before the start time");
     if (now > end) throw httpError(409, "This session has already ended");
 
-    const meetingLink = booking.meetingLink || slot.meetingLink || `https://meet.edu-pathway.com/session-${booking.id}`;
+    const meetingLink = booking.meetingLink || slot.meetingLink || `/dashboard/student/session/${booking.id}`;
     if (booking.status === "confirmed") await booking.update({ status: "started", startedAt: now, meetingLink });
     return { meetingLink };
+  }
+
+  static async getStudentBookings(userId: number): Promise<BookingResponse[]> {
+    let student = await Student.findOne({ where: { userId } });
+    if (!student) {
+      student = await Student.create({ userId });
+    }
+    
+    const bookings = await BookingRepository.findByStudent(student.id);
+    return bookings.map(booking => this.formatBookingResponse(booking));
+  }
+
+  static async getStudentUpcomingBookings(userId: number): Promise<BookingResponse[]> {
+    let student = await Student.findOne({ where: { userId } });
+    if (!student) {
+      student = await Student.create({ userId });
+    }
+    
+    const bookings = await BookingRepository.findUpcomingByStudent(student.id, true);
+    const now = new Date();
+    return bookings
+      .filter((booking) => {
+        const start = (booking as any).slot?.startTime;
+        return start && new Date(start) > now;
+      })
+      .map((booking) => this.formatBookingResponse(booking));
+  }
+
+  static async getBookingDetails(userId: number, bookingId: number, role: UserRole): Promise<BookingResponse> {
+    const booking = await BookingRepository.findByIdWithAssociations(bookingId);
+    if (!booking) throw httpError(404, "Booking not found");
+    
+    const counselor = await CounselorRepository.findByUserId(userId);
+    const student = await Student.findOne({ where: { userId } });
+    
+    if (role === UserRole.STUDENT && student?.id !== booking.studentId) {
+      throw httpError(403, "Unauthorized to view this booking");
+    }
+    if (role === UserRole.COUNSELOR && counselor?.id !== booking.counselorId) {
+      throw httpError(403, "Unauthorized to view this booking");
+    }
+    
+    return this.formatBookingResponse(booking);
+  }
+
+  static async getBookingThread(userId: number, bookingId: number, role: UserRole): Promise<CounselorMessageResponse[]> {
+    const booking = await BookingRepository.findByIdWithAssociations(bookingId);
+    if (!booking) throw httpError(404, "Booking not found");
+    
+    const counselor = await CounselorRepository.findByUserId(userId);
+    const student = await Student.findOne({ where: { userId } });
+    
+    let otherUserId: number;
+    if (role === UserRole.STUDENT) {
+      if (student?.id !== booking.studentId) throw httpError(403, "Unauthorized");
+      const counselorData = await CounselorRepository.findById(booking.counselorId);
+      if (!counselorData) throw httpError(404, "Counselor not found");
+      otherUserId = counselorData.userId;
+    } else if (role === UserRole.COUNSELOR) {
+      if (counselor?.id !== booking.counselorId) throw httpError(403, "Unauthorized");
+      otherUserId = (booking.student as Student)?.userId || 0;
+    } else {
+      throw httpError(403, "Invalid role");
+    }
+    
+    const thread = await CounselorMessageRepository.findThread(userId, otherUserId);
+    return thread.map((item) => this.formatMessage(item));
   }
 
   static async updateVerification(counselorId: number, dto: AdminVerificationDto): Promise<CounselorResponse> {
     const counselor = await CounselorRepository.findById(counselorId);
     if (!counselor) throw httpError(404, "Counselor not found");
-    await counselor.update({ verificationStatus: dto.verificationStatus });
+    
+    const updateData: any = { verificationStatus: dto.verificationStatus };
+    if (dto.verificationStatus === 'verified') {
+      updateData.isActive = true;
+    } else if (dto.verificationStatus === 'rejected') {
+      updateData.isActive = false;
+    }
+    
+    await counselor.update(updateData);
     const user = await User.findByPk(counselor.userId);
     return this.formatCounselorResponse(counselor, user);
   }
@@ -668,7 +842,7 @@ export class CounselorService {
     const counselors = await Counselor.findAll({
       include: [{ model: User, as: "user", attributes: ["name", "email"] }],
     });
-    return counselors.map((counselor) => this.formatCounselorResponse(counselor, (counselor as any).user || null));
+    return counselors.map((counselor) => this.formatCounselorResponse(counselor, counselor.get('user') as User | null));
   }
 
   static async updateVisibility(counselorId: number, dto: AdminVisibilityDto): Promise<CounselorResponse> {
@@ -853,15 +1027,20 @@ export class CounselorService {
     return {
       id: slot.id,
       counselorId: slot.counselorId,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
+      startTime: slot.startTime instanceof Date ? slot.startTime.toISOString() : slot.startTime,
+      endTime: slot.endTime instanceof Date ? slot.endTime.toISOString() : slot.endTime,
       status: slot.status,
       reservedStudentId: slot.reservedStudentId,
       meetingLink: slot.meetingLink,
+      consultationMode: slot.consultationMode || 'video',
     };
   }
 
   private static formatBookingResponse(booking: Booking): BookingResponse {
+    const slot = booking.slot as AvailabilitySlot | undefined;
+    const counselor = booking.counselor as Counselor | undefined;
+    const student = booking.student as Student | undefined;
+    
     return {
       id: booking.id,
       studentId: booking.studentId,
@@ -872,6 +1051,19 @@ export class CounselorService {
       startedAt: booking.startedAt,
       completedAt: booking.completedAt,
       createdAt: booking.createdAt,
+      slot: slot ? {
+        startTime: slot.startTime.toISOString(),
+        endTime: slot.endTime.toISOString(),
+        consultationMode: slot.consultationMode || 'video',
+      } : undefined,
+      counselor: counselor?.user ? {
+        name: (counselor.user as User).name,
+        email: (counselor.user as User).email,
+        userId: (counselor.user as User).id,
+      } : undefined,
+      student: student?.user ? {
+        name: (student.user as User).name,
+      } : undefined,
     };
   }
 

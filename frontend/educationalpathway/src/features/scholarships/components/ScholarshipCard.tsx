@@ -90,14 +90,18 @@ export const ScholarshipCard = ({ scholarship }: ScholarshipCardProps) => {
               Details
             </Link>
 
-            <a 
-               href={scholarship.originalUrl}
-               target="_blank"
-               rel="noopener noreferrer"
-               className="flex-1 h-11 primary-gradient text-primary-foreground rounded-lg flex items-center justify-center gap-2 text-sm font-medium"
+<a 
+                href={scholarship.originalUrl && scholarship.originalUrl.startsWith('http') ? scholarship.originalUrl : '#'}
+                target={scholarship.originalUrl && scholarship.originalUrl.startsWith('http') ? '_blank' : '_self'}
+                rel="noopener noreferrer"
+                className={`flex-1 h-11 rounded-lg flex items-center justify-center gap-2 text-sm font-medium ${
+                  scholarship.originalUrl && scholarship.originalUrl.startsWith('http')
+                    ? 'primary-gradient text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
+                }`}
             >
-              Apply Now
-              <ExternalLink className="h-4 w-4" />
+                Apply Now
+                <ExternalLink className="h-4 w-4" />
             </a>
           </div>
 

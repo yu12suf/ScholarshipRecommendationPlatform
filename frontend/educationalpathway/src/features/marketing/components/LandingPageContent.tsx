@@ -15,19 +15,49 @@ import {
   Zap,
   ShieldCheck,
   Target,
+  FileText,
+  Mic,
+  Brain,
+  MessageCircle,
+  CreditCard,
+  Calendar,
+  BarChart3,
+  Clock,
+  Search,
+  Video,
+  Mail,
+  Lock,
+  BarChart,
+  Star,
+  Play,
+  Building2,
+  Clock3,
+  Bell,
+  Languages,
+  PenTool,
+  SearchCheck,
+  UserCheck,
+  Wallet,
+  AlertCircle,
+  MapPin,
+  GraduationCapIcon,
+  TestTube,
+  FileCheck,
+  UsersRound,
+  CircleDollarSign,
+  CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Footer } from "@/components/layout/Footer";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-
 const features = [
   {
     icon: Award,
-    title: "Smart Scholarship Match",
+    title: "AI-Powered Scholarship Discovery",
     description:
-      "Our AI engine analyzes your academic profile, goals, and background to surface the scholarships most aligned with your potential — not just your grades.",
+      "Our intelligent recommendation engine analyzes your academic profile, goals, and background to surface scholarships you're most likely to qualify for. Get instant match scores and personalized recommendations.",
     color: "bg-emerald-500/20 text-emerald-400",
     border: "hover:border-emerald-400/50",
   },
@@ -35,25 +65,126 @@ const features = [
     icon: Users,
     title: "Expert Counselor Network",
     description:
-      "Connect with verified counselors who have guided hundreds of students to scholarship success. Get personalized advice, CV reviews, and interview prep.",
+      "Connect with verified Ethiopian counselors who secured international scholarships themselves. Get personalized guidance, CV reviews, essay feedback, and mock interview preparation.",
     color: "bg-teal-500/20 text-teal-400",
     border: "hover:border-teal-400/50",
   },
   {
-    icon: BookOpen,
-    title: "Academic Path Planning",
+    icon: Languages,
+    title: "AI English Proficiency Assessment",
     description:
-      "Map out your academic journey from where you are today to where you want to be. Visualize deadlines, requirements, and milestones in one place.",
+      "Take adaptive diagnostic tests for IELTS, TOEFL, and GRE. Get instant scoring, pronunciation analysis via speech AI, and personalized learning pathways to improve your English skills.",
     color: "bg-green-500/20 text-green-400",
     border: "hover:border-green-400/50",
   },
   {
-    icon: Zap,
-    title: "AI-Powered Assessments",
+    icon: FileText,
+    title: "Document Assistance & Writing Tools",
     description:
-      "Take mock IELTS and TOEFL exams powered by AI. Get instant scoring, personalized feedback reports, and adaptive learning tags to target your weak points.",
-    color: "bg-emerald-400/20 text-emerald-400",
-    border: "hover:border-emerald-500/50",
+      "Get AI-powered assistance for Statements of Purpose, Letters of Recommendation, and CVs. Our system provides grammar feedback, tone analysis, and suggestions aligned with university requirements.",
+    color: "bg-blue-500/20 text-blue-400",
+    border: "hover:border-blue-400/50",
+  },
+  {
+    icon: CreditCard,
+    title: "Secure Payment & Escrow System",
+    description:
+      "Book counseling sessions with confidence. Payments are held securely in escrow and released only after session completion, protecting both students and counselors.",
+    color: "bg-purple-500/20 text-purple-400",
+    border: "hover:border-purple-400/50",
+  },
+  {
+    icon: Calendar,
+    title: "Smart Scheduling & Booking",
+    description:
+      "View counselor availability, book time slots, and manage your sessions in one place. Get automated reminders and join video sessions directly from the platform.",
+    color: "bg-orange-500/20 text-orange-400",
+    border: "hover:border-orange-400/50",
+  },
+  {
+    icon: Bell,
+    title: "Deadline Tracking & Reminders",
+    description:
+      "Track scholarship applications with personalized deadlines. Set custom reminders for yourself and receive notifications via in-app, email, or push alerts.",
+    color: "bg-rose-500/20 text-rose-400",
+    border: "hover:border-rose-400/50",
+  },
+  {
+    icon: MessageCircle,
+    title: "Community & Peer Support",
+    description:
+      "Connect with fellow students, join study groups, and share experiences. Access discussion forums moderated for quality and appropriateness.",
+    color: "bg-cyan-500/20 text-cyan-400",
+    border: "hover:border-cyan-400/50",
+  },
+];
+
+const detailedFeatures = [
+  {
+    title: "Scholarship Discovery & AI Matching",
+    items: [
+      "Smart scholarship matching based on profile analysis",
+      "Pathfinder AI - paste any scholarship for instant eligibility analysis",
+      "Save & Track with automatic application checklist generation",
+      "Real-time notifications for new matching scholarships",
+      "Profile-based match score calculation",
+    ],
+    icon: SearchCheck,
+  },
+  {
+    title: "English Proficiency & Exam Prep",
+    items: [
+      "Adaptive diagnostic tests (Reading, Listening, Grammar, Vocabulary)",
+      "AI-powered mock interviews with speech analysis",
+      "CEFR-aligned proficiency scoring",
+      "Personalized adaptive learning pathways",
+      "GRE, IELTS, TOEFL mock exams with instant feedback",
+      "AI-generated writing feedback aligned with official rubrics",
+    ],
+    icon: TestTube,
+  },
+  {
+    title: "Document Preparation",
+    items: [
+      "AI-assisted SOP drafting and review",
+      "CV/Resume template and optimization",
+      "Letter of Recommendation guidance",
+      "Grammar, tone, and coherence feedback",
+      "OCR/NLP for automatic document parsing",
+    ],
+    icon: FileCheck,
+  },
+  {
+    title: "Counselor Integration",
+    items: [
+      "Verified counselor directory with specialization filters",
+      "AI-recommended counselors based on your profile",
+      "Secure messaging between students and counselors",
+      "Session history and progress tracking",
+      "Video/audio session capabilities",
+    ],
+    icon: UsersRound,
+  },
+  {
+    title: "Financial Security",
+    items: [
+      "Integrated payment gateway (Chapa/Stripe)",
+      "Escrow protection for all transactions",
+      "Milestone-based counselor payment release",
+      "Transparent commission handling",
+    ],
+    icon: CircleDollarSign,
+  },
+  {
+    title: "Progress & Analytics",
+    items: [
+      "Dashboard with personalized insights",
+      "Performance heat maps for exam prep",
+      "Application status tracking",
+      "Achievement badges and progress metrics",
+      "Calendar view of all deadlines and milestones",
+    ],
+    icon: BarChart3,
   },
 ];
 
@@ -61,29 +192,62 @@ const steps = [
   {
     step: "01",
     title: "Create Your Profile",
-    description: "Tell us about your academic background, goals, preferred countries, and field of study.",
-    icon: Target,
+    description: "Register and complete your academic profile including GPA, field of study, preferred countries, and funding needs.",
+    icon: UserCheck,
   },
   {
     step: "02",
-    title: "Discover Matches",
-    description: "Our AI instantly surfaces scholarships ranked by how well they fit your unique profile.",
-    icon: Sparkles,
+    title: "Take Assessment",
+    description: "Complete our AI-powered English diagnostic to identify your proficiency level and get personalized learning recommendations.",
+    icon: Brain,
   },
   {
     step: "03",
-    title: "Get Expert Guidance",
-    description: "Book sessions with vetted counselors who specialize in your target scholarship programs.",
-    icon: ShieldCheck,
+    title: "Discover Scholarships",
+    description: "Our AI matches you with scholarships ranked by relevance. Use Pathfinder to analyze any external scholarship instantly.",
+    icon: Search,
   },
   {
     step: "04",
-    title: "Apply & Succeed",
-    description: "Submit polished, competitive applications with AI-assisted writing and track your progress.",
+    title: "Book Expert Counselor",
+    description: "Connect with verified counselors, make secure payments, and book sessions to get personalized guidance.",
+    icon: CalendarClock,
+  },
+  {
+    step: "05",
+    title: "Track & Succeed",
+    description: "Monitor deadlines, receive reminders, submit polished applications, and track your progress to scholarship success.",
     icon: TrendingUp,
   },
 ];
 
+const stats = [
+  { value: "500+", label: "Scholarships Available" },
+  { value: "50+", label: "Expert Counselors" },
+  { value: "10K+", label: "Students Supported" },
+  { value: "95%", label: "Success Rate" },
+];
+
+const testimonials = [
+  {
+    quote: "አድማስ helped me find scholarships I never knew existed. The AI matching was incredibly accurate!",
+    name: "Sarah T.",
+    role: "Scholarship Recipient, USA",
+    country: "🇺🇸",
+  },
+  {
+    quote: "The counselor booking system and escrow protection gave me confidence in seeking guidance.",
+    name: "Michael B.",
+    role: "Accepted to UK University",
+    country: "🇬🇧",
+  },
+  {
+    quote: "The English assessment and learning path helped me improve my IELTS score from 5.5 to 7.0.",
+    name: "Helen A.",
+    role: "Now studying in Canada",
+    country: "🇨🇦",
+  },
+];
 
 export const LandingPageContent = () => {
   return (
@@ -95,7 +259,7 @@ export const LandingPageContent = () => {
           <div className="relative">
             <div className="absolute inset-0 bg-emerald-500 rounded-lg blur opacity-20" />
             <div className="relative overflow-hidden rounded-lg">
-              <Image
+              <img
                 src="/admas.png"
                 alt="አድማስ Logo"
                 width={36}
@@ -114,7 +278,10 @@ export const LandingPageContent = () => {
             Features
           </Link>
           <Link className="text-sm font-medium text-slate-300 hover:text-emerald-400 transition-colors hidden md:block" href="/#how">
-            How it Works
+            How It Works
+          </Link>
+          <Link className="text-sm font-medium text-slate-300 hover:text-emerald-400 transition-colors hidden md:block" href="/#about">
+            About
           </Link>
           <Link href="/login">
             <Button size="sm" variant="outline" className="border-emerald-600 text-emerald-700 hover:bg-emerald-50">
@@ -178,7 +345,7 @@ export const LandingPageContent = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="mx-auto max-w-3xl text-lg md:text-xl text-slate-300 leading-relaxed mb-10"
             >
-              አድማስ connects Ethiopian and African students with life-changing scholarships, expert counselors, and AI-powered tools — all in one platform. Discover your match today.
+              አድማስ (Admas) is a comprehensive platform designed to empower Ethiopian and African students in their pursuit of international education. Discover scholarships, connect with expert counselors, prepare for exams, and track your applications — all in one intelligent platform.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -201,11 +368,24 @@ export const LandingPageContent = () => {
               </Link>
             </motion.div>
 
-            {/* Removed: No credit card / 100% free badges */}
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto"
+            >
+              {stats.map((stat, i) => (
+                <div key={i} className="text-center">
+                  <div className="text-3xl md:text-4xl font-black text-emerald-400 mb-1">{stat.value}</div>
+                  <div className="text-sm text-slate-400">{stat.label}</div>
+                </div>
+              ))}
+            </motion.div>
           </div>
         </section>
 
-        {/* ─── FEATURES ─── */}
+        {/* ─── FEATURES GRID ─── */}
         <section id="features" className="py-24 md:py-32 bg-slate-950">
           <div className="container px-4 md:px-6 mx-auto max-w-6xl">
 
@@ -218,7 +398,7 @@ export const LandingPageContent = () => {
                 <span className="text-emerald-400">academic breakthrough</span>
               </h2>
               <p className="text-slate-400 max-w-2xl mx-auto text-lg">
-                From discovery to acceptance — አድማስ supports every step of your scholarship journey with intelligent tools and human expertise.
+                From scholarship discovery to acceptance — አድማስ supports every step of your scholarship journey with intelligent tools and human expertise.
               </p>
             </div>
 
@@ -249,6 +429,54 @@ export const LandingPageContent = () => {
           </div>
         </section>
 
+        {/* ─── DETAILED FEATURES ─── */}
+        <section className="py-24 md:py-32 bg-slate-900">
+          <div className="container px-4 md:px-6 mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <span className="inline-block px-4 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-widest mb-4">
+                Comprehensive System
+              </span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+                All-in-One Scholarship Management
+              </h2>
+              <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+                A complete solution for every aspect of your international education journey
+              </p>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {detailedFeatures.map((feature, i) => {
+                const Icon = feature.icon;
+                return (
+                  <motion.div
+                    key={feature.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 hover:border-emerald-500/30 transition-all"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="text-lg font-bold text-white">{feature.title}</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {feature.items.map((item, j) => (
+                        <li key={j} className="flex items-start gap-2 text-sm text-slate-400">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* ─── HOW IT WORKS ─── */}
         <section id="how" className="py-24 md:py-32 bg-slate-950">
           <div className="container px-4 md:px-6 mx-auto max-w-6xl">
@@ -258,14 +486,14 @@ export const LandingPageContent = () => {
                 Simple Process
               </span>
               <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-                From profile to scholarship — in few steps
+                Your journey to a global education
               </h2>
               <p className="text-slate-400 max-w-2xl mx-auto text-lg">
-                We've made the process clear, guided, and stress-free.
+                Five simple steps from profile creation to scholarship success
               </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
               {steps.map((s, i) => {
                 const Icon = s.icon;
                 return (
@@ -297,6 +525,99 @@ export const LandingPageContent = () => {
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── TESTIMONIALS ─── */}
+        <section className="py-24 md:py-32 bg-slate-900">
+          <div className="container px-4 md:px-6 mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <span className="inline-block px-4 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
+                Success Stories
+              </span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+                What our students say
+              </h2>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              {testimonials.map((t, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50"
+                >
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(5)].map((_, j) => (
+                      <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-slate-300 mb-6 italic">"{t.quote}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                      {t.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-white">{t.name}</div>
+                      <div className="text-sm text-slate-400">{t.role}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── ABOUT SECTION ─── */}
+        <section id="about" className="py-24 md:py-32 bg-slate-950">
+          <div className="container px-4 md:px-6 mx-auto max-w-4xl">
+            <div className="text-center mb-12">
+              <span className="inline-block px-4 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">
+                About አድማስ
+              </span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+                Empowering Ethiopian Students
+              </h2>
+            </div>
+
+            <div className="bg-slate-900/50 rounded-xl p-8 border border-slate-800">
+              <p className="text-slate-300 text-lg leading-relaxed mb-6">
+                አድማስ (Admas) — meaning "Adventure" in Amharic — is a comprehensive platform designed to transform how Ethiopian and African students navigate their journey toward international education. Named for the adventure that awaits every student who dares to pursue education abroad, our platform combines cutting-edge AI technology with human expertise.
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-bold text-white mb-3">Our Mission</h3>
+                  <p className="text-slate-400 text-sm">
+                    To simplify the complex process of securing international education opportunities by providing intelligent tools, expert guidance, and comprehensive support — all in one platform.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-white mb-3">Key Capabilities</h3>
+                  <ul className="space-y-2 text-sm text-slate-400">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      AI-powered scholarship matching
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      Expert counselor network
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      English proficiency assessment
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      Secure payment & booking
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/providers/auth-context";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
@@ -53,6 +53,17 @@ export function LoginForm() {
         <Card className="bg-card border border-border rounded-lg">
 
           <CardHeader className="text-center pt-10 pb-4">
+
+            {/* Back to Home */}
+            <div className="mb-4">
+              <Link 
+                href="/" 
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </Link>
+            </div>
 
             <h1 className="text-3xl font-semibold text-foreground">
               Welcome

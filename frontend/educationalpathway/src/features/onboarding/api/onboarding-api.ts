@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { ExtractedData } from '../types';
+import { ExtractedData, StudentExtractedData } from '../types';
 
 export const extractData = async (document: File, role: string) => {
   const formData = new FormData();
@@ -10,6 +10,24 @@ export const extractData = async (document: File, role: string) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data.extractedData as ExtractedData;
+};
+
+export interface ExtractProfileResponse {
+  extractedData: StudentExtractedData;
+  profileFormValues: Record<string, any>;
+  confidence: number;
+  extractedFields: number;
+  success?: boolean;
+}
+
+export const extractProfileFromDocument = async (document: File): Promise<ExtractProfileResponse> => {
+  const formData = new FormData();
+  formData.append('document', document);
+
+  const response = await api.post('/onboarding/extract-profile', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data as ExtractProfileResponse;
 };
 
 export const verifyIdentity = async (idCard: File, selfie: File) => {

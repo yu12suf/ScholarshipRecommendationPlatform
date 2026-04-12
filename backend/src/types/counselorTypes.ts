@@ -131,6 +131,18 @@ export interface BookingResponse {
     startedAt: Date | null;
     completedAt: Date | null;
     createdAt: Date;
+    slot?: {
+        startTime: string;
+        endTime: string;
+        consultationMode?: string;
+    };
+    counselor?: {
+        name: string;
+        email: string;
+    };
+    student?: {
+        name: string;
+    };
 }
 
 export interface CounselorDirectoryQuery {

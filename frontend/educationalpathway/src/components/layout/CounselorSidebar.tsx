@@ -16,7 +16,9 @@ import {
   Menu,
   X,
   ShieldCheck,
-  ClipboardList
+  ClipboardList,
+  Home,
+  MessageCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -29,11 +31,13 @@ export function CounselorSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const menuItems = [
+    { name: 'Home', href: '/', icon: Home },
     { name: 'Dashboard', href: '/dashboard/counselor', icon: LayoutDashboard },
     { name: 'My Students', href: '/dashboard/students', icon: Users },
     { name: 'Schedule Explorer', href: '/dashboard/calendar', icon: Calendar },
     { name: 'Active Sessions', href: '/dashboard/counselor/bookings', icon: CalendarCheck },
     { name: 'Messages', href: '/dashboard/counselor/chat', icon: MessageSquare },
+    { name: 'Community', href: '/dashboard/community', icon: MessageCircle },
     { name: 'Goal Tracking', href: '/dashboard/counselor/tasks', icon: ClipboardList },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
@@ -45,7 +49,7 @@ export function CounselorSidebar() {
         {(!collapsed || mobile) && (
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-              <Image src="/admas.png" alt="Logo" width={36} height={36} className="h-full w-full object-cover" />
+              <img src="/admas.png" alt="Logo" width={36} height={36} className="h-full w-full object-cover" />
             </div>
             <span className="text-sm font-bold text-foreground tracking-tight">አድማስ</span>
           </div>

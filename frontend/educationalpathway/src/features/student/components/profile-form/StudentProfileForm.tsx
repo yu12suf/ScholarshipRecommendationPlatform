@@ -37,6 +37,8 @@ import { Input } from "@/components/ui/Input";
 import { ProfileFormValues } from "../../lib/profile-schema";
 import { FIELDS_OF_STUDY, FIELDS_OF_STUDY_GROUPED } from "../../constants/fields-of-study";
 import { useGeoData, CountryData, UniversityData } from "../../hooks/useGeoData";
+import { extractProfileFromDocument, ExtractProfileResponse } from "@/features/onboarding/api/onboarding-api";
+import { Loader2, Check } from "lucide-react";
 
 const formatCountryOption = (option: any) => (
   <div className="flex items-center gap-2">
@@ -126,6 +128,13 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  // OCR Document Upload State
+  const [ocrDocument, setOcrDocument] = useState<File | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrSuccess, setOcrSuccess] = useState(false);
+  const [extractedFields, setExtractedFields] = useState<string[]>([]);
 
   const methods = useForm<ProfileFormValues>({
     // resolver: zodResolver(profileSchema) as any, // disabled validation for now
@@ -261,6 +270,104 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
 
   const progress = (currentStep / STEPS.length) * 100;
 
+  // Handle OCR document upload and extraction
+  const handleOcrDocumentUpload = async (file: File) => {
+    setOcrDocument(file);
+    setOcrLoading(true);
+    setOcrError(null);
+    setOcrSuccess(false);
+    setExtractedFields([]);
+
+    try {
+      console.log('[OCR] Starting extraction for file:', file.name, file.size, file.type);
+      
+      const response: ExtractProfileResponse = await extractProfileFromDocument(file);
+      
+      console.log('[OCR] Extraction response:', JSON.stringify(response, null, 2));
+      
+      const { profileFormValues, success } = response;
+
+      // Check if extraction was successful
+      if (!success) {
+        setOcrError('Could not extract data from the document. Please try again with a clearer image or different document.');
+        setOcrLoading(false);
+        return;
+      }
+      
+      // Apply extracted values to form
+      const fieldsApplied: string[] = [];
+      
+      Object.entries(profileFormValues).forEach(([key, value]) => {
+        // Skip undefined, null, empty strings, and empty arrays
+        if (value === undefined || value === null) return;
+        if (typeof value === 'string' && value === '') return;
+        if (Array.isArray(value) && value.length === 0) return;
+        
+        // For objects (except arrays), check if they have any non-empty values
+        if (typeof value === 'object' && !Array.isArray(value)) {
+          const hasValues = Object.values(value as object).some(v => v !== undefined && v !== null && v !== '');
+          if (!hasValues) return;
+        }
+        
+        setValue(key as any, value);
+        fieldsApplied.push(key);
+      });
+
+      setExtractedFields(fieldsApplied);
+      setOcrSuccess(true);
+      
+      console.log('[OCR] Extracted fields:', fieldsApplied);
+    } catch (error: any) {
+      console.error('[OCR] Extraction error:', error);
+      
+      // No more client-side retries needed - backend handles retries
+      if (error.response?.data?.message?.includes('SERVICE_UNAVAILABLE') || error.response?.data?.message?.includes('busy')) {
+        setOcrError('Google service is temporarily busy. Please wait a moment and try again.');
+      } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        setOcrError('Extraction is taking longer than expected. Please try with a smaller file or wait and try again.');
+      } else {
+        setOcrError(error?.response?.data?.message || error?.message || 'Failed to extract data from document. Please try again.');
+      }
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  // Handle file input change
+  const handleOcrFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowedTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        setOcrError('Invalid file type. Please upload PDF, DOCX, or image files.');
+        return;
+      }
+      
+      if (file.size > 25 * 1024 * 1024) {
+        setOcrError('File too large. Maximum size is 25MB.');
+        return;
+      }
+      
+      handleOcrDocumentUpload(file);
+    }
+  };
+
+  // Clear OCR data
+  const clearOcrData = () => {
+    setOcrDocument(null);
+    setOcrSuccess(false);
+    setOcrError(null);
+    setExtractedFields([]);
+  };
+
   return (
     <FormProvider {...methods}>
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -283,6 +390,95 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
             />
           </div>
         </div>
+
+        {/* OCR Document Upload - Only show on first step */}
+        {currentStep === 1 && (
+          <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Extract Data from Document
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Upload your transcript, ID, CV, or any document to automatically extract and fill profile fields.
+                </p>
+              </div>
+            </div>
+
+            {!ocrSuccess ? (
+              <div className="mt-4">
+                <div className="relative">
+                  <input
+                    type="file"
+                    id="ocr-document-upload"
+                    accept=".pdf,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                    onChange={handleOcrFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={ocrLoading}
+                  />
+                  <div className={`
+                    border-2 border-dashed rounded-lg p-4 text-center transition-colors
+                    ${ocrLoading ? 'border-muted bg-muted/50 cursor-not-allowed' : 'border-primary/30 hover:border-primary bg-primary/5'}
+                  `}>
+                    {ocrLoading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <span className="text-sm text-muted-foreground">Extracting data from document...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <Upload className="h-5 w-5 text-primary" />
+                        <span className="text-sm font-medium text-foreground">
+                          Click to upload PDF, DOCX, or Image
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {ocrError && (
+                  <div className="mt-3 flex items-center gap-2 text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    {ocrError}
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  Supported formats: PDF, DOCX, JPG, PNG, GIF, WebP (Max 25MB)
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/30 rounded-lg">
+                  <Check className="h-5 w-5 text-success" />
+                  <span className="text-sm font-medium text-foreground">
+                    Successfully extracted {extractedFields.length} fields from document
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearOcrData}
+                    className="ml-auto text-sm text-muted-foreground hover:text-foreground underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+                {extractedFields.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {extractedFields.map((field) => (
+                      <span
+                        key={field}
+                        className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
+                      >
+                        {field}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Step Indicator */}
         <div className="flex items-center justify-between mb-8">

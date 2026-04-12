@@ -30,6 +30,7 @@ export const StudentDashboard = () => {
   const [recommendedCounselors, setRecommendedCounselors] = useState<any[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [loadingCounselors, setLoadingCounselors] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && !user.isOnboarded) {
@@ -42,8 +43,9 @@ export const StudentDashboard = () => {
       try {
         const data = await getScholarships();
         setMatches(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch matches:", error);
+        setError(error?.message || error?.response?.data?.message || "Failed to load scholarships");
       } finally {
         setLoadingMatches(false);
       }
@@ -259,6 +261,20 @@ export const StudentDashboard = () => {
                 Array.from({ length: 2 }).map((_, i) => (
                   <Card key={i} className="animate-pulse border border-border bg-card h-48" />
                 ))
+              ) : error ? (
+                <Card className="border border-destructive/30 bg-destructive/5 col-span-2">
+                  <CardBody className="py-12 text-center">
+                    <h3 className="h4 text-destructive">Unable to load scholarships</h3>
+                    <p className="text-small mt-2 max-w-sm mx-auto text-muted-foreground">
+                      {error}
+                    </p>
+                    <Link href="/dashboard/student/profile">
+                      <Button className="mt-4" variant="outline">
+                        Complete Profile
+                      </Button>
+                    </Link>
+                  </CardBody>
+                </Card>
               ) : matches.length > 0 ? (
                 matches.slice(0, 4).map((match) => (
                   <ScholarshipCard key={match.id} scholarship={match} />
@@ -269,7 +285,7 @@ export const StudentDashboard = () => {
                     <h3 className="h4">Scanning for matches...</h3>
                     <p className="text-small mt-2 max-w-sm mx-auto">
                       {user?.isOnboarded 
-                        ? "We haven't found exact matches yet. Try updating your profile with more details."
+                        ? "We haven't found exact matches yet. Try updating your profile with more details, or contact admin to load scholarships."
                         : "Complete your profile to unlock more scholarship opportunities."}
                     </p>
                     <Link href="/dashboard/student/profile">
@@ -322,7 +338,7 @@ export const StudentDashboard = () => {
                           <p className="text-[12px] text-muted-foreground truncate">{match?.provider || 'Academic Provider'}</p>
                         </div>
                       </div>
-                      <Link href={`/dashboard/scholarships/${match?.id}`}>
+                      <Link href={`/dashboard/student/scholarships/${match?.id}`}>
                         <Button variant="outline" size="sm" className="shrink-0 h-9 px-4 font-semibold cursor-pointer">
                           View
                         </Button>

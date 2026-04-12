@@ -1,18 +1,19 @@
 
 import { Sequelize, DataTypes } from 'sequelize';
-const sequelize = new Sequelize('EAP', 'postgres', '12345', {
+const sequelize = new Sequelize('EAPS', 'postgres', 'password123', {
   host: 'localhost',
   dialect: 'postgres',
   logging: false
 });
 
-async function checkScores() {
+async function checkCounselors() {
   try {
-    const [scholarships] = await sequelize.query('SELECT id, title, country, degree_levels FROM scholarships LIMIT 5');
-    console.log('Sample Scholarships:', scholarships);
+    const [allUsers] = await sequelize.query('SELECT id, name, email, role FROM users ORDER BY id');
+    console.log('All Users:', allUsers);
     
-    const [students] = await sequelize.query('SELECT user_id, country_interest, degree_seeking, field_of_study, calculated_gpa FROM students LIMIT 5');
-    console.log('Sample Students:', students);
+    const [allCounselors] = await sequelize.query('SELECT c.id, c.user_id, c.verification_status, u.name as user_name, u.email as user_email FROM counselors c LEFT JOIN users u ON c.user_id = u.id ORDER BY c.id');
+    console.log('All Counselors with JOIN:', allCounselors);
+    
   } catch (err) {
     console.error('Error:', err);
   } finally {
@@ -20,4 +21,4 @@ async function checkScores() {
   }
 }
 
-checkScores();
+checkCounselors();

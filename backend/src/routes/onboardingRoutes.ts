@@ -12,6 +12,13 @@ const router = Router();
 router.post("/extract", authenticate, OnboardingController.extractData);
 
 /**
+ * @route POST /api/onboarding/extract-profile
+ * @desc Extract profile data from document for pre-filling form fields
+ * @access Private
+ */
+router.post("/extract-profile", authenticate, OnboardingController.extractProfileData);
+
+/**
  * @route POST /api/onboarding/verify-identity
  * @desc Stage 2: Biometric Identity Matching (Face-to-ID)
  * @access Private

@@ -1,3 +1,5 @@
+//Instead of Admin Home page, Investigate and analyse the project, and create their corresponding professional, advenced pages for Platform Stats, System Logs, Security Center, and Settings//
+
 This README is designed to look like an industry-standard production project while highlighting the academic rigor required for a senior project. It aligns perfectly with your Software Design Document (SDD).
 Educational Adventure Pathway (EAP) 🎓
 An AI-Powered Platform for Ethiopian Students Pursuing International Education.

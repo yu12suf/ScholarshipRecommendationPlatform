@@ -282,7 +282,7 @@ export class Counselor extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => User)
+    @BelongsTo(() => User, { as: 'user' })
     user!: User;
 
     @HasMany(() => AvailabilitySlot, { foreignKey: 'counselorId' })

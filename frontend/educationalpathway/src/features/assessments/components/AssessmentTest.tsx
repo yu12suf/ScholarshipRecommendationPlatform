@@ -238,15 +238,42 @@ export function AssessmentTest({ examData, onComplete }: Props) {
 
     try {
       setIsSubmitting(true);
-      // Mark current section as complete
       if (isSectionComplete(currentSection)) {
         setCompletedSections((prev) => new Set(prev).add(currentSection));
       }
-      await submitAssessment(testId, responses, audioBlob);
-      toast.success("Assessment submitted. Grading in progress...");
-      pollResult();
+      const subRes = await submitAssessment(testId, responses, audioBlob);
+      
+      if (subRes.status === "already_completed") {
+        toast.success("Assessment already evaluated.");
+        const res = await getAssessmentResult(testId);
+        if (res.status === "success") {
+          setResult(res.data);
+        } else if (res.status === "failed") {
+          toast.error("Evaluation failed: " + (res.reason || "Unknown error"));
+        }
+        setIsSubmitting(false);
+      } else if (subRes.status === "completed") {
+        // Synchronous processing completed immediately
+        setResult(subRes.evaluation);
+        setIsSubmitting(false);
+        toast.success("Assessment evaluated successfully!");
+      } else if (subRes.status === "processing") {
+        toast.info("Assessment is being processed...");
+        pollResult();
+      } else if (subRes.status === "submitted") {
+        toast.success("Assessment submitted. Grading in progress...");
+        pollResult();
+      } else {
+        toast.error("Unexpected response. Please try again.");
+        setIsSubmitting(false);
+      }
     } catch (error: any) {
-      toast.error("Failed to submit assessment.");
+      const errMsg = error?.response?.data?.error || error?.message || "Failed to submit assessment";
+      if (errMsg.includes("expired") || errMsg.includes("not found")) {
+        toast.error("Assessment expired. Please start a new assessment.");
+      } else {
+        toast.error(errMsg);
+      }
       setIsSubmitting(false);
     }
   };

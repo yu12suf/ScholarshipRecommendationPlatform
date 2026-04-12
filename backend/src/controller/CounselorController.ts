@@ -39,6 +39,8 @@ export class CounselorController {
 
   static async recommendForMe(req: Request, res: Response, next: NextFunction) {
     try {
+      console.log('[recommendForMe] user:', req.user);
+      console.log('[recommendForMe] user id:', req.user?.id);
       const data = await CounselorService.recommendForStudent(req.user!.id);
       res.status(200).json({ success: true, data });
     } catch (error) {
@@ -84,16 +86,42 @@ export class CounselorController {
 
   static async createSlots(req: Request, res: Response, next: NextFunction) {
     try {
+      console.log('[CounselorController] Creating slots:', req.body);
       const data = await CounselorService.createSlots((req as any).counselor.id, req.body.slots as CreateSlotDto[]);
+      console.log('[CounselorController] Slots created:', data.length);
       res.status(201).json({ success: true, data });
     } catch (error) {
+      console.error('[CounselorController] Create slots error:', error);
       next(error);
     }
   }
 
   static async getSlots(req: Request, res: Response, next: NextFunction) {
     try {
+      console.log('[CounselorController] Getting slots for counselor:', (req as any).counselor.id);
       const data = await CounselorService.getSlots((req as any).counselor.id, req.query.fromDate as string, req.query.toDate as string, req.query.status as string);
+      console.log('[CounselorController] Slots found:', data.length);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      console.error('[CounselorController] Get slots error:', error);
+      next(error);
+    }
+  }
+
+  static async getCounselorSlots(req: Request, res: Response, next: NextFunction) {
+    try {
+      const counselorId = Number(req.params.counselorId);
+      const data = await CounselorService.getCounselorSlots(counselorId);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getCounselorSlotsPublic(req: Request, res: Response, next: NextFunction) {
+    try {
+      const counselorId = Number(req.params.counselorId);
+      const data = await CounselorService.getCounselorSlotsPublic(counselorId);
       res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);
@@ -268,6 +296,42 @@ export class CounselorController {
   static async getThread(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await CounselorService.getThread(req.user!.id, req.user!.role, Number(req.params.userId));
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMyBookings(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getStudentBookings(req.user!.id);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMyUpcomingBookings(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getStudentUpcomingBookings(req.user!.id);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getBookingDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getBookingDetails(req.user!.id, Number(req.params.id), req.user!.role);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getBookingThread(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getBookingThread(req.user!.id, Number(req.params.id), req.user!.role);
       res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);

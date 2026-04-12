@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { redisOptions } from "../config/redis.js";
+import { redisOptions, redisConnection, assessmentQueue } from "../config/redis.js";
 import { AssessmentService } from "../services/AssessmentService.js";
 
 /**
@@ -12,7 +12,6 @@ export const assessmentWorker = new Worker(
     const { testId, blueprint, responses, studentId, audioData } = job.data;
     console.log(`Processing evaluation for test_id: ${testId}`);
 
-    // Keep observable job activity during long-running LLM calls.
     const heartbeat = setInterval(() => {
       job
         .updateProgress({
@@ -21,7 +20,7 @@ export const assessmentWorker = new Worker(
           timestamp: Date.now(),
         })
         .catch(() => {
-          // Ignore heartbeat update errors; worker completion/failure will handle final state.
+          // Ignore heartbeat update errors
         });
     }, 15000);
 
@@ -34,6 +33,13 @@ export const assessmentWorker = new Worker(
         audioData,
       );
       console.log(`✅ Evaluation complete for test_id: ${testId}`);
+      
+      try {
+        await redisConnection.set(`evaluation:${testId}`, JSON.stringify(evaluation), "EX", 86400 * 7);
+      } catch (redisErr) {
+        console.warn("Failed to cache evaluation in Redis, using DB only:", redisErr);
+      }
+      
       return evaluation;
     } catch (error) {
       console.error(`❌ Evaluation failed for test_id: ${testId}:`, error);
@@ -45,9 +51,9 @@ export const assessmentWorker = new Worker(
   {
     connection: redisOptions,
     concurrency: 1,
-    lockDuration: 600000, // 10 minutes (Gives Gemini and TTS enough time to finish)
-    maxStalledCount: 3,
-    stalledInterval: 30000 // Check for stalls every 30 seconds
+    lockDuration: 1800000,
+    maxStalledCount: 1,
+    stalledInterval: 60000
   },
 );
 
@@ -61,7 +67,7 @@ assessmentWorker.on("failed", (job, err) => {
 
 let lastConnError = "";
 assessmentWorker.on("error", (err) => {
-  if (err.message.includes("ETIMEDOUT") || err.message.includes("ECONNREFUSED")) {
+  if (err.message.includes("ETIMEDOUT") || err.message.includes("ECONNREFUSED") || err.message.includes("ENOTFOUND")) {
     if (lastConnError !== err.message) {
       console.warn(`AssessmentWorker Redis unavailable (${err.message}) - sync fallback active.`);
       lastConnError = err.message;

@@ -28,13 +28,14 @@ export function AdminSidebar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const menuItems = [
-    { name: 'Home', href: '/dashboard/admin', icon: Home },
+    { name: 'Landing Page', href: '/', icon: Home },
+    { name: 'Dashboard', href: '/dashboard/admin', icon: Shield },
     { name: 'Students', href: '/dashboard/admin/students', icon: GraduationCap },
     { name: 'Counselors', href: '/dashboard/admin/counselors', icon: ShieldCheck },
-    { name: 'Platform Stats', href: '/dashboard/analytics', icon: Activity },
-    { name: 'System Logs', href: '/dashboard/logs', icon: Zap },
-    { name: 'Security Center', href: '/dashboard/security', icon: Shield },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+    { name: 'Platform Stats', href: '/dashboard/admin/platform-stats', icon: Activity },
+    { name: 'System Logs', href: '/dashboard/admin/system-logs', icon: Zap },
+    { name: 'Security Center', href: '/dashboard/admin/security-center', icon: Shield },
+    { name: 'Settings', href: '/dashboard/admin/settings', icon: Settings },
   ];
 
   return (
@@ -50,7 +51,7 @@ export function AdminSidebar() {
         {!collapsed && (
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
-              <Image 
+              <img 
                 src="/admas.png" 
                 alt="Logo" 
                 width={40} 

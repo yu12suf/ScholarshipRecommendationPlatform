@@ -16,9 +16,11 @@ import {
   X,
   Settings,
   MessageSquare,
+  Calendar,
+  Home,
+  MessageCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 import { ThemeToggle } from './ThemeToggle';
 
 export function StudentSidebar() {
@@ -28,10 +30,13 @@ export function StudentSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const menuItems = [
+    { name: 'Home', href: '/', icon: Home },
     { name: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
     { name: 'Scholarships', href: '/dashboard/scholarships', icon: GraduationCap },
     { name: 'Counselors', href: '/dashboard/counselors', icon: Users },
+    { name: 'My Bookings', href: '/dashboard/student/bookings', icon: Calendar },
     { name: 'Messages', href: '/dashboard/student/chat', icon: MessageSquare },
+    { name: 'Community', href: '/dashboard/community', icon: MessageCircle },
     { name: 'Assessment', href: '/dashboard/assessment', icon: ClipboardList },
     { name: 'Learning Path', href: '/dashboard/learning-path', icon: Compass },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
@@ -44,7 +49,7 @@ export function StudentSidebar() {
         {(!collapsed || mobile) && (
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-              <Image src="/admas.png" alt="Logo" width={36} height={36} className="h-full w-full object-cover" />
+              <img src="/admas.png" alt="Logo" width={36} height={36} className="h-full w-full object-cover" />
             </div>
             <span className="text-sm font-bold text-foreground tracking-tight">አድማስ</span>
           </div>

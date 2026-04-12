@@ -8,7 +8,7 @@ export function Footer() {
 
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <Image 
+          <img 
             src="/admas.png" 
             alt="አድማስ Logo" 
             width={24} 
@@ -22,7 +22,7 @@ export function Footer() {
 
         {/* Copyright */}
         <p className="text-sm text-gray-300">
-          © 2024 አድማስ Platform. All rights reserved.
+          © 2026 አድማስ Platform. All rights reserved.
         </p>
 
         {/* Links */}

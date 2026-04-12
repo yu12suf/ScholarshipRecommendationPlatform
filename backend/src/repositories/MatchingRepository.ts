@@ -23,46 +23,11 @@ export class MatchingRepository {
             }
         };
 
-        // --- HARD FILTERS (From Student Profile) ---
+        // --- HARD FILTERS DISABLED FOR NOW - Show all scholarships ---
         
-        // 1. Country match (Include scholarships with no country specified as they might be global)
-        const preferredCountries = safeParse(student.preferredCountries);
-        if (preferredCountries && Array.isArray(preferredCountries) && preferredCountries.length > 0) {
-            whereConditions.push({
-                [Op.or]: [
-                    { country: { [Op.in]: preferredCountries } },
-                    { country: null },
-                    { country: "" }
-                ]
-            });
-        } else if (student.countryInterest) {
-            whereConditions.push({
-                [Op.or]: [
-                    { country: student.countryInterest },
-                    { country: null },
-                    { country: "" }
-                ]
-            });
-        }
+        // Skip all filtering for now - just show all scholarships
 
-        // 2. Academic Level match (JSONB check - be inclusive of unknown levels)
-        const normalizeLevel = (l: string) => l.replace(/'s/g, '').trim();
-        const preferredLevels = safeParse(student.preferredDegreeLevel);
-        const rawLevels = [...new Set([student.degreeSeeking, ...(Array.isArray(preferredLevels) ? preferredLevels : [])])].filter(Boolean);
-        const levelsToMatch = rawLevels.map(normalizeLevel);
-        
-        if (levelsToMatch.length > 0) {
-            // Using ?| operator to check if any level matches in the JSONB array, or if it's not specified
-            // We include both normalized and raw versions just in case
-            const allLevels = [...new Set([...levelsToMatch, ...rawLevels])];
-            const levelsArr = allLevels.map(l => `'${l.replace(/'/g, "''")}'`).join(',');
-            whereConditions.push({
-                [Op.or]: [
-                    Sequelize.literal(`degree_levels ?| array[${levelsArr}]`),
-                    { degree_levels: null }
-                ]
-            });
-        }
+        console.log("[MatchingRepository] All filtering disabled, showing all scholarships");
 
         // --- OPTIONAL FILTERS (From Search Bar/UI) ---
         if (filters) {
@@ -96,42 +61,13 @@ export class MatchingRepository {
 
         const finalWhere = whereConditions.length > 0 ? { [Op.and]: whereConditions } : {};
 
-        // Only attempt vector search if extension exists AND we have a valid vector string
-        if (hasVectorExtension && vectorStr && vectorStr.length > 5) {
-            try {
-                // Robust casting and calculation
-                const matches = await Scholarship.findAll({
-                    where: finalWhere,
-                    attributes: {
-                        include: [
-                            [
-                                Sequelize.literal(`(1 - (embedding <=> '${vectorStr}'::vector)) * 100`),
-                                'matchScore'
-                            ]
-                        ]
-                    },
-                    order: [
-                        Sequelize.literal(`CAST(embedding::text AS vector) <=> '${vectorStr}'::vector ASC`)
-                    ],
-                    limit: 20
-                });
-                return matches.map(mapResult);
-            } catch (err: any) {
-                console.error("[MatchingRepository] Vector search failed:", err.message);
-            }
-        }
-
-        // Fallback: Default ranking
+        // Always use fallback for now - skip vector search entirely
+        console.log("[MatchingRepository] Returning all scholarships without filtering");
         const matches = await Scholarship.findAll({
-            where: finalWhere,
-            attributes: {
-                include: [
-                    [Sequelize.literal('0'), 'matchScore']
-                ]
-            },
             order: [['createdAt', 'DESC']],
-            limit: 20
+            limit: 50
         });
+        console.log(`[MatchingRepository] Found ${matches.length} scholarships`);
         return matches.map(mapResult);
     }
 

@@ -5,17 +5,27 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api',
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: false,
+  timeout: 180000, // 3 minute timeout for large OCR files
 });
+
+// Add CORS workaround - don't use withCredentials
 
 // Helper to extract error messages without using 'any'
 export const getErrorMessage = (error: unknown, defaultMessage: string = 'Something went wrong'): string => {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || error.message || defaultMessage;
+    const data = error.response?.data;
+    if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+      const messages = data.errors.map((e: any) => e.msg || e.message).filter(Boolean);
+      if (messages.length > 0) {
+        return messages.join('. ');
+      }
+    }
+    return data?.message || error.message || defaultMessage;
   }
   return error instanceof Error ? error.message : defaultMessage;
 };
@@ -26,6 +36,10 @@ api.interceptors.request.use(
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Don't set Content-Type for FormData - let browser set it with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },
@@ -51,7 +65,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`, {}, {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api'}/auth/refresh-token`, {}, {
           withCredentials: true
         });
 

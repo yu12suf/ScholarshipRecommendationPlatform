@@ -4,6 +4,7 @@ import { Order } from 'sequelize';
 import { AvailabilitySlot } from '../models/AvailabilitySlot.js';
 import { Student } from '../models/Student.js';
 import { User } from '../models/User.js';
+import { Counselor } from '../models/Counselor.js';
 
 export class BookingRepository {
     /**
@@ -27,7 +28,26 @@ export class BookingRepository {
                 {
                     model: Student,
                     as: 'student',
-                    required: false
+                    required: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email']
+                        }
+                    ]
+                },
+                {
+                    model: Counselor,
+                    as: 'counselor',
+                    required: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email']
+                        }
+                    ]
                 }
             ]
         });
@@ -262,5 +282,113 @@ export class BookingRepository {
             whereClause.status = status;
         }
         return Booking.count({ where: whereClause });
+    }
+
+    /**
+     * Find all bookings for a student
+     */
+    static async findByStudent(
+        studentId: number,
+        filters?: {
+            status?: string | string[];
+            fromDate?: Date;
+            toDate?: Date;
+        }
+    ): Promise<Booking[]> {
+        const whereClause: any = { studentId };
+
+        if (filters?.status) {
+            if (Array.isArray(filters.status)) {
+                whereClause.status = { [Op.in]: filters.status };
+            } else {
+                whereClause.status = filters.status;
+            }
+        }
+
+        if (filters?.fromDate) {
+            whereClause.createdAt = { [Op.gte]: filters.fromDate };
+        }
+
+        if (filters?.toDate) {
+            whereClause.createdAt = { ...whereClause.createdAt, [Op.lte]: filters.toDate };
+        }
+
+        return Booking.findAll({
+            where: whereClause,
+            include: [
+                {
+                    model: AvailabilitySlot,
+                    as: 'slot',
+                    required: false
+                },
+                {
+                    model: Student,
+                    as: 'student',
+                    required: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email']
+                        }
+                    ]
+                },
+                {
+                    model: Counselor,
+                    as: 'counselor',
+                    required: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email']
+                        }
+                    ]
+                }
+            ],
+            order: [['createdAt', 'DESC']] as Order
+        });
+    }
+
+    /**
+     * Find upcoming bookings for a student
+     */
+    static async findUpcomingByStudent(
+        studentId: number,
+        includeAssociations: boolean = true
+    ): Promise<Booking[]> {
+        const now = new Date();
+
+        return Booking.findAll({
+            where: {
+                studentId,
+                status: { [Op.in]: ['confirmed', 'started'] }
+            },
+            include: includeAssociations ? [
+                {
+                    model: AvailabilitySlot,
+                    as: 'slot',
+                    required: false
+                },
+                {
+                    model: Student,
+                    as: 'student',
+                    required: false
+                },
+                {
+                    model: Counselor,
+                    as: 'counselor',
+                    required: false,
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'name', 'email']
+                        }
+                    ]
+                }
+            ] : [],
+            order: [['createdAt', 'ASC']] as Order
+        });
     }
 }

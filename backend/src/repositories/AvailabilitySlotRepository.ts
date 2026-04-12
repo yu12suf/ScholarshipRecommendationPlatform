@@ -105,14 +105,14 @@ export class AvailabilitySlotRepository {
         startTime: Date;
         endTime: Date;
         status?: string;
-    }>): Promise<AvailabilitySlot[]> {
+    }>, options?: any): Promise<AvailabilitySlot[]> {
         const slotsData = data.map(slot => ({
             counselorId: slot.counselorId,
             startTime: slot.startTime,
             endTime: slot.endTime,
             status: slot.status || 'available'
         }));
-        return AvailabilitySlot.bulkCreate(slotsData);
+        return AvailabilitySlot.bulkCreate(slotsData, options);
     }
 
     /**

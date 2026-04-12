@@ -1,7 +1,7 @@
 
 import { Sequelize } from 'sequelize';
 import fs from 'fs';
-const sequelize = new Sequelize('EAP', 'postgres', '12345', {
+const sequelize = new Sequelize('EAP', 'postgres', 'password123', {
   host: 'localhost',
   dialect: 'postgres',
   logging: false

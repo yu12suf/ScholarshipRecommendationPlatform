@@ -10,6 +10,15 @@ export class AssessmentRepository {
     }
 
     /**
+     * Find assessment result by testId.
+     */
+    static async findByTestId(testId: string): Promise<AssessmentResult | null> {
+        return AssessmentResult.findOne({
+            where: { testId } as WhereOptions<AssessmentResult>
+        });
+    }
+
+    /**
      * Get student progress with optional filtering by exam type.
      * results are returned in ascending order by creation time.
      */

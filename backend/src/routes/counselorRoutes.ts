@@ -24,11 +24,17 @@ const router = Router();
 
 router.get('/ping', (_req, res) => res.status(200).send('pong'));
 router.get('/directory', validate(counselorDirectoryValidation), CounselorController.publicDirectory);
+router.get('/slots/public/:counselorId', CounselorController.getCounselorSlotsPublic);
 
 router.use(authenticate);
 
 router.post('/apply', validate(applyAsCounselorValidation), CounselorController.apply);
-router.get('/recommendations/me', authorize(UserRole.STUDENT), CounselorController.recommendForMe);
+router.get('/recommendations/me', authorize(UserRole.STUDENT, UserRole.ADMIN), CounselorController.recommendForMe);
+
+router.get('/my-bookings', authorize(UserRole.STUDENT), CounselorController.getMyBookings);
+router.get('/my-bookings/upcoming', authorize(UserRole.STUDENT), CounselorController.getMyUpcomingBookings);
+router.get('/my-bookings/:id', authorize(UserRole.STUDENT, UserRole.COUNSELOR), validate(idParamValidation), CounselorController.getBookingDetails);
+router.get('/my-bookings/:id/thread', authorize(UserRole.STUDENT, UserRole.COUNSELOR), validate(idParamValidation), CounselorController.getBookingThread);
 
 router.post('/bookings', authorize(UserRole.STUDENT), validate(createBookingValidation), CounselorController.createBooking);
 router.patch('/bookings/:id/reschedule', authorize(UserRole.STUDENT), validate(idParamValidation), validate(rescheduleBookingValidation), CounselorController.rescheduleBooking);
@@ -54,6 +60,7 @@ router.delete('/me', CounselorController.deleteProfile);
 
 router.post('/slots', validate(createSlotsValidation), CounselorController.createSlots);
 router.get('/slots', CounselorController.getSlots);
+router.get('/slots/:counselorId', CounselorController.getCounselorSlots);
 router.put('/slots/:id', validate(idParamValidation), validate(updateSlotValidation), CounselorController.updateSlot);
 router.delete('/slots/:id', validate(idParamValidation), CounselorController.deleteSlot);
 

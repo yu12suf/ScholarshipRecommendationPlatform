@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/providers/auth-context";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
@@ -80,6 +80,17 @@ export function SignupForm({
         <Card className="bg-card border border-border rounded-lg">
 
           <CardHeader className="text-center pt-10 pb-4">
+
+            {/* Back to Home */}
+            <div className="mb-4">
+              <Link 
+                href="/" 
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </Link>
+            </div>
 
             <h1 className="text-3xl font-semibold text-foreground">
               Create Account
@@ -166,6 +177,17 @@ export function SignupForm({
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
 
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-1 mt-2">
+                  <p className="font-medium">Password must contain:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li className={formData.password.length >= 8 ? "text-green-600 dark:text-green-400" : ""}>At least 8 characters</li>
+                    <li className={/[A-Z]/.test(formData.password) ? "text-green-600 dark:text-green-400" : ""}>One uppercase letter (A-Z)</li>
+                    <li className={/[a-z]/.test(formData.password) ? "text-green-600 dark:text-green-400" : ""}>One lowercase letter (a-z)</li>
+                    <li className={/\d/.test(formData.password) ? "text-green-600 dark:text-green-400" : ""}>One number (0-9)</li>
+                    <li className={/[@$!%*?&]/.test(formData.password) ? "text-green-600 dark:text-green-400" : ""}>One special character (@$!%*?&)</li>
+                  </ul>
                 </div>
 
               </div>

@@ -152,4 +152,115 @@ export class UserService {
       admins,
     };
   }
+
+  static async getPlatformStats() {
+    const totalUsers = await UserRepository.countAll();
+    const students = await UserRepository.countByRole(UserRole.STUDENT);
+    const counselors = await UserRepository.countByRole(UserRole.COUNSELOR);
+    const activeUsers = await UserRepository.countActive();
+    
+    const { Booking, Scholarship, Notification, AssessmentResult } = await import('../models/index.js');
+    
+    const totalBookings = await Booking.count();
+    const totalScholarships = await Scholarship.count();
+    const totalNotifications = await Notification.count();
+    const totalAssessments = await AssessmentResult.count();
+
+    const pendingCounselors = await import('../repositories/CounselorRepository.js').then(m => 
+      m.CounselorRepository.countPendingVerification()
+    );
+
+    return {
+      users: {
+        total: totalUsers,
+        active: activeUsers,
+        students,
+        counselors,
+        pendingCounselors,
+      },
+      platform: {
+        totalBookings,
+        totalScholarships,
+        totalNotifications,
+        totalAssessments,
+      },
+      timestamp: new Date(),
+    };
+  }
+
+  static async getSystemLogs(limit = 100, offset = 0) {
+    const { User, Booking, Notification } = await import('../models/index.js');
+    
+    const recentUsers = await User.findAll({
+      attributes: ['id', 'name', 'email', 'role', 'createdAt', 'isActive'],
+      order: [['createdAt', 'DESC']],
+      limit: 20,
+    });
+
+    const recentBookings = await Booking.findAll({
+      attributes: ['id', 'status', 'createdAt'],
+      order: [['createdAt', 'DESC']],
+      limit: 20,
+    });
+
+    const recentNotifications = await Notification.findAll({
+      attributes: ['id', 'type', 'title', 'isRead', 'createdAt'],
+      order: [['createdAt', 'DESC']],
+      limit: 20,
+    });
+
+    return {
+      users: recentUsers.map(u => ({
+        id: u.id,
+        type: 'user_activity',
+        message: `User ${u.name} (${u.role}) ${u.isActive ? 'active' : 'inactive'}`,
+        timestamp: u.createdAt,
+      })),
+      bookings: recentBookings.map(b => ({
+        id: b.id,
+        type: 'booking',
+        message: `Booking #${b.id} - ${b.status}`,
+        timestamp: b.createdAt,
+      })),
+      notifications: recentNotifications.map(n => ({
+        id: n.id,
+        type: 'notification',
+        message: n.title,
+        timestamp: n.createdAt,
+      })),
+    };
+  }
+
+  static async getSecurityInfo() {
+    const { User } = await import('../models/index.js');
+    
+    const totalUsers = await User.count();
+    const activeUsers = await User.count({ where: { isActive: true } });
+    const inactiveUsers = totalUsers - activeUsers;
+    
+    const last7Days = new Date();
+    last7Days.setDate(last7Days.getDate() - 7);
+    
+    const newUsersLast7Days = await User.count({
+      where: {
+        createdAt: { [await import('sequelize').then(m => m.Op?.gte)]: last7Days }
+      }
+    });
+
+    return {
+      summary: {
+        totalUsers,
+        activeUsers,
+        inactiveUsers,
+        newUsersLast7Days,
+      },
+      securityStatus: 'healthy',
+      lastScan: new Date(),
+      recommendations: [
+        'Enable two-factor authentication for all admin accounts',
+        'Review user activity logs regularly',
+        'Keep system software updated',
+      ],
+    };
+  }
 }

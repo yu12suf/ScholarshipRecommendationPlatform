@@ -21,3 +21,7 @@ export * from "./ConversationParticipant.js";
 export * from "./ChatMessage.js";
 export * from "./TrackedScholarship.js";
 export * from "./ScholarshipMilestone.js";
+export * from "./CommunityGroup.js";
+export * from "./CommunityMember.js";
+export * from "./CommunityMessage.js";
+export * from "./CommunityMessageReaction.js";

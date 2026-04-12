@@ -20,10 +20,12 @@ export class MatchingService {
     const student = await StudentRepository.findByUserId(userId);
 
     if (!student) {
-      throw new Error("Student profile not found.");
+      console.log(`[MatchingService] Student profile not found for userId: ${userId}`);
+      throw new Error("Student profile not found. Please complete your profile first.");
     }
 
     if (!student.isOnboarded) {
+      console.log(`[MatchingService] Student ${student.id} is not onboarded`);
       throw new Error(
         "Student is not onboarded. Please complete your profile first.",
       );
@@ -72,6 +74,7 @@ export class MatchingService {
     );
 
     if (!candidates.length) {
+      console.log(`[MatchingService] No scholarships found for student ${userId}. Student isOnboarded: ${student.isOnboarded}, countryInterest: ${student.countryInterest}, degreeSeeking: ${student.degreeSeeking}`);
       return [];
     }
 

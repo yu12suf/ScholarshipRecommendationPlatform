@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GraduationCap, Briefcase, Check } from "lucide-react";
+import { GraduationCap, Briefcase, Check, ArrowLeft } from "lucide-react";
 
 export function RoleSelection() {
   return (
@@ -11,6 +11,18 @@ export function RoleSelection() {
 
         {/* Header */}
         <div className="text-center mb-14">
+          
+          {/* Back to Home */}
+          <div className="mb-6">
+            <Link 
+              href="/" 
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Link>
+          </div>
+
           <h1 className="text-3xl md:text-5xl font-semibold text-foreground tracking-tight mb-4">
             Choose Your Role
           </h1>

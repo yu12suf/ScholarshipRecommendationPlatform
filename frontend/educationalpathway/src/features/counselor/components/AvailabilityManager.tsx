@@ -8,7 +8,8 @@ import {
   Clock, 
   Save, 
   Loader2,
-  CalendarCheck
+  CalendarCheck,
+  RefreshCw
 } from 'lucide-react';
 import { Button, Card, CardBody, Input } from '@/components/ui';
 import { getCounselorSlots, createCounselorSlots } from '../api/counselor-api';
@@ -25,9 +26,38 @@ export const AvailabilityManager = () => {
   useEffect(() => {
     const fetchSlots = async () => {
       try {
+        console.log('[AvailabilityManager] Fetching slots...');
         const data = await getCounselorSlots();
-        setSlots(data.data || []);
-      } catch (error) {
+        console.log('[AvailabilityManager] Raw response:', data);
+        
+        // Handle both { success: true, data: [...] } and [...] response formats
+        const rawSlots = data.data || data || [];
+        console.log('[AvailabilityManager] Raw slots:', rawSlots);
+        
+        // Convert ISO8601 slots to time-only format for the UI
+        // Group slots by day of week to show unique weekly patterns
+        const slotMap = new Map<string, { startTime: string; endTime: string }>();
+        rawSlots.forEach((slot: any) => {
+          const start = new Date(slot.startTime);
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const dayOfWeek = dayNames[start.getDay()];
+          const startTime = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+          const end = new Date(slot.endTime);
+          const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+          
+          // Store unique slots based on day + time combination
+          const key = `${dayOfWeek}-${startTime}-${endTime}`;
+          if (!slotMap.has(key)) {
+            slotMap.set(key, { dayOfWeek, startTime, endTime });
+          }
+        });
+        
+        const formattedSlots = Array.from(slotMap.values());
+        console.log('[AvailabilityManager] Formatted slots:', formattedSlots);
+        setSlots(formattedSlots);
+      } catch (error: any) {
+        console.error('[AvailabilityManager] Failed to load slots:', error);
+        console.error('[AvailabilityManager] Error response:', error?.response?.data);
         toast.error('Failed to load availability');
       } finally {
         setLoading(false);
@@ -59,12 +89,68 @@ export const AvailabilityManager = () => {
   };
 
   const handleSave = async () => {
+    // Convert time-only format to ISO8601 datetime
+    const slotsToSave = slots.map(slot => {
+      const dayMap: Record<string, number> = {
+        'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+        'Thursday': 4, 'Friday': 5, 'Saturday': 6
+      };
+      const dayIndex = dayMap[slot.dayOfWeek] || 1;
+      
+      // Get next occurrence of this day
+      const today = new Date();
+      const currentDay = today.getDay();
+      const daysUntil = (dayIndex - currentDay + 7) % 7 || 7;
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + daysUntil);
+      
+      // Parse time and set on target date
+      const [startHour, startMin] = slot.startTime.split(':');
+      const startDate = new Date(targetDate);
+      startDate.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
+      
+      const [endHour, endMin] = slot.endTime.split(':');
+      const endDate = new Date(targetDate);
+      endDate.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
+      
+      return {
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString()
+      };
+    });
+    
+    console.log('[AvailabilityManager] Saving slots:', slotsToSave);
+    
     setSaving(true);
     try {
-      await createCounselorSlots(slots);
+      const response = await createCounselorSlots(slotsToSave);
+      console.log('[AvailabilityManager] Save response:', response);
       toast.success('Availability updated successfully');
-    } catch (error) {
-      toast.error('Failed to save availability');
+      
+      // Refresh slots after saving - with deduplication like in fetchSlots
+      const data = await getCounselorSlots();
+      const rawSlots = data.data || data || [];
+      
+      const slotMap = new Map<string, { dayOfWeek: string; startTime: string; endTime: string }>();
+      rawSlots.forEach((slot: any) => {
+        const start = new Date(slot.startTime);
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayOfWeek = dayNames[start.getDay()];
+        const startTime = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+        const end = new Date(slot.endTime);
+        const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+        
+        const key = `${dayOfWeek}-${startTime}-${endTime}`;
+        if (!slotMap.has(key)) {
+          slotMap.set(key, { dayOfWeek, startTime, endTime });
+        }
+      });
+      
+      setSlots(Array.from(slotMap.values()));
+    } catch (error: any) {
+      console.error('[AvailabilityManager] Save error:', error);
+      console.error('[AvailabilityManager] Error response:', error?.response?.data);
+      toast.error(error?.response?.data?.message || 'Failed to save availability');
     } finally {
       setSaving(false);
     }
@@ -88,14 +174,46 @@ export const AvailabilityManager = () => {
           </h1>
           <p className="text-muted-foreground mt-1">Set your recurring availability slots for student bookings.</p>
         </div>
-        <Button 
-          onClick={addSlot}
-          variant="outline"
-          className="border-primary text-primary hover:bg-primary/10 h-12 px-6"
-        >
-          <Plus size={18} className="mr-2" />
-          Add Slot
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const data = await getCounselorSlots();
+                const rawSlots = data.data || [];
+                const formattedSlots = rawSlots.map((slot: any) => {
+                  const start = new Date(slot.startTime);
+                  const end = new Date(slot.endTime);
+                  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  return {
+                    dayOfWeek: dayNames[start.getDay()],
+                    startTime: `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`,
+                    endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`
+                  };
+                });
+                setSlots(formattedSlots);
+              } catch (error) {
+                toast.error('Failed to refresh slots');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            title="Refresh slots"
+            className="h-12 w-12"
+          >
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </Button>
+          <Button 
+            onClick={addSlot}
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary/10 h-12 px-6"
+          >
+            <Plus size={18} className="mr-2" />
+            Add Slot
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -8,6 +8,8 @@ import notificationRouter from "./notificationRoutes.js";
 import videoRouter from "./videoRoutes.js";
 import learningPathRouter from "./learningPathRoutes.js";
 import chatRouter from "./chatRoutes.js";
+import adminRouter from "./adminRoutes.js";
+import communityRouter from "./communityRoutes.js";
 
 export default {
     userRouter,
@@ -19,5 +21,7 @@ export default {
     videoRouter,
     learningPathRouter,
     notificationRouter,
-    chatRouter
+    chatRouter,
+    adminRouter,
+    communityRouter
 };

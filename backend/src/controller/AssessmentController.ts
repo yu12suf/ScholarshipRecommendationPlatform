@@ -1,37 +1,24 @@
 import { Request, Response, NextFunction } from "express";
-import { AssessmentService } from "../services/AssessmentService.js";
 import { StudentRepository } from "../repositories/StudentRepository.js";
+import { AssessmentService } from "../services/AssessmentService.js";
 
 export class AssessmentController {
   static async generate(req: Request, res: Response, next: NextFunction) {
     try {
-      const examType =
-        typeof req.body?.examType === "string" ? req.body.examType.trim() : "";
-      const difficulty =
-        typeof req.body?.difficulty === "string"
-          ? req.body.difficulty.trim()
-          : "";
+      const { examType, difficulty } = req.body;
 
       if (!examType || !difficulty) {
-        res.status(400).json({ error: "examType and difficulty are required" });
-        return;
-      }
-
-      const examTypeUpper = examType.toUpperCase();
-      const difficultyLower = difficulty.toLowerCase();
-      if (!["IELTS", "TOEFL"].includes(examTypeUpper)) {
-        res.status(400).json({ error: "examType must be IELTS or TOEFL" });
-        return;
-      }
-      if (!["easy", "medium", "hard"].includes(difficultyLower)) {
         res
           .status(400)
-          .json({ error: "difficulty must be Easy, Medium, or Hard" });
+          .json({ error: "examType and difficulty are required" });
         return;
       }
 
-      const result = await AssessmentService.generateExam(examType, difficulty);
-      res.status(201).json(result);
+      const examData = await AssessmentService.generateExam(
+        examType,
+        difficulty,
+      );
+      res.json(examData);
     } catch (error) {
       next(error);
     }
@@ -40,39 +27,38 @@ export class AssessmentController {
   static async submit(req: Request, res: Response, next: NextFunction) {
     try {
       const { test_id, responses: rawResponses } = req.body;
+
       if (!test_id || !rawResponses) {
-        res.status(400).json({ error: "test_id and responses are required" });
+        res
+          .status(400)
+          .json({ error: "test_id and responses are required" });
         return;
       }
 
-      // Normalize responses: may arrive as a JSON string (multipart) or object (JSON body)
-      let parsedResponses = rawResponses;
-      if (typeof rawResponses === "string") {
-        try {
-          parsedResponses = JSON.parse(rawResponses);
-        } catch (e) {
-          res
-            .status(400)
-            .json({
-              error:
-                "responses must be a valid JSON object or stringified JSON",
-            });
-          return;
-        }
+      let parsedResponses;
+      try {
+        parsedResponses =
+          typeof rawResponses === "string"
+            ? JSON.parse(rawResponses)
+            : rawResponses;
+      } catch (parseError) {
+        res
+          .status(400)
+          .json({ error: "Invalid responses JSON format" });
+        return;
       }
 
-      let audioData: { buffer: Buffer; mimetype: string } | undefined;
-      // express-fileupload attaches files to req.files
+      let audioData: { buffer: Buffer; mimetype: string } | undefined =
+        undefined;
+
       if (req.files && req.files.audio) {
-        const audioFile = Array.isArray(req.files.audio)
-          ? req.files.audio[0]
+        const audioFile = Array.isArray(req.files.audio) 
+          ? req.files.audio[0] 
           : req.files.audio;
-        if (audioFile) {
-          audioData = {
-            buffer: audioFile.data,
-            mimetype: audioFile.mimetype,
-          };
-        }
+        audioData = {
+          buffer: audioFile.data,
+          mimetype: audioFile.mimetype,
+        };
       }
 
       const student = await StudentRepository.findByUserId(req.user!.id);
@@ -88,8 +74,14 @@ export class AssessmentController {
         audioData,
       );
       res.json(result);
-    } catch (error) {
-      next(error);
+    } catch (error: any) {
+      console.error("Submit assessment error:", error);
+      const message = error?.message || "Unknown error";
+      if (message.includes("expired") || message.includes("not found")) {
+        res.status(400).json({ error: "Assessment expired. Please start a new assessment." });
+      } else {
+        next(error);
+      }
     }
   }
 

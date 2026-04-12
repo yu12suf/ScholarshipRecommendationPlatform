@@ -7,11 +7,17 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
+  console.error("========== ERROR HANDLER CAUGHT ERROR ==========");
   console.error("Error Details:", {
     message: error.message,
     stack: error.stack,
     path: req.path,
+    method: req.method,
+    body: req.body,
   });
+  console.error("Error isOperational:", error.isOperational);
+  console.error("Error statusCode:", error.statusCode);
+  console.error("===============================================");
 
   const statusCode = error.statusCode || 500;
   

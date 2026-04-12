@@ -9,6 +9,7 @@ import {
     Default,
     HasMany,
     HasOne,
+    BelongsToMany,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
@@ -111,4 +112,7 @@ export class User extends Model {
 
     @HasOne(() => Counselor)
     counselor!: Counselor;
+
+    @HasMany(() => Counselor, { as: 'counselors' })
+    counselors!: Counselor[];
 }
