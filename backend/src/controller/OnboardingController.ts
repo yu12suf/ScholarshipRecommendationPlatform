@@ -88,7 +88,7 @@ export class OnboardingController {
         res.status(200).json({
             status: "success",
             message: "Profile updated and onboarding complete",
-            data: { role: result.role }
+            data: result
         });
     });
 }

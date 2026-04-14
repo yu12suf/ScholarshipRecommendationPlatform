@@ -9,6 +9,8 @@ import { VectorService } from "./VectorService.js";
 import { MatchingService } from "./MatchingService.js";
 import { sendEmail } from "../utils/emailService.js";
 import { ScholarshipNotificationService } from "./ScholarshipNotificationService.js";
+import { AuthService } from "./AuthService.js";
+
 
 export class OnboardingService {
     /**
@@ -183,6 +185,6 @@ export class OnboardingService {
             });
         }
 
-        return { role: user.role };
+        return AuthService.getUserWithProfile(user);
     }
 }

@@ -191,7 +191,7 @@ export class AuthService {
     return this.getUserWithProfile(user);
   }
 
-  private static async getUserWithProfile(user: User) {
+  static async getUserWithProfile(user: User) {
     let profileData: any = {};
     if (user.role === UserRole.STUDENT) {
       const student = await StudentRepository.findByUserId(user.id);
