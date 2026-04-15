@@ -900,20 +900,20 @@ export default function CommunityPage() {
                         onClick={() => setSelectedGroup(group)}
                         className={`w-full flex items-center gap-3 p-2 rounded-lg transition cursor-pointer ${
                           selectedGroup?.id === group.id 
-                            ? "bg-emerald-500/20 text-emerald-400" 
-                            : "hover:bg-slate-800 text-slate-300"
+                            ? isDarkMode ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-700"
+                            : isDarkMode ? "hover:bg-slate-800 text-slate-300" : "hover:bg-gray-200 text-gray-700"
                         }`}
                       >
-                        <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden ${isDarkMode ? 'bg-slate-700' : 'bg-gray-300'}`}>
                           {group.avatar ? (
                             <Image src={group.avatar} alt={group.name} width={40} height={40} className="h-full w-full object-cover" />
                           ) : (
-                            <span className="text-lg font-bold">{group.name.charAt(0)}</span>
+                            <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{group.name.charAt(0)}</span>
                           )}
                         </div>
                         <div className="flex-1 text-left overflow-hidden">
                           <p className="font-medium truncate">{group.name}</p>
-                          <p className="text-xs text-slate-500">{group.memberCount} members</p>
+                          <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{group.memberCount} members</p>
                         </div>
                         <Button 
                           size="sm" 
