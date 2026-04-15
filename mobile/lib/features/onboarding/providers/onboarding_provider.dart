@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/models/student_profile_model.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
+import 'package:mobile/models/json_utils.dart'; // Add this for readInt/readDouble
 
 import 'dart:convert';
 
@@ -10,10 +11,18 @@ class OnboardingNotifier extends Notifier<StudentProfileModel> {
     if (value is List) return value.map((e) => e.toString()).toList();
     if (value is String) {
       if (value.isEmpty) return [];
+      // Handle potential double encoding or raw comma-separated lists
       try {
         final parsed = jsonDecode(value);
         if (parsed is List) return parsed.map((e) => e.toString()).toList();
-      } catch (_) {}
+        if (parsed is String) return _parseStringList(parsed); // Recursive for double encoding
+      } catch (_) {
+        // Fallback for comma separated if JSON decode fails
+        if (value.contains(',')) {
+          return value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        }
+        return [value]; // Single item string
+      }
     }
     return [];
   }
@@ -72,24 +81,24 @@ class OnboardingNotifier extends Notifier<StudentProfileModel> {
     return StudentProfileModel(
       fullName: user.fullName ?? user.name,
       email: user.email,
-      phoneNumber: user.phoneNumber,
-      dateOfBirth: user.dateOfBirth,
-      gender: user.gender,
-      nationality: user.nationality,
-      countryOfResidence: user.countryOfResidence,
-      city: user.city,
-      currentEducationLevel: user.currentEducationLevel,
-      degreeSeeking: user.degreeSeeking,
-      fieldOfStudyInput: _parseStringList(raw['fieldOfStudy'] ?? raw['field_of_study'] ?? user.fieldOfStudyInput),
-      previousUniversity: user.previousUniversity,
-      graduationYear: user.graduationYear,
-      gpa: user.gpa,
+      phoneNumber: user.phoneNumber ?? raw['phoneNumber'] ?? raw['phone_number'],
+      dateOfBirth: user.dateOfBirth ?? raw['dateOfBirth'] ?? raw['date_of_birth'],
+      gender: user.gender ?? raw['gender'],
+      nationality: user.nationality ?? raw['nationality'],
+      countryOfResidence: user.countryOfResidence ?? raw['countryOfResidence'] ?? raw['country_of_residence'],
+      city: user.city ?? raw['city'],
+      currentEducationLevel: user.currentEducationLevel ?? raw['currentEducationLevel'] ?? raw['current_education_level'] ?? raw['academicStatus'] ?? raw['academic_status'],
+      degreeSeeking: user.degreeSeeking ?? raw['degreeSeeking'] ?? raw['degree_seeking'],
+      fieldOfStudyInput: _parseStringList(raw['fieldOfStudyInput'] ?? raw['field_of_study_input'] ?? raw['fieldOfStudy'] ?? raw['field_of_study'] ?? (user.fieldOfStudyInput is List ? user.fieldOfStudyInput : [])),
+      previousUniversity: user.previousUniversity ?? raw['previousUniversity'] ?? raw['previous_university'] ?? raw['currentUniversity'] ?? raw['current_university'],
+      graduationYear: user.graduationYear ?? readInt(raw, ['graduationYear', 'graduation_year']),
+      gpa: user.gpa ?? readDouble(raw, ['gpa', 'calculatedGpa', 'calculated_gpa']),
       languageTestType: raw['languageTestType'] ?? raw['language_test_type'] ?? 'None',
-      testScore: raw['languageScore'] ?? raw['language_score'],
+      testScore: raw['languageScore'] ?? raw['language_score'] ?? raw['testScore'] ?? raw['test_score'],
       researchArea: raw['researchArea'] ?? raw['research_area'],
       proposedResearchTopic: raw['proposedResearchTopic'] ?? raw['proposed_research_topic'],
       preferredDegreeLevel: _parseStringList(raw['preferredDegreeLevel'] ?? raw['preferred_degree_level']),
-      preferredFundingType: _parseStringList(raw['fundingRequirement'] ?? raw['funding_requirement']),
+      preferredFundingType: _parseStringList(raw['fundingRequirement'] ?? raw['funding_requirement'] ?? raw['preferredFundingType'] ?? raw['preferred_funding_type'] ?? raw['studyPreferences'] ?? raw['study_preferences']),
       preferredCountries: _parseStringList(raw['preferredCountries'] ?? raw['preferred_countries']),
       preferredUniversities: _parseStringList(raw['preferredUniversities'] ?? raw['preferred_universities']),
       studyMode: raw['studyMode'] ?? raw['study_mode'],
@@ -100,7 +109,7 @@ class OnboardingNotifier extends Notifier<StudentProfileModel> {
       inSystemNotif: inSystemNotif,
       cvPath: raw['cvUrl'] ?? raw['cv_url'],
       transcriptPath: raw['transcriptUrl'] ?? raw['transcript_url'],
-      certificatePath: raw['certificateUrl'] ?? raw['degreeCertificateUrl'] ?? raw['certificate_url'],
+      certificatePath: raw['degreeCertificateUrl'] ?? raw['degree_certificate_url'] ?? raw['certificateUrl'] ?? raw['certificate_url'],
     );
   }
 
@@ -149,10 +158,3 @@ class OnboardingNotifier extends Notifier<StudentProfileModel> {
 final onboardingProvider = NotifierProvider<OnboardingNotifier, StudentProfileModel>(
   OnboardingNotifier.new,
 );
-
-
-
-
-
-
-

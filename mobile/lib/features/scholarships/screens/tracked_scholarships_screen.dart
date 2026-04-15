@@ -8,9 +8,17 @@ import 'package:mobile/features/scholarships/providers/scholarship_providers.dar
 import 'package:mobile/features/scholarships/screens/scholarship_detail_screen.dart';
 import 'package:mobile/features/core/theme/design_system.dart';
 import 'package:mobile/features/core/widgets/glass_container.dart';
+import 'package:mobile/features/dashboard/providers/dashboard_provider.dart';
 
 class TrackedScholarshipsScreen extends ConsumerWidget {
-  const TrackedScholarshipsScreen({super.key});
+  final String? initialStatus;
+  final bool showDueSoonOnly;
+
+  const TrackedScholarshipsScreen({
+    super.key, 
+    this.initialStatus,
+    this.showDueSoonOnly = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,19 +58,46 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
           ),
           watchlistAsync.when(
             data: (watchlist) {
-              if (watchlist.isEmpty) {
+              final now = DateTime.now();
+              var filteredList = watchlist;
+
+              if (showDueSoonOnly) {
+                filteredList = watchlist.where((item) {
+                  final deadline = item.manualDeadline ?? item.scholarship?.deadline;
+                  if (deadline == null) return false;
+                  final diff = deadline.difference(now).inDays;
+                  return diff >= 0 && diff <= 14;
+                }).toList();
+              } else if (initialStatus != null) {
+                if (initialStatus == 'SAVED') {
+                  filteredList = watchlist.where((item) => 
+                    item.status == 'WATCHING' || item.status == 'NOT_STARTED'
+                  ).toList();
+                } else if (initialStatus == 'APPLIED') {
+                  filteredList = watchlist.where((item) => 
+                    item.status == 'APPLIED' || item.status == 'SUBMITTED' || item.status == 'ACCEPTED'
+                  ).toList();
+                }
+              }
+
+              if (filteredList.isEmpty) {
+                String message = "You haven't tracked any scholarships yet.";
+                if (showDueSoonOnly) message = "No deadlines approaching in the next 14 days.";
+                if (initialStatus == 'SAVED') message = "No saved scholarships found.";
+                if (initialStatus == 'APPLIED') message = "No applied scholarships found.";
+                
                 return Center(
                   child: Text(
-                    "You haven't tracked any scholarships yet.",
+                    message,
                     style: GoogleFonts.inter(color: Colors.white54),
                   ),
                 );
               }
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                itemCount: watchlist.length,
+                itemCount: filteredList.length,
                 itemBuilder: (context, index) {
-                  return _buildTrackedCard(context, ref, watchlist[index]);
+                  return _buildTrackedCard(context, ref, filteredList[index]);
                 },
               );
             },
@@ -147,8 +182,16 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => _showStatusBottomSheet(context, ref, item.scholarshipId, item.status ?? 'NOT_STARTED'),
-                    child: const Icon(LucideIcons.edit2, color: Colors.white54, size: 16),
+                    onTap: () => _showStatusBottomSheet(context, ref, item.scholarshipId, item.status),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                      ),
+                      child: const Icon(LucideIcons.edit2, color: Color(0xFF10B981), size: 14),
+                    ),
                   ),
                 ],
               ),
@@ -188,33 +231,46 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
   void _showStatusBottomSheet(BuildContext context, WidgetRef ref, int scholarshipId, String currentStatus) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return GlassContainer(
-          borderRadius: 30,
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: GlassContainer(
+            borderRadius: 30,
+            padding: const EdgeInsets.all(30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Text(
                 "Update Status",
                 style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-              _buildStatusOption(context, ref, scholarshipId, "NOT_STARTED", "Saved for Later", currentStatus),
-              _buildStatusOption(context, ref, scholarshipId, "WATCHING", "Actively Watching", currentStatus),
-              _buildStatusOption(context, ref, scholarshipId, "APPLIED", "Applied / In Progress", currentStatus),
-              _buildStatusOption(context, ref, scholarshipId, "SUBMITTED", "Submitted", currentStatus),
-              _buildStatusOption(context, ref, scholarshipId, "ACCEPTED", "Accepted", currentStatus),
-              _buildStatusOption(context, ref, scholarshipId, "REJECTED", "Rejected", currentStatus),
-              const SizedBox(height: 20),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildStatusOption(context, ref, scholarshipId, "NOT_STARTED", "Saved for Later", currentStatus),
+                      _buildStatusOption(context, ref, scholarshipId, "WATCHING", "Actively Watching", currentStatus),
+                      _buildStatusOption(context, ref, scholarshipId, "APPLIED", "Applied / In Progress", currentStatus),
+                      _buildStatusOption(context, ref, scholarshipId, "SUBMITTED", "Submitted", currentStatus),
+                      _buildStatusOption(context, ref, scholarshipId, "ACCEPTED", "Accepted", currentStatus),
+                      _buildStatusOption(context, ref, scholarshipId, "REJECTED", "Rejected", currentStatus),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildStatusOption(BuildContext context, WidgetRef ref, int id, String val, String label, String current) {
     final isSelected = val == current;
@@ -223,6 +279,7 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
         Navigator.pop(context);
         try {
           await ref.read(scholarshipWatchlistProvider.notifier).updateStatus(id, val);
+          ref.invalidate(dashboardStatsProvider);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Status updated successfully')));
           }

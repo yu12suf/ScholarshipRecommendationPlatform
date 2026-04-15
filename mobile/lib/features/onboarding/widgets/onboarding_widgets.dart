@@ -205,22 +205,34 @@ class UploadBox extends StatelessWidget {
 
   Widget _buildPreview() {
     final path = filePath ?? "";
+    final isRemote = path.startsWith('http');
     final isImage =
-        path.endsWith('.jpg') ||
-        path.endsWith('.jpeg') ||
-        path.endsWith('.png');
-    final isPdf = path.endsWith('.pdf');
+        path.toLowerCase().endsWith('.jpg') ||
+        path.toLowerCase().endsWith('.jpeg') ||
+        path.toLowerCase().endsWith('.png') ||
+        path.contains('image'); // Guessing for Cloudinary URLs
+    final isPdf = path.toLowerCase().endsWith('.pdf') || path.contains('pdf');
 
     if (isImage) {
+      if (isRemote) {
+        return Image.network(
+          path,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) => _buildFileFallback(),
+        );
+      }
       return Image.file(
         File(path),
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
+        errorBuilder: (context, error, stackTrace) => _buildFileFallback(),
       );
     }
 
-    if (isPdf) {
+    if (isPdf && !isRemote) {
       return FutureBuilder<PdfPageImage?>(
         future: _renderPdfFirstPage(path),
         builder: (context, snapshot) {

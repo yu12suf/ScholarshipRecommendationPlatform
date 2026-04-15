@@ -110,10 +110,18 @@ class ScholarshipApiService {
   }
 
   /// `POST /api/scholarships/track/:id`
-  Future<void> toggleTrackScholarship(int scholarshipId) async {
+  Future<void> trackScholarship(int scholarshipId) async {
     final response = await _api.post('/api/scholarships/track/$scholarshipId', auth: true);
     if (response.statusCode != 200 && response.statusCode != 201) {
       throwForResponse(response, fallback: 'Failed to track scholarship');
+    }
+  }
+
+  /// `DELETE /api/scholarships/track/:id`
+  Future<void> untrackScholarship(int scholarshipId) async {
+    final response = await _api.delete('/api/scholarships/track/$scholarshipId', auth: true);
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throwForResponse(response, fallback: 'Failed to remove from watchlist');
     }
   }
 

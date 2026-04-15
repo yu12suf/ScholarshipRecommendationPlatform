@@ -5,9 +5,13 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/features/chat/screens/pathfinder_chat_screen.dart';
+import 'package:mobile/features/core/theme/design_system.dart';
 import 'package:mobile/features/dashboard/providers/dashboard_provider.dart';
 import 'package:mobile/features/scholarships/screens/scholarship_detail_screen.dart';
 import 'package:mobile/features/scholarships/screens/tracked_scholarships_screen.dart';
+import 'package:mobile/core/providers/navigation_provider.dart';
+import 'package:mobile/features/core/providers/notification_provider.dart';
+import 'package:mobile/models/user.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -42,24 +46,17 @@ class DashboardScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 10),
-                        _buildHeader(state.user?.name),
+                        _buildHeader(context, ref, state.user),
                         const SizedBox(height: 30),
                         _buildWelcomeText(state.user?.name),
                         const SizedBox(height: 25),
                         _buildPathfinderCard(context, state.recommendations.length),
                         const SizedBox(height: 25),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const TrackedScholarshipsScreen()),
-                            );
-                          },
-                          child: _buildStatsRow(
-                            state.savedCount,
-                            state.appliedCount,
-                            state.dueSoonCount,
-                          ),
+                        _buildStatsRow(
+                          context,
+                          state.savedCount,
+                          state.appliedCount,
+                          state.dueSoonCount,
                         ),
                         const SizedBox(height: 25),
                         InkWell(
@@ -70,7 +67,7 @@ class DashboardScreen extends ConsumerWidget {
                         const SizedBox(height: 25),
                         _buildUpcomingSession(),
                         const SizedBox(height: 25),
-                        _buildSectionHeader("Top Recommendations", showViewAll: true),
+                        _buildSectionHeader(ref, "Top Recommendations", showViewAll: true),
                         ...state.recommendations.map((sch) => InkWell(
                               onTap: () => Navigator.push(
                                 context,
@@ -96,7 +93,7 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                         const SizedBox(height: 25),
-                        _buildSectionHeader("Expert Mentors"),
+                        _buildSectionHeader(ref, "Expert Mentors"),
                         _buildMentorsRow(),
                         const SizedBox(height: 100), // Space for bottom nav
                       ],
@@ -128,48 +125,86 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   // --- HEADER SECTION ---
-  Widget _buildHeader(String? name) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref, User? user) {
+    final avatarSeed = user?.name ?? "Alex";
+
     return Row(
       children: [
-        Stack(
-          children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundImage: NetworkImage('https://api.dicebear.com/7.x/avataaars/png?seed=${name ?? 'Alex'}'),
-            ),
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF0F172A), width: 2),
-                ),
+        GestureDetector(
+          onTap: () => context.push('/edit-profile'),
+          child: Stack(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: DesignSystem.emerald.withOpacity(0.1),
+                backgroundImage: user?.avatarUrl != null 
+                  ? NetworkImage(user!.avatarUrl!) 
+                  : NetworkImage('https://api.dicebear.com/7.x/avataaars/png?seed=$avatarSeed') as ImageProvider,
               ),
-            )
-          ],
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF0F172A), width: 2),
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 15),
         Expanded(
-          child: Text(
-            "Adventure Pathway",
-            style: GoogleFonts.plusJakartaSans(
-              color: const Color(0xFF10B981),
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-            overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Adventure Pathway",
+                style: GoogleFonts.plusJakartaSans(
+                  color: DesignSystem.emerald,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
         const SizedBox(width: 8),
-        const Icon(LucideIcons.search, color: Colors.white70, size: 22),
+        GestureDetector(
+          onTap: () => context.push('/notifications'),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(LucideIcons.bell, color: Colors.white70, size: 22),
+              if (ref.watch(unreadNotificationCountProvider) > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 8,
+                      minHeight: 8,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
         const SizedBox(width: 15),
-        const Icon(LucideIcons.bell, color: Colors.white70, size: 22),
-        const SizedBox(width: 15),
-        const Icon(LucideIcons.settings, color: Colors.white70, size: 22),
+        GestureDetector(
+          onTap: () => context.push('/settings'),
+          child: const Icon(LucideIcons.settings, color: Colors.white70, size: 22),
+        ),
       ],
     );
   }
@@ -196,23 +231,33 @@ class DashboardScreen extends ConsumerWidget {
   // --- PATHFINDER AI CARD ---
   Widget _buildPathfinderCard(BuildContext context, int matchCount) {
     return _buildGlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(LucideIcons.sparkles, color: Color(0xFF10B981), size: 20),
-              const SizedBox(width: 8),
-              Text("AI INSIGHT", style: GoogleFonts.plusJakartaSans(color: const Color(0xFF10B981), fontWeight: FontWeight.bold, letterSpacing: 1)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            matchCount > 0 
-              ? "$matchCount New Scholarships match your profile perfectly today."
-              : "Ask Pathfinder to find the perfect scholarship for you.",
-            style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
-          ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PathfinderChatScreen(),
+            ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(LucideIcons.sparkles, color: Color(0xFF10B981), size: 20),
+                const SizedBox(width: 8),
+                Text("AI INSIGHT", style: GoogleFonts.plusJakartaSans(color: const Color(0xFF10B981), fontWeight: FontWeight.bold, letterSpacing: 1)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              matchCount > 0 
+                ? "$matchCount New Scholarships match your profile perfectly today."
+                : "Ask Pathfinder to find the perfect scholarship for you.",
+              style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+            ),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
@@ -253,39 +298,82 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
           )
-        ],
+          ],
+        ),
       ),
     );
   }
 
   // --- STATS ROW ---
-  Widget _buildStatsRow(int saved, int applied, int dueSoon) {
+  Widget _buildStatsRow(BuildContext context, int saved, int applied, int dueSoon) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildStatItem(LucideIcons.bookmark, saved.toString(), "SAVED", Colors.amber),
-        _buildStatItem(LucideIcons.send, applied.toString(), "APPLIED", const Color(0xFF10B981)),
-        _buildStatItem(LucideIcons.clock, dueSoon.toString(), "DUE SOON", const Color(0xFFF43F5E)),
+        _buildStatItem(
+          icon: LucideIcons.bookmark,
+          value: saved.toString(),
+          label: "SAVED",
+          color: Colors.amber,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TrackedScholarshipsScreen(initialStatus: 'SAVED'),
+            ),
+          ),
+        ),
+        _buildStatItem(
+          icon: LucideIcons.send,
+          value: applied.toString(),
+          label: "APPLIED",
+          color: const Color(0xFF10B981),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TrackedScholarshipsScreen(initialStatus: 'APPLIED'),
+            ),
+          ),
+        ),
+        _buildStatItem(
+          icon: LucideIcons.clock,
+          value: dueSoon.toString(),
+          label: "DUE SOON",
+          color: const Color(0xFFF43F5E),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TrackedScholarshipsScreen(showDueSoonOnly: true),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildStatItem(IconData icon, String value, String label, Color color) {
-    return Container(
-      width: 105,
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 8),
-          Text(value, style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-          Text(label, style: GoogleFonts.inter(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
-        ],
+  Widget _buildStatItem({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 105,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 8),
+            Text(value, style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(label, style: GoogleFonts.inter(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }
@@ -406,14 +494,18 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, {bool showViewAll = false}) {
+  Widget _buildSectionHeader(WidgetRef ref, String title, {bool showViewAll = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title, style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          if (showViewAll) Text("View all", style: GoogleFonts.inter(color: const Color(0xFF10B981), fontSize: 12)),
+          if (showViewAll) 
+            GestureDetector(
+              onTap: () => ref.read(navigationIndexProvider.notifier).state = 1,
+              child: Text("View all", style: GoogleFonts.inter(color: const Color(0xFF10B981), fontSize: 12)),
+            ),
         ],
       ),
     );

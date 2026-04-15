@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:mobile/features/core/theme/design_system.dart';
 import 'dart:async';
 import 'dart:ui';
@@ -12,6 +13,7 @@ import 'package:mobile/features/scholarships/providers/scholarship_providers.dar
 import 'package:mobile/features/core/widgets/glass_container.dart';
 import '../widgets/scholarship_match_card.dart';
 import 'package:mobile/features/scholarships/screens/scholarship_detail_screen.dart';
+import 'package:mobile/features/chat/screens/pathfinder_chat_screen.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -98,7 +100,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
           // Floating Sparkle Button (AI Discovery Trigger)
           Positioned(
-            bottom: 100,
+            bottom: 75,
             right: 20,
             child: _buildFloatingSparkleButton(),
           ),
@@ -130,7 +132,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
           ],
         ),
-        const Icon(LucideIcons.sliders, color: Colors.white70, size: 20),
+        GestureDetector(
+          onTap: () => context.push('/settings'),
+          child: const Icon(LucideIcons.sliders, color: Colors.white70, size: 20),
+        ),
       ],
     );
   }
@@ -149,7 +154,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
             child: Row(
               children: [
-                const Icon(LucideIcons.search, color: Colors.white24, size: 20),
+                // Search icon removed as requested
+                const SizedBox(width: 8),
                 const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
@@ -238,7 +244,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildPathfinderHeroCard(topMatch),
+            _buildScholarshipHeroCard(topMatch, label: "PATHFINDER'S TOP CHOICE"),
             const SizedBox(height: 35),
             Text(
               "Curated For Your Pathway",
@@ -249,20 +255,23 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            ...listItems.map((s) => ScholarshipMatchCard(
-                  title: s.title,
-                  university: s.country ?? 'International',
-                  matchPercent: "${s.matchScore}%",
-                  aiInsight: s.matchReason ?? "AI recommends this based on your profile.",
-                  fundingType: s.fundType ?? "Scholarship",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ScholarshipDetailScreen(scholarshipId: s.id),
-                      ),
-                    );
-                  },
+            ...listItems.map((s) => Padding(
+                  padding: const EdgeInsets.only(bottom: 15),
+                  child: ScholarshipMatchCard(
+                    title: s.title,
+                    university: s.country ?? 'International',
+                    matchPercent: "${s.matchScore}%",
+                    aiInsight: s.matchReason ?? "AI recommends this based on your profile.",
+                    fundingType: s.fundType ?? "Scholarship",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ScholarshipDetailScreen(scholarshipId: s.id),
+                        ),
+                      );
+                    },
+                  ),
                 )),
           ],
         );
@@ -277,8 +286,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildTrackedContent(AsyncValue<List<TrackedScholarship>> async, int tabIndex) {
-    return async.when(
+  Widget _buildTrackedContent(AsyncValue<List<TrackedScholarship>> watchlistAsync, int tabIndex) {
+    return watchlistAsync.when(
       data: (list) {
         final filteredList = list.where((t) {
           if (tabIndex == 1) return t.status != 'APPLIED'; // Saved
@@ -293,11 +302,23 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           );
         }
 
+        // Match the layout of the Matched tab
+        final topItem = filteredList.first;
+        final listItems = filteredList.skip(1).toList();
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (tabIndex == 1) ...[
+              _buildScholarshipHeroCard(
+                topItem.scholarship!,
+                label: "SAVED OPPORTUNITY",
+                isHero: true,
+              ),
+              const SizedBox(height: 35),
+            ],
             Text(
-              tabIndex == 1 ? "Saved Opportunities" : "Your Applications",
+              tabIndex == 1 ? "Your Watchlist" : "Your Applications",
               style: GoogleFonts.plusJakartaSans(
                 color: Colors.white,
                 fontSize: 18,
@@ -305,21 +326,44 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            ...filteredList.map((t) => ScholarshipMatchCard(
-                  title: t.scholarship!.title,
-                  university: t.scholarship!.country ?? 'International',
-                  matchPercent: "${t.scholarship!.matchScore}%",
-                  aiInsight: t.scholarship!.matchReason ?? "Saved to your watchlist.",
-                  fundingType: t.scholarship!.fundType ?? "Scholarship",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ScholarshipDetailScreen(scholarshipId: t.scholarship!.id),
-                      ),
-                    );
-                  },
+            ...listItems.map((t) => Padding(
+                  padding: const EdgeInsets.only(bottom: 15),
+                  child: ScholarshipMatchCard(
+                    title: t.scholarship!.title,
+                    university: t.scholarship!.country ?? 'International',
+                    matchPercent: "${t.scholarship!.matchScore}%",
+                    aiInsight: t.scholarship!.matchReason ?? "Saved to your watchlist.",
+                    fundingType: t.scholarship!.fundType ?? "Scholarship",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ScholarshipDetailScreen(scholarshipId: t.scholarship!.id),
+                        ),
+                      );
+                    },
+                  ),
                 )),
+            // If it's Applied tab, we might just want the regular list or hero for first
+            if (tabIndex == 2 && listItems.isEmpty) 
+               Padding(
+                  padding: const EdgeInsets.only(bottom: 15),
+                  child: ScholarshipMatchCard(
+                    title: topItem.scholarship!.title,
+                    university: topItem.scholarship!.country ?? 'International',
+                    matchPercent: "${topItem.scholarship!.matchScore}%",
+                    aiInsight: topItem.scholarship!.matchReason ?? "Applied",
+                    fundingType: topItem.scholarship!.fundType ?? "Scholarship",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ScholarshipDetailScreen(scholarshipId: topItem.scholarship!.id),
+                        ),
+                      );
+                    },
+                  ),
+                ),
           ],
         );
       },
@@ -352,7 +396,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildPathfinderHeroCard(MatchedScholarship s) {
+  Widget _buildScholarshipHeroCard(
+    MatchedScholarship s, {
+    required String label,
+    bool isHero = false,
+  }) {
+    final watchlistAsync = ref.watch(scholarshipWatchlistProvider);
+    final isSaved = watchlistAsync.value?.any((t) => t.scholarshipId == s.id) ?? false;
+
     return GlassContainer(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -366,10 +417,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(LucideIcons.sparkles, color: DesignSystem.emerald, size: 14),
+                        Icon(
+                          isHero ? LucideIcons.sparkles : LucideIcons.bookmark,
+                          color: DesignSystem.emerald,
+                          size: 14,
+                        ),
                         const SizedBox(width: 5),
                         Text(
-                          "PATHFINDER'S TOP CHOICE",
+                          label,
                           style: GoogleFonts.plusJakartaSans(
                             color: DesignSystem.emerald,
                             fontSize: 10,
@@ -451,10 +506,28 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 ),
               ),
               const SizedBox(width: 15),
-              GlassContainer(
-                padding: const EdgeInsets.all(15),
-                borderRadius: 15,
-                child: const Icon(LucideIcons.bookmark, color: Colors.white, size: 20),
+              GestureDetector(
+                onTap: () {
+                  ref.read(scholarshipWatchlistProvider.notifier).toggleWatchlist(s.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(isSaved ? 'Removed from watchlist' : 'Added to watchlist'),
+                      duration: const Duration(seconds: 2),
+                      backgroundColor: DesignSystem.cardColor,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                },
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(15),
+                  borderRadius: 15,
+                  child: Icon(
+                    isSaved ? LucideIcons.check : LucideIcons.bookmark,
+                    color: isSaved ? DesignSystem.emerald : Colors.white,
+                    size: 20,
+                  ),
+                ),
               ),
             ],
           )
@@ -505,9 +578,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildFloatingSparkleButton() {
     return GestureDetector(
-      onTap: () async {
-        // Trigger Discovery logic could go here
-        await ref.read(scholarshipMatchesProvider.notifier).reload();
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PathfinderChatScreen(),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(16),

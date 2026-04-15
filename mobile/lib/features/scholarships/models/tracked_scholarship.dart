@@ -66,6 +66,28 @@ class TrackedScholarship {
       milestones: milestones,
     );
   }
+
+  TrackedScholarship copyWith({
+    int? id,
+    int? studentId,
+    int? scholarshipId,
+    DateTime? manualDeadline,
+    String? status,
+    int? notificationLeadTime,
+    MatchedScholarship? scholarship,
+    List<ScholarshipMilestone>? milestones,
+  }) {
+    return TrackedScholarship(
+      id: id ?? this.id,
+      studentId: studentId ?? this.studentId,
+      scholarshipId: scholarshipId ?? this.scholarshipId,
+      manualDeadline: manualDeadline ?? this.manualDeadline,
+      status: status ?? this.status,
+      notificationLeadTime: notificationLeadTime ?? this.notificationLeadTime,
+      scholarship: scholarship ?? this.scholarship,
+      milestones: milestones ?? this.milestones,
+    );
+  }
 }
 
 

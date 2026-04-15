@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:mobile/features/core/theme/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:country_picker/country_picker.dart';
@@ -19,6 +21,7 @@ import 'package:mobile/features/core/widgets/glass_container.dart';
 import 'package:mobile/features/core/widgets/primary_button.dart';
 import 'package:mobile/features/onboarding/widgets/onboarding_widgets.dart';
 import 'package:mobile/features/scholarships/widgets/matching_analysis_overlay.dart';
+import 'package:mobile/models/student_profile_model.dart';
 
 class StudentOnboardingScreen extends ConsumerStatefulWidget {
   const StudentOnboardingScreen({super.key});
@@ -37,9 +40,33 @@ class _StudentOnboardingScreenState
   bool _isUploading = false;
   bool _animFinished = false;
 
+  final TextEditingController _gpaController = TextEditingController();
+  final TextEditingController _gradYearController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _uniController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Schedule a post-frame callback to grab initial values safely.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = ref.read(onboardingProvider);
+      if (state.gpa != null) _gpaController.text = state.gpa.toString();
+      if (state.graduationYear != null)
+        _gradYearController.text = state.graduationYear.toString();
+      if (state.city != null) _cityController.text = state.city!;
+      if (state.previousUniversity != null)
+        _uniController.text = state.previousUniversity!;
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
+    _gpaController.dispose();
+    _gradYearController.dispose();
+    _cityController.dispose();
+    _uniController.dispose();
     super.dispose();
   }
 
@@ -318,7 +345,7 @@ class _StudentOnboardingScreenState
               hint: state.gender ?? "Select gender",
               onTap: () => _showOptionsSelector(
                 "Select Gender",
-                ['Male', 'Female', 'Other'],
+                ['Male', 'Female'],
                 (val) => notifier.updateField((s) => s.copyWith(gender: val)),
               ),
             ),
@@ -338,10 +365,7 @@ class _StudentOnboardingScreenState
             CustomTextField(
               hintText: "Enter your city",
               prefixIcon: LucideIcons.mapPin,
-              controller: TextEditingController(text: state.city)
-                ..selection = TextSelection.collapsed(
-                  offset: (state.city ?? '').length,
-                ),
+              controller: _cityController,
               onChanged: (val) =>
                   notifier.updateField((s) => s.copyWith(city: val)),
             ),
@@ -357,6 +381,22 @@ class _StudentOnboardingScreenState
   Widget _buildStep2AcademicProfile() {
     final state = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
+
+    ref.listen<StudentProfileModel>(onboardingProvider, (previous, next) {
+      // Sync controllers if model changes from backend remotely but only if empty
+      if (_gpaController.text.isEmpty && next.gpa != null) {
+        _gpaController.text = next.gpa.toString();
+      }
+      if (_gradYearController.text.isEmpty && next.graduationYear != null) {
+        _gradYearController.text = next.graduationYear.toString();
+      }
+      if (_cityController.text.isEmpty && next.city != null) {
+        _cityController.text = next.city!;
+      }
+      if (_uniController.text.isEmpty && next.previousUniversity != null) {
+        _uniController.text = next.previousUniversity!;
+      }
+    });
 
     final showResearchFields =
         state.currentEducationLevel == "Master's" ||
@@ -468,10 +508,7 @@ class _StudentOnboardingScreenState
             CustomTextField(
               hintText: "University Name",
               prefixIcon: LucideIcons.building2,
-              controller: TextEditingController(text: state.previousUniversity)
-                ..selection = TextSelection.collapsed(
-                  offset: (state.previousUniversity ?? '').length,
-                ),
+              controller: _uniController,
               onChanged: (val) => notifier.updateField(
                 (s) => s.copyWith(previousUniversity: val),
               ),
@@ -489,13 +526,7 @@ class _StudentOnboardingScreenState
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        controller:
-                            TextEditingController(
-                                text: state.gpa?.toString() ?? '',
-                              )
-                              ..selection = TextSelection.collapsed(
-                                offset: (state.gpa?.toString() ?? '').length,
-                              ),
+                        controller: _gpaController,
                         onChanged: (val) => notifier.updateField(
                           (s) => s.copyWith(gpa: double.tryParse(val)),
                         ),
@@ -512,14 +543,7 @@ class _StudentOnboardingScreenState
                       CustomTextField(
                         hintText: "e.g. 2024",
                         keyboardType: TextInputType.number,
-                        controller:
-                            TextEditingController(
-                                text: state.graduationYear?.toString() ?? '',
-                              )
-                              ..selection = TextSelection.collapsed(
-                                offset: (state.graduationYear?.toString() ?? '')
-                                    .length,
-                              ),
+                        controller: _gradYearController,
                         onChanged: (val) => notifier.updateField(
                           (s) => s.copyWith(graduationYear: int.tryParse(val)),
                         ),
@@ -572,10 +596,11 @@ class _StudentOnboardingScreenState
               CustomTextField(
                 hintText: "e.g. Artificial Intelligence",
                 prefixIcon: LucideIcons.search,
-                controller: TextEditingController(text: state.researchArea ?? '')
-                  ..selection = TextSelection.collapsed(
-                    offset: (state.researchArea ?? '').length,
-                  ),
+                controller:
+                    TextEditingController(text: state.researchArea ?? '')
+                      ..selection = TextSelection.collapsed(
+                        offset: (state.researchArea ?? '').length,
+                      ),
                 onChanged: (val) =>
                     notifier.updateField((s) => s.copyWith(researchArea: val)),
               ),
@@ -585,12 +610,16 @@ class _StudentOnboardingScreenState
                 hintText: "Brief summary of your research interest",
                 prefixIcon: LucideIcons.fileText,
                 maxLines: 3,
-                controller: TextEditingController(text: state.proposedResearchTopic ?? '')
-                  ..selection = TextSelection.collapsed(
-                    offset: (state.proposedResearchTopic ?? '').length,
-                  ),
-                onChanged: (val) =>
-                    notifier.updateField((s) => s.copyWith(proposedResearchTopic: val)),
+                controller:
+                    TextEditingController(
+                        text: state.proposedResearchTopic ?? '',
+                      )
+                      ..selection = TextSelection.collapsed(
+                        offset: (state.proposedResearchTopic ?? '').length,
+                      ),
+                onChanged: (val) => notifier.updateField(
+                  (s) => s.copyWith(proposedResearchTopic: val),
+                ),
               ),
             ],
 
@@ -631,7 +660,8 @@ class _StudentOnboardingScreenState
               onTap: () => _showOptionsSelector(
                 "Select Study Mode",
                 ['On-Campus', 'Online', 'Hybrid'],
-                (val) => notifier.updateField((s) => s.copyWith(studyMode: val)),
+                (val) =>
+                    notifier.updateField((s) => s.copyWith(studyMode: val)),
               ),
             ),
 
@@ -784,7 +814,9 @@ class _StudentOnboardingScreenState
                     ),
                     label: Text(
                       "Add Position",
-                      style: DesignSystem.labelStyle(color: DesignSystem.emerald),
+                      style: DesignSystem.labelStyle(
+                        color: DesignSystem.emerald,
+                      ),
                     ),
                   ),
                 ],
@@ -851,7 +883,8 @@ class _StudentOnboardingScreenState
                               size: 18,
                               color: Colors.white24,
                             ),
-                            onPressed: () => notifier.removeWorkExperience(index),
+                            onPressed: () =>
+                                notifier.removeWorkExperience(index),
                           ),
                         ],
                       ),
@@ -939,17 +972,19 @@ class _StudentOnboardingScreenState
             const SizedBox(height: 32),
             Text("Notifications Setup", style: DesignSystem.labelStyle()),
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 Switch(
                   value: state.emailNotif,
                   activeColor: DesignSystem.emerald,
-                  onChanged: (val) => notifier.updateField(
-                    (s) => s.copyWith(emailNotif: val),
-                  ),
+                  onChanged: (val) =>
+                      notifier.updateField((s) => s.copyWith(emailNotif: val)),
                 ),
-                Text("Email Notifications", style: DesignSystem.bodyStyle(fontSize: 14)),
+                Text(
+                  "Email Notifications",
+                  style: DesignSystem.bodyStyle(fontSize: 14),
+                ),
               ],
             ),
             Row(
@@ -961,7 +996,10 @@ class _StudentOnboardingScreenState
                     (s) => s.copyWith(inSystemNotif: val),
                   ),
                 ),
-                Text("In-System Alerts", style: DesignSystem.bodyStyle(fontSize: 14)),
+                Text(
+                  "In-System Alerts",
+                  style: DesignSystem.bodyStyle(fontSize: 14),
+                ),
               ],
             ),
 
@@ -1040,34 +1078,36 @@ class _StudentOnboardingScreenState
             return GlassContainer(
               borderRadius: 0,
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, style: DesignSystem.headingStyle(fontSize: 20)),
-                  const SizedBox(height: 24),
-                  ...options.map(
-                    (opt) => CustomCheckbox(
-                      label: opt,
-                      value: tempSelected.contains(opt),
-                      onChanged: (val) {
-                        setModalState(() {
-                          if (val == true) {
-                            tempSelected.add(opt);
-                          } else {
-                            tempSelected.remove(opt);
-                          }
-                        });
-                        onSelected(tempSelected);
-                      },
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, style: DesignSystem.headingStyle(fontSize: 20)),
+                    const SizedBox(height: 24),
+                    ...options.map(
+                      (opt) => CustomCheckbox(
+                        label: opt,
+                        value: tempSelected.contains(opt),
+                        onChanged: (val) {
+                          setModalState(() {
+                            if (val == true) {
+                              tempSelected.add(opt);
+                            } else {
+                              tempSelected.remove(opt);
+                            }
+                          });
+                          onSelected(tempSelected);
+                        },
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  PrimaryButton(
-                    text: "Apply Selection",
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    const SizedBox(height: 32),
+                    PrimaryButton(
+                      text: "Apply Selection",
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             );
           },
@@ -1101,50 +1141,52 @@ class _StudentOnboardingScreenState
         child: GlassContainer(
           borderRadius: 30,
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Add Experience",
-                style: DesignSystem.headingStyle(fontSize: 22),
-              ),
-              const SizedBox(height: 24),
-              _buildFieldLabel("Company Name"),
-              CustomTextField(
-                hintText: "e.g. Google",
-                controller: companyController,
-                prefixIcon: LucideIcons.building2,
-              ),
-              _buildFieldLabel("Your Role"),
-              CustomTextField(
-                hintText: "e.g. Software Engineer",
-                controller: roleController,
-                prefixIcon: LucideIcons.user,
-              ),
-              _buildFieldLabel("Duration"),
-              CustomTextField(
-                hintText: "e.g. 2021 - Present",
-                controller: durationController,
-                prefixIcon: LucideIcons.calendar,
-              ),
-              const SizedBox(height: 24),
-              PrimaryButton(
-                text: "Save Position",
-                onPressed: () {
-                  if (companyController.text.isNotEmpty &&
-                      roleController.text.isNotEmpty) {
-                    notifier.addWorkExperience({
-                      'company': companyController.text,
-                      'role': roleController.text,
-                      'duration': durationController.text,
-                    });
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Add Experience",
+                  style: DesignSystem.headingStyle(fontSize: 22),
+                ),
+                const SizedBox(height: 24),
+                _buildFieldLabel("Company Name"),
+                CustomTextField(
+                  hintText: "e.g. Google",
+                  controller: companyController,
+                  prefixIcon: LucideIcons.building2,
+                ),
+                _buildFieldLabel("Your Role"),
+                CustomTextField(
+                  hintText: "e.g. Software Engineer",
+                  controller: roleController,
+                  prefixIcon: LucideIcons.user,
+                ),
+                _buildFieldLabel("Duration"),
+                CustomTextField(
+                  hintText: "e.g. 2021 - Present",
+                  controller: durationController,
+                  prefixIcon: LucideIcons.calendar,
+                ),
+                const SizedBox(height: 24),
+                PrimaryButton(
+                  text: "Save Position",
+                  onPressed: () {
+                    if (companyController.text.isNotEmpty &&
+                        roleController.text.isNotEmpty) {
+                      notifier.addWorkExperience({
+                        'company': companyController.text,
+                        'role': roleController.text,
+                        'duration': durationController.text,
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
@@ -1237,28 +1279,37 @@ class _StudentOnboardingScreenState
     final searchController = TextEditingController();
     List<String> results = [];
     bool searching = false;
+    Timer? debounce;
 
     // Helper to fetch unis
     Future<void> fetchUnis(String? val, StateSetter setModalState) async {
+      if (!mounted) return;
       setModalState(() => searching = true);
+
       final countries = ref.read(onboardingProvider).preferredCountries;
       try {
         List<String> allUnis = [];
+        final query = val?.trim() ?? "";
+
         if (countries.isEmpty) {
-          final query = val ?? "University";
+          final searchQuery = query.isEmpty ? "University" : query;
           final response = await http.get(
-            Uri.parse('http://universities.hipolabs.com/search?name=$query'),
+            Uri.parse(
+              'http://universities.hipolabs.com/search?name=${Uri.encodeComponent(searchQuery)}',
+            ),
           );
           if (response.statusCode == 200) {
             final List data = jsonDecode(response.body);
             allUnis = data.map((u) => u['name'] as String).toList();
           }
         } else {
-          final query = val ?? "";
+          // Fetch from all selected countries
           final futures = countries.map(
             (c) => http.get(
               Uri.parse(
-                'http://universities.hipolabs.com/search?name=$query&country=${Uri.encodeComponent(c)}',
+                query.isEmpty 
+                  ? 'http://universities.hipolabs.com/search?country=${Uri.encodeComponent(c)}'
+                  : 'http://universities.hipolabs.com/search?name=${Uri.encodeComponent(query)}&country=${Uri.encodeComponent(c)}',
               ),
             ),
           );
@@ -1271,14 +1322,17 @@ class _StudentOnboardingScreenState
           }
         }
 
-        setModalState(() {
-          results = allUnis.toSet().toList();
-          if (results.length > 50)
-            results = results.sublist(0, 50); // Limit to 50 for performance
-          searching = false;
-        });
+        if (mounted) {
+          setModalState(() {
+            results = allUnis.toSet().toList();
+            // Sort to show more relevant ones first or alphabetically
+            results.sort();
+            if (results.length > 60) results = results.sublist(0, 60);
+            searching = false;
+          });
+        }
       } catch (e) {
-        setModalState(() => searching = false);
+        if (mounted) setModalState(() => searching = false);
       }
     }
 
@@ -1288,15 +1342,11 @@ class _StudentOnboardingScreenState
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
-          // Pre-fetch popular universities from selected countries if empty
-          if (results.isEmpty && !searching) {
-            final countries = ref.read(onboardingProvider).preferredCountries;
-            if (countries.isNotEmpty) {
-              Future.delayed(
-                Duration.zero,
-                () => fetchUnis(null, setModalState),
-              );
-            }
+          if (results.isEmpty && !searching && searchController.text.isEmpty) {
+            Future.delayed(
+              Duration.zero,
+              () => fetchUnis(null, setModalState),
+            );
           }
 
           return Padding(
@@ -1309,8 +1359,17 @@ class _StudentOnboardingScreenState
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white10,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    "Search Universities",
+                    "Select Universities",
                     style: DesignSystem.headingStyle(fontSize: 22),
                   ),
                   const SizedBox(height: 20),
@@ -1319,18 +1378,34 @@ class _StudentOnboardingScreenState
                     prefixIcon: LucideIcons.search,
                     controller: searchController,
                     onChanged: (val) {
-                      if (val.length < 3) return;
-                      fetchUnis(val, setModalState);
+                      if (debounce?.isActive ?? false) debounce?.cancel();
+                      debounce = Timer(const Duration(milliseconds: 600), () {
+                        fetchUnis(val, setModalState);
+                      });
                     },
                   ),
                   const SizedBox(height: 10),
                   if (searching)
-                    const CircularProgressIndicator(color: DesignSystem.emerald)
+                    const Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(
+                        color: DesignSystem.emerald,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  else if (results.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: Text(
+                        "No universities found",
+                        style: DesignSystem.bodyStyle(color: Colors.white24),
+                      ),
+                    )
                   else
                     Flexible(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.4,
+                          maxHeight: MediaQuery.of(context).size.height * 0.45,
                         ),
                         child: ListView.builder(
                           shrinkWrap: true,
@@ -1341,26 +1416,31 @@ class _StudentOnboardingScreenState
                                 .watch(onboardingProvider)
                                 .preferredUniversities
                                 .contains(uni);
-                            return CustomCheckbox(
-                              label: uni,
-                              value: isSelected,
-                              onChanged: (val) {
-                                final current = ref
-                                    .read(onboardingProvider)
-                                    .preferredUniversities;
-                                final updated = List<String>.from(current);
-                                if (val == true) {
-                                  updated.add(uni);
-                                } else {
-                                  updated.remove(uni);
-                                }
-                                notifier.updateField(
-                                  (s) => s.copyWith(
-                                    preferredUniversities: updated,
-                                  ),
-                                );
-                                setModalState(() {}); // Refresh local UI
-                              },
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                unselectedWidgetColor: Colors.white24,
+                              ),
+                              child: CustomCheckbox(
+                                label: uni,
+                                value: isSelected,
+                                onChanged: (val) {
+                                  final current = ref
+                                      .read(onboardingProvider)
+                                      .preferredUniversities;
+                                  final updated = List<String>.from(current);
+                                  if (val == true) {
+                                    updated.add(uni);
+                                  } else {
+                                    updated.remove(uni);
+                                  }
+                                  notifier.updateField(
+                                    (s) => s.copyWith(
+                                      preferredUniversities: updated,
+                                    ),
+                                  );
+                                  setModalState(() {});
+                                },
+                              ),
                             );
                           },
                         ),
@@ -1368,7 +1448,7 @@ class _StudentOnboardingScreenState
                     ),
                   const SizedBox(height: 24),
                   PrimaryButton(
-                    text: "Done",
+                    text: "Save Selection",
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],

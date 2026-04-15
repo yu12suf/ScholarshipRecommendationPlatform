@@ -62,14 +62,14 @@ final dashboardDataProvider = Provider<DashboardState>((ref) {
   final statsState = ref.watch(dashboardStatsProvider);
 
   final user = authState.valueOrNull;
-  final watchlist = watchlistState.valueOrNull ?? [];
-  final matches = matchesState.valueOrNull ?? [];
-  final backendStats = statsState.valueOrNull ?? {};
-
-  final isLoading = authState.isLoading || watchlistState.isLoading || matchesState.isLoading || statsState.isLoading;
+  final isLoading = authState.isLoading || (watchlistState.isLoading && !watchlistState.hasValue) || matchesState.isLoading || (statsState.isLoading && !statsState.hasValue);
   final error = authState.hasError ? authState.error.toString() : 
                (watchlistState.hasError ? watchlistState.error.toString() : 
                (matchesState.hasError ? matchesState.error.toString() : null));
+
+  final watchlist = watchlistState.value ?? [];
+  final matches = matchesState.valueOrNull ?? [];
+  final backendStats = statsState.value ?? {};
 
   // 1. Calculate Stats (Prefer backend stats, fallback to local tracking)
   int saved = 0;
@@ -85,13 +85,14 @@ final dashboardDataProvider = Provider<DashboardState>((ref) {
     for (final tracked in watchlist) {
       if (tracked.status == 'NOT_STARTED' || tracked.status == 'WATCHING') {
         saved++;
-      } else if (tracked.status == 'APPLIED' || tracked.status == 'SUBMITTED') {
+      } else if (tracked.status == 'APPLIED' || tracked.status == 'SUBMITTED' || tracked.status == 'ACCEPTED') {
         applied++;
       }
 
-      if (tracked.manualDeadline != null) {
-        final diff = tracked.manualDeadline!.difference(now).inDays;
-        if (diff >= 0 && diff <= 7) {
+      final effectiveDeadline = tracked.manualDeadline ?? tracked.scholarship?.deadline;
+      if (effectiveDeadline != null) {
+        final diff = effectiveDeadline.difference(now).inDays;
+        if (diff >= 0 && diff <= 14) { 
           dueSoon++;
         }
       }

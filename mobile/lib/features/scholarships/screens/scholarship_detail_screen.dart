@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import 'package:mobile/models/models.dart';
 import 'package:mobile/features/scholarships/providers/scholarship_providers.dart';
+import 'package:mobile/features/dashboard/providers/dashboard_provider.dart';
 
 import 'package:mobile/features/core/widgets/glass_container.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -408,6 +409,15 @@ class _ScholarshipDetailScreenState extends ConsumerState<ScholarshipDetailScree
             Expanded(
               child: GestureDetector(
                 onTap: () async {
+                  // 1. Mark as Applied / Track it immediately
+                  try {
+                    await ref.read(scholarshipWatchlistProvider.notifier).trackAndApply(widget.scholarshipId);
+                    ref.invalidate(dashboardStatsProvider);
+                  } catch (e) {
+                    debugPrint('Automatic tracking error: $e');
+                  }
+
+                  // 2. Launch external application URL
                   if (applicationUrl != null && applicationUrl.isNotEmpty) {
                     final uri = Uri.parse(applicationUrl);
                     if (await canLaunchUrl(uri)) {
@@ -415,14 +425,14 @@ class _ScholarshipDetailScreenState extends ConsumerState<ScholarshipDetailScree
                     } else {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Could not launch application URL')),
+                          const SnackBar(content: Text('Could not launch application URL')),
                         );
                       }
                     }
                   } else {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Application URL not available')),
+                        const SnackBar(content: Text('No application URL available for this scholarship')),
                       );
                     }
                   }
