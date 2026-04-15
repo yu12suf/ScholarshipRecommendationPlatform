@@ -322,6 +322,7 @@ export class CounselorController {
 
   static async getBookingDetails(req: Request, res: Response, next: NextFunction) {
     try {
+      console.log('[Controller] getBookingDetails called, id:', req.params.id);
       const data = await CounselorService.getBookingDetails(req.user!.id, Number(req.params.id), req.user!.role);
       res.status(200).json({ success: true, data });
     } catch (error) {

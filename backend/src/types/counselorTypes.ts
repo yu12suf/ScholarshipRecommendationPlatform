@@ -139,6 +139,7 @@ export interface BookingResponse {
     counselor?: {
         name: string;
         email: string;
+        userId?: number;
     };
     student?: {
         name: string;

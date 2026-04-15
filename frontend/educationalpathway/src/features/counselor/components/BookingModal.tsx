@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import { 
   Calendar, 
   Clock, 
@@ -10,12 +12,14 @@ import {
   Phone, 
   MessageSquare,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { getCounselorSlotsById, bookSession, AvailabilitySlot, BookingConfirmation } from '../api/counselor-api';
-import { format, parseISO, isToday, isTomorrow } from 'date-fns';
+import api from '@/lib/api';
+import { format, parseISO, isToday, isTomorrow, isPast, isBefore, startOfToday } from 'date-fns';
 
 interface BookingModalProps {
   counselor: {
@@ -47,8 +51,22 @@ export const BookingModal = ({ counselor, isOpen, onClose, onSuccess }: BookingM
     setError(null);
     try {
       const data = await getCounselorSlotsById(counselor.id);
+      const today = startOfToday();
+      const now = new Date();
+      
       const availableSlots = Array.isArray(data) 
-        ? data.filter((slot: AvailabilitySlot) => slot.status === 'available')
+        ? data.filter((slot: AvailabilitySlot) => {
+            if (slot.status !== 'available') return false;
+            try {
+              const slotStart = parseISO(slot.startTime);
+              const slotDate = startOfToday(slotStart);
+              if (isBefore(slotDate, today)) return false;
+              if (isBefore(slotStart, now)) return false;
+              return true;
+            } catch {
+              return false;
+            }
+          })
         : [];
       setSlots(availableSlots);
     } catch (err) {
@@ -245,6 +263,10 @@ interface BookingSuccessModalProps {
 }
 
 export const BookingSuccessModal = ({ booking, isOpen, onClose }: BookingSuccessModalProps) => {
+  const router = useRouter();
+  const [message, setMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+
   if (!isOpen || !booking) return null;
 
   const formatDate = (dateStr?: string) => {
@@ -265,11 +287,33 @@ export const BookingSuccessModal = ({ booking, isOpen, onClose }: BookingSuccess
     }
   };
 
+  const handleSendMessage = async () => {
+    if (!message.trim() || !booking.counselor?.userId) return;
+    
+    setSendingMessage(true);
+    try {
+      // Start conversation and send message
+      await api.post('/chat/start', { receiverId: booking.counselor.userId });
+      await api.post('/chat/send', { 
+        receiverId: booking.counselor.userId, 
+        content: message.trim() 
+      });
+      toast.success('Message sent! You can continue chatting from the Messages page.');
+      // Clear the message after sending
+      setMessage('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast.error('Could not send message. Try again from the chat page.');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative w-full max-w-md bg-card rounded-xl shadow-2xl border border-border overflow-hidden">
+      <div className="relative w-full max-w-md max-h-[85vh] bg-card rounded-xl shadow-2xl border border-border overflow-y-auto">
         <div className="p-8 text-center">
           <div className="h-16 w-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="h-8 w-8 text-success" />
@@ -293,7 +337,7 @@ export const BookingSuccessModal = ({ booking, isOpen, onClose }: BookingSuccess
               <span className="text-sm text-muted-foreground">Time</span>
               <span className="font-medium">{formatTime(booking.slot?.startTime)}</span>
             </div>
-            {booking.meetingLink && (
+            {booking.meetingLink ? (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Meeting Link</span>
                 <a 
@@ -305,12 +349,66 @@ export const BookingSuccessModal = ({ booking, isOpen, onClose }: BookingSuccess
                   Join Session
                 </a>
               </div>
+            ) : (
+              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                The meeting link will be available after the counselor prepares the session.
+              </div>
             )}
           </div>
 
-          <Button onClick={onClose} className="w-full primary-gradient text-primary-foreground">
-            Done
-          </Button>
+          {/* Message Section */}
+          <div className="mb-4">
+            <label className="text-sm text-muted-foreground block mb-2">
+              Send a message to {booking.counselor?.name}
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Hi! I'm excited for our session. I wanted to ask..."
+              className="w-full h-20 p-3 bg-muted border border-border rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              maxLength={500}
+            />
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-muted-foreground">{message.length}/500</span>
+              <Button
+                size="sm"
+                onClick={handleSendMessage}
+                disabled={!message.trim() || sendingMessage}
+                className="flex items-center gap-1"
+              >
+                {sendingMessage ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-3 w-3" />
+                    Send Message
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                onClose();
+                router.push('/dashboard/student/bookings');
+              }} 
+              className="flex-1"
+            >
+              View Bookings
+            </Button>
+            <Button 
+              onClick={onClose} 
+              className="flex-1 primary-gradient text-primary-foreground"
+            >
+              Done
+            </Button>
+          </div>
         </div>
       </div>
     </div>

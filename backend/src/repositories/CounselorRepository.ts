@@ -24,6 +24,14 @@ export class CounselorRepository {
         return Counselor.findByPk(id);
     }
 
+    static async findByIdWithUser(id: number): Promise<Counselor | null> {
+        if (!id || id <= 0) return null;
+        return Counselor.findOne({
+            where: { id },
+            include: [{ model: User, as: "user" }]
+        });
+    }
+
     static async findByUserIdWithUser(userId: number): Promise<Counselor | null> {
         return Counselor.findOne({
             where: { userId },

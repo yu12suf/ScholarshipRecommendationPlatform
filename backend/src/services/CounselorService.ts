@@ -448,12 +448,19 @@ export class CounselorService {
   }
 
   static async getCounselorSlotsPublic(counselorId: number): Promise<SlotResponse[]> {
+    const now = new Date();
     const filters = { 
       status: 'available',
-      fromDate: new Date() // Only show future available slots
+      fromDate: now
     };
     const slots = await AvailabilitySlotRepository.findAllByCounselor(counselorId, filters);
-    return slots.map((slot) => this.formatSlotResponse(slot));
+    return slots
+      .filter(slot => {
+        const slotStart = new Date(slot.startTime);
+        const slotEnd = new Date(slot.endTime);
+        return slotStart > now || slotEnd > now;
+      })
+      .map((slot) => this.formatSlotResponse(slot));
   }
 
   static async updateSlot(counselorId: number, slotId: number, dto: UpdateSlotDto): Promise<SlotResponse> {
@@ -489,13 +496,14 @@ export class CounselorService {
       throw httpError(403, "Counselor is not available for booking");
     }
 
-    const meetingLink = slot.meetingLink || `/dashboard/student/session/${slot.id}`;
+    // Don't set meeting link immediately - it will be generated when counselor prepares the room
+    // This is best practice - link only available closer to session time
     const booking = await BookingRepository.create({
       studentId: student.id,
       counselorId: slot.counselorId,
       slotId: slot.id,
       status: "confirmed",
-      meetingLink,
+      meetingLink: null, // Will be set when counselor prepares the room
     });
     
     // Fetch the booking with all associations for proper response formatting
@@ -508,12 +516,13 @@ export class CounselorService {
     await AvailabilitySlotRepository.update(slot.id, {
       status: "booked",
       reservedStudentId: student.id,
-      meetingLink,
+      meetingLink: null,
     });
 
+    const studentUser = await User.findByPk(userId);
+    const counselorUser = await User.findByPk(counselor.userId);
+
     try {
-      const studentUser = await User.findByPk(userId);
-      const counselorUser = await User.findByPk(counselor.userId);
 
       if (studentUser) {
         await NotificationService.createNotification(
@@ -536,7 +545,30 @@ export class CounselorService {
       console.error('[createBooking] Failed to send notifications:', notifError);
     }
 
-    return this.formatBookingResponse(bookingWithAssociations);
+    return {
+      id: booking.id,
+      studentId: booking.studentId,
+      counselorId: booking.counselorId,
+      slotId: booking.slotId,
+      status: booking.status,
+      meetingLink: null, // Not available yet - will be shown when counselor prepares room
+      startedAt: booking.startedAt,
+      completedAt: booking.completedAt,
+      createdAt: booking.createdAt,
+      slot: {
+        startTime: slot.startTime instanceof Date ? slot.startTime.toISOString() : String(slot.startTime),
+        endTime: slot.endTime instanceof Date ? slot.endTime.toISOString() : String(slot.endTime),
+        consultationMode: slot.consultationMode || 'video',
+      },
+      counselor: {
+        name: counselorUser?.name || 'Unknown Counselor',
+        email: counselorUser?.email || '',
+        userId: counselorUser?.id,
+      },
+      student: {
+        name: studentUser?.name || 'Unknown Student',
+      },
+    };
   }
 
   static async rescheduleBooking(userId: number, bookingId: number, dto: RescheduleBookingDto): Promise<BookingResponse> {
@@ -756,23 +788,57 @@ export class CounselorService {
   }
 
   static async getStudentBookings(userId: number): Promise<BookingResponse[]> {
-    let student = await Student.findOne({ where: { userId } });
+    const student = await Student.findOne({ where: { userId } });
     if (!student) {
-      student = await Student.create({ userId });
+      return [];
     }
     
     const bookings = await BookingRepository.findByStudent(student.id);
+    
+    for (const booking of bookings) {
+      if (booking.counselorId && !(booking as any).counselor?.user) {
+        const counselorWithUser = await CounselorRepository.findByIdWithUser(booking.counselorId);
+        if (counselorWithUser) {
+          const user = await User.findByPk(counselorWithUser.userId);
+          (booking as any).counselor = counselorWithUser;
+          (booking as any).counselor.user = user;
+        }
+      }
+      
+      if (booking.slotId && !(booking as any).slot) {
+        const slot = await AvailabilitySlotRepository.findById(booking.slotId);
+        (booking as any).slot = slot;
+      }
+    }
+    
     return bookings.map(booking => this.formatBookingResponse(booking));
   }
 
   static async getStudentUpcomingBookings(userId: number): Promise<BookingResponse[]> {
-    let student = await Student.findOne({ where: { userId } });
+    const student = await Student.findOne({ where: { userId } });
     if (!student) {
-      student = await Student.create({ userId });
+      return [];
     }
     
     const bookings = await BookingRepository.findUpcomingByStudent(student.id, true);
     const now = new Date();
+    
+    for (const booking of bookings) {
+      if (booking.counselorId && !(booking as any).counselor?.user) {
+        const counselorWithUser = await CounselorRepository.findByIdWithUser(booking.counselorId);
+        if (counselorWithUser) {
+          const user = await User.findByPk(counselorWithUser.userId);
+          (booking as any).counselor = counselorWithUser;
+          (booking as any).counselor.user = user;
+        }
+      }
+      
+      if (booking.slotId && !(booking as any).slot) {
+        const slot = await AvailabilitySlotRepository.findById(booking.slotId);
+        (booking as any).slot = slot;
+      }
+    }
+    
     return bookings
       .filter((booking) => {
         const start = (booking as any).slot?.startTime;
@@ -783,16 +849,26 @@ export class CounselorService {
 
   static async getBookingDetails(userId: number, bookingId: number, role: UserRole): Promise<BookingResponse> {
     const booking = await BookingRepository.findByIdWithAssociations(bookingId);
+    console.log('[getBookingDetails] booking:', booking?.id, 'slot:', booking?.slot ? 'exists' : 'null', 'counselor:', booking?.counselor ? 'exists' : 'null');
     if (!booking) throw httpError(404, "Booking not found");
     
-    const counselor = await CounselorRepository.findByUserId(userId);
     const student = await Student.findOne({ where: { userId } });
     
     if (role === UserRole.STUDENT && student?.id !== booking.studentId) {
       throw httpError(403, "Unauthorized to view this booking");
     }
-    if (role === UserRole.COUNSELOR && counselor?.id !== booking.counselorId) {
-      throw httpError(403, "Unauthorized to view this booking");
+    
+    if (booking.counselorId && !booking.counselor) {
+      console.log('[getBookingDetails] fetching counselor, counselorId:', booking.counselorId);
+      const counselorWithUser = await CounselorRepository.findByIdWithUser(booking.counselorId);
+      console.log('[getBookingDetails] counselorWithUser:', counselorWithUser?.id, 'user:', counselorWithUser?.user?.name);
+      (booking as any).counselor = counselorWithUser;
+      (booking as any).counselor.user = counselorWithUser ? (await User.findByPk(counselorWithUser.userId)) : null;
+    }
+    
+    if (booking.slotId && !booking.slot) {
+      const slot = await AvailabilitySlotRepository.findById(booking.slotId);
+      (booking as any).slot = slot;
     }
     
     return this.formatBookingResponse(booking);
@@ -1041,6 +1117,8 @@ export class CounselorService {
     const counselor = booking.counselor as Counselor | undefined;
     const student = booking.student as Student | undefined;
     
+    const counselorName = counselor?.user ? (counselor.user as User).name : `Counselor #${booking.counselorId}`;
+    
     return {
       id: booking.id,
       studentId: booking.studentId,
@@ -1060,7 +1138,7 @@ export class CounselorService {
         name: (counselor.user as User).name,
         email: (counselor.user as User).email,
         userId: (counselor.user as User).id,
-      } : undefined,
+      } : { name: `Counselor #${booking.counselorId}`, email: '' },
       student: student?.user ? {
         name: (student.user as User).name,
       } : undefined,

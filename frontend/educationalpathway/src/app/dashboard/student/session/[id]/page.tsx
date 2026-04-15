@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { 
   Calendar, 
   Clock, 
@@ -9,14 +9,13 @@ import {
   MessageSquare, 
   User, 
   ArrowLeft, 
-  Loader2, 
-  Send,
-  X
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { getBookingDetails, getBookingThread, StudentBooking, sendBookingMessage } from '@/features/counselor/api/counselor-api';
+import { getBookingDetails, StudentBooking } from '@/features/counselor/api/counselor-api';
 import { VideoCall } from '@/components/video/VideoCall';
 import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -34,22 +33,20 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const bookingId = parseInt(resolvedParams.id);
 
   const [booking, setBooking] = useState<StudentBooking | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'video' | 'messages'>('video');
-  const [messageInput, setMessageInput] = useState('');
-  const [sendingMessage, setSendingMessage] = useState(false);
   const [inCall, setInCall] = useState(false);
 
   useEffect(() => {
     fetchBookingDetails();
-    fetchMessages();
   }, [bookingId]);
 
   const fetchBookingDetails = async () => {
     try {
       const response = await getBookingDetails(bookingId);
-      if (response.success) {
+      console.log('[Session] getBookingDetails response:', response);
+      if (response && response.id) {
+        setBooking(response);
+      } else if (response && response.data && response.data.id) {
         setBooking(response.data);
       }
     } catch (error) {
@@ -57,46 +54,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       toast.error('Failed to load booking details');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchMessages = async () => {
-    try {
-      const response = await getBookingThread(bookingId);
-      if (response.success) {
-        setMessages(response.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch messages:', error);
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!messageInput.trim() || !booking?.counselor) return;
-
-    setSendingMessage(true);
-    try {
-      const counselorData = booking.counselor as any;
-      const counselorUserId = counselorData?.userId;
-      
-      if (!counselorUserId) {
-        toast.error('Cannot send message: counselor user ID not available');
-        return;
-      }
-
-      await sendBookingMessage(bookingId, {
-        receiverId: counselorUserId,
-        body: messageInput.trim()
-      });
-
-      setMessageInput('');
-      await fetchMessages();
-      toast.success('Message sent');
-    } catch (error: any) {
-      console.error('Failed to send message:', error);
-      toast.error(error?.response?.data?.message || 'Failed to send message');
-    } finally {
-      setSendingMessage(false);
     }
   };
 
@@ -175,24 +132,23 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
         <div className="flex items-center gap-2">
           <Button
-            variant={activeTab === 'video' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('video')}
+            variant="default"
           >
             <Video className="h-4 w-4 mr-2" />
             Video Call
           </Button>
-          <Button
-            variant={activeTab === 'messages' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('messages')}
-          >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Messages
-          </Button>
+          <Link href="/dashboard/student/chat">
+            <Button variant="outline">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Open Chat
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {activeTab === 'video' && (
-        <Card>
+      {(
+<Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Video className="h-5 w-5 text-primary" />
@@ -250,17 +206,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                       <Video className="h-5 w-5 mr-2" />
                       Start Video Call
                     </Button>
-                  ) : booking.status === 'completed' ? (
-                    <div className="text-center text-muted-foreground">
-                      This session has been completed.
-                    </div>
-                  ) : booking.status === 'cancelled' ? (
-                    <div className="text-center text-destructive">
-                      This session was cancelled.
-                    </div>
                   ) : (
-                    <div className="text-center text-muted-foreground">
-                      This session cannot be joined at this time.
+                    <div className="text-center text-muted-foreground text-sm py-4">
+                      Session {booking.status}
                     </div>
                   )}
                 </div>
@@ -268,74 +216,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {activeTab === 'messages' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              Messages
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {messages.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-40" />
-                  <p>No messages yet. Start the conversation!</p>
-                </div>
-              ) : (
-                messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.senderUserId === booking?.counselorId ? 'justify-start' : 'justify-end'}`}
-                  >
-                    <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
-                        message.senderUserId === booking?.counselorId
-                          ? 'bg-muted'
-                          : 'bg-primary text-primary-foreground'
-                      }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      <p className="text-xs mt-1 opacity-70">
-                        {format(parseISO(message.createdAt), 'MMM d, h:mm a')}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <Input
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                placeholder="Type a message..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                disabled={sendingMessage}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!messageInput.trim() || sendingMessage}
-                size="icon"
-              >
-                {sendingMessage ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+)}
     </div>
   );
 }
