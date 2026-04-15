@@ -4,6 +4,13 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
+type RefreshTokenResponse = {
+  accessToken?: string;
+  data?: {
+    accessToken?: string;
+  };
+};
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
   headers: {
@@ -15,7 +22,8 @@ const api = axios.create({
 // Helper to extract error messages without using 'any'
 export const getErrorMessage = (error: unknown, defaultMessage: string = 'Something went wrong'): string => {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || error.message || defaultMessage;
+    const responseData = error.response?.data as { message?: string; error?: string; details?: string } | undefined;
+    return responseData?.message || responseData?.error || responseData?.details || error.message || defaultMessage;
   }
   return error instanceof Error ? error.message : defaultMessage;
 };
@@ -51,11 +59,16 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`, {}, {
+        const refreshUrl = `${api.defaults.baseURL}/auth/refresh-token`;
+        const response = await axios.post<RefreshTokenResponse>(refreshUrl, {}, {
           withCredentials: true
         });
 
-        const { accessToken } = response.data;
+        const accessToken = response.data?.accessToken || response.data?.data?.accessToken;
+        if (!accessToken) {
+          throw new Error('Refresh token response did not include accessToken');
+        }
+
         localStorage.setItem('accessToken', accessToken);
 
         if (originalRequest.headers) {

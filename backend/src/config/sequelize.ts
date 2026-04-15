@@ -23,6 +23,8 @@ import {
   ChatMessage,
   TrackedScholarship,
   ScholarshipMilestone,
+  VisaGuideline,
+  VisaMockInterview,
 } from "../models/index.js";
 import configs from "./configs.js";
 
@@ -75,7 +77,9 @@ export const sequelize = new Sequelize({
     ConversationParticipant,
     ChatMessage,
     TrackedScholarship,
-    ScholarshipMilestone
+    ScholarshipMilestone,
+    VisaGuideline,
+    VisaMockInterview,
   ], // Add all models here
 } as SequelizeOptions);
 

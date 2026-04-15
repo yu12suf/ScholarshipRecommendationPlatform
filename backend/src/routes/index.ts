@@ -4,11 +4,11 @@ import onboardingRouter from "./onboardingRoutes.js";
 import counselorRouter from "./counselorRoutes.js";
 import scholarshipRouter from "./scholarshipRoutes.js";
 import assessmentRouter from "./assessmentRouter.js";
-import interviewRouter from "./interviewRoutes.js";
 import notificationRouter from "./notificationRoutes.js";
 import videoRouter from "./videoRoutes.js";
 import learningPathRouter from "./learningPathRoutes.js";
 import chatRouter from "./chatRoutes.js";
+import visaRoutes from "./visaRoutes.js";
 
 export default {
   userRouter,
@@ -17,9 +17,9 @@ export default {
   counselorRouter,
   scholarshipRouter,
   assessmentRouter,
-  interviewRouter,
   videoRouter,
   learningPathRouter,
   notificationRouter,
   chatRouter,
+  visaRoutes,
 };
