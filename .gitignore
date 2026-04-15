@@ -30,7 +30,7 @@ backend/test-db.js
 *.njsproj
 *.sln
 *.sw?
-
+backend/uploads/
 # Logs
 npm-debug.log*
 yarn-debug.log*
