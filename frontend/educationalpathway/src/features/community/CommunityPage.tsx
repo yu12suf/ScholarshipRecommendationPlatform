@@ -40,7 +40,9 @@ import {
   EyeOff,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -56,6 +58,14 @@ interface GroupFormData {
 
 export default function CommunityPage() {
   const { user } = useAuth();
+  
+  // Local dark mode state for Community page only
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // Toggle night mode - local to community page only
+  const toggleNightMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
   
   const [myGroups, setMyGroups] = useState<CommunityGroup[]>([]);
   const [allGroups, setAllGroups] = useState<CommunityGroup[]>([]);
@@ -123,6 +133,31 @@ export default function CommunityPage() {
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
+  };
+
+  // Debounced search ref
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced search like Telegram
+  const debouncedSearch = (query: string) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      if (!query.trim()) {
+        fetchGroups();
+        return;
+      }
+      communityApi.searchGroups(query)
+        .then((res: any) => {
+          const searchedGroups = res?.data?.groups || res?.groups || [];
+          setAllGroups(searchedGroups);
+        })
+        .catch((error) => {
+          console.error('Error searching groups:', error);
+        });
+    }, 300); // 300ms delay like Telegram
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -507,21 +542,6 @@ export default function CommunityPage() {
     }
   };
 
-  // Search groups
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      fetchGroups();
-      return;
-    }
-    try {
-      const res = await communityApi.searchGroups(searchQuery);
-      setAllGroups((res as any)?.data?.groups || (res as any)?.groups || []);
-    } catch (error) {
-      console.error('Error searching groups:', error);
-    }
-  };
-
   // Search users to add
   const handleSearchUsers = async (query: string) => {
     setUserSearchQuery(query);
@@ -730,7 +750,7 @@ export default function CommunityPage() {
   }, {} as Record<string, CommunityMessage[]>);
 
   return (
-    <div className="flex flex-col bg-slate-950 h-screen">
+    <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-slate-950' : 'bg-gray-100'}`}>
       {/* Toast Notification */}
       <AnimatePresence>
         {toast.show && (
@@ -740,7 +760,7 @@ export default function CommunityPage() {
             exit={{ opacity: 0, y: -50, x: '-50%' }}
             className={`fixed top-4 left-1/2 z-[200] px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
               toast.type === 'success' ? 'bg-emerald-600' :
-              toast.type === 'error' ? 'bg-red-600' : 'bg-slate-700'
+              toast.type === 'error' ? 'bg-red-600' : isDarkMode ? 'bg-slate-700' : 'bg-gray-800'
             }`}
           >
             {toast.type === 'success' && <CheckCircle className="h-5 w-5 text-white" />}
@@ -752,32 +772,67 @@ export default function CommunityPage() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="h-16 border-b border-slate-800 bg-slate-900 flex items-center justify-between px-4 shrink-0">
+      <header className={`h-16 border-b ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-300 bg-white'} flex items-center justify-between px-4 shrink-0`}>
         <div className="flex items-center gap-3">
           <Link href="/dashboard/student" className="lg:hidden">
-            <ArrowLeft className="h-5 w-5 text-slate-400" />
+            <ArrowLeft className={`h-5 w-5 ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`} />
           </Link>
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <MessageCircle className="h-5 w-5 text-emerald-400" />
+            <div className={`h-9 w-9 rounded-full ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'} flex items-center justify-center`}>
+              <MessageCircle className={`h-5 w-5 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
             </div>
-            <span className="text-lg font-bold text-white">Community</span>
+            <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Community</span>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <form onSubmit={handleSearch} className="hidden md:flex items-center">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                type="text"
-                placeholder="Search groups..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 w-64 bg-slate-800 border-slate-700 pl-9 text-sm"
-              />
-            </div>
-          </form>
+          {/* Night Mode Toggle - Local to Community page only */}
+          <button
+            onClick={toggleNightMode}
+            className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-gray-200'}`}
+            title={isDarkMode ? 'Switch to light mode' : 'Switch to night mode'}
+          >
+            {isDarkMode ? (
+              <Sun className="h-5 w-5 text-yellow-400" />
+            ) : (
+              <Moon className="h-5 w-5 text-gray-600" />
+            )}
+          </button>
+          
+          {/* Search - always visible like Telegram */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                debouncedSearch(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                  }
+                  // Immediate search on Enter
+                  if (!searchQuery.trim()) {
+                    fetchGroups();
+                  } else {
+                    communityApi.searchGroups(searchQuery)
+                      .then((res: any) => {
+                        const searchedGroups = res?.data?.groups || res?.groups || [];
+                        setAllGroups(searchedGroups);
+                      })
+                      .catch((error) => {
+                        console.error('Error searching groups:', error);
+                      });
+                  }
+                }
+              }}
+              className={`h-9 w-48 md:w-64 pl-9 text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+            />
+          </div>
           <Button
             onClick={() => setShowCreateModal(true)}
             size="sm"
@@ -791,102 +846,114 @@ export default function CommunityPage() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Groups Sidebar */}
-        <aside className="w-80 border-r border-slate-800 bg-slate-900 flex flex-col shrink-0">
-          <div className="p-4 border-b border-slate-800">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">My Groups</h2>
+        <aside className={`w-80 border-r ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-300 bg-gray-50'} flex flex-col shrink-0`}>
+          <div className={`p-4 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-300'} max-h-[45%] overflow-y-auto`}>
+            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-3 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>My Groups</h2>
             {myGroups.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">No groups yet. Create or join one!</p>
+              <p className={`text-sm text-center py-4 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>No groups yet. Create or join one!</p>
             ) : (
               <div className="space-y-1">
-                {myGroups.slice(0, 5).map(group => (
+                {myGroups.map(group => (
                   <div
                     key={group.id}
                     onClick={() => setSelectedGroup({ ...group, isMember: true, isAdmin: group.role === 'admin' || group.role === 'moderator' })}
                     className={`w-full flex items-center gap-3 p-2 rounded-lg transition cursor-pointer ${
                       selectedGroup?.id === group.id 
-                        ? 'bg-emerald-500/20 text-emerald-400' 
-                        : 'hover:bg-slate-800 text-slate-300'
+                        ? isDarkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                        : isDarkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-200 text-gray-700'
                     }`}
                   >
-                    <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden ${isDarkMode ? 'bg-slate-700' : 'bg-gray-300'}`}>
                       {group.avatar ? (
                         <Image src={group.avatar} alt={group.name} width={40} height={40} className="h-full w-full object-cover" />
                       ) : (
-                        <span className="text-lg font-bold">{group.name.charAt(0)}</span>
+                        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{group.name.charAt(0)}</span>
                       )}
                     </div>
                     <div className="flex-1 text-left overflow-hidden">
                       <p className="font-medium truncate">{group.name}</p>
-                      <p className="text-xs text-slate-500">{group.memberCount} members</p>
+                      <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{group.memberCount} members</p>
                     </div>
-                    {group.type === 'channel' && <Hash className="h-4 w-4 text-slate-500" />}
+                    {group.type === 'channel' && <Hash className={`h-4 w-4 ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`} />}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="flex-1 p-4">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Discover Groups</h2>
-            <div className="space-y-1">
-              {allGroups.filter(g => !g.isMember).slice(0, 10).map(group => (
-                <div
-                  key={group.id}
-                  onClick={() => setSelectedGroup(group)}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition cursor-pointer ${
-                    selectedGroup?.id === group.id 
-                      ? 'bg-emerald-500/20 text-emerald-400' 
-                      : 'hover:bg-slate-800 text-slate-300'
-                  }`}
-                >
-                  <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
-                    {group.avatar ? (
-                      <Image src={group.avatar} alt={group.name} width={40} height={40} className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-lg font-bold">{group.name.charAt(0)}</span>
-                    )}
-                  </div>
-                  <div className="flex-1 text-left overflow-hidden">
-                    <p className="font-medium truncate">{group.name}</p>
-                    <p className="text-xs text-slate-500">{group.memberCount} members</p>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="text-xs h-7"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleJoinGroup(group);
-                    }}
-                  >
-                    Join
-                  </Button>
-                </div>
-              ))}
-            </div>
+          <div className="flex-1 p-4 overflow-y-auto">
+            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-3 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+              {searchQuery ? "Search Results" : "Discover Groups"}
+            </h2>
+            {allGroups.length === 0 ? (
+              <p className={`text-sm text-center py-4 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                {searchQuery ? "No groups found matching your search" : "No groups to discover. Create one!"}
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {allGroups
+                  .filter((g) => !g.isMember)
+                  .map((group) => {
+                    return (
+                      <div
+                        key={group.id}
+                        onClick={() => setSelectedGroup(group)}
+                        className={`w-full flex items-center gap-3 p-2 rounded-lg transition cursor-pointer ${
+                          selectedGroup?.id === group.id 
+                            ? "bg-emerald-500/20 text-emerald-400" 
+                            : "hover:bg-slate-800 text-slate-300"
+                        }`}
+                      >
+                        <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
+                          {group.avatar ? (
+                            <Image src={group.avatar} alt={group.name} width={40} height={40} className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="text-lg font-bold">{group.name.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 text-left overflow-hidden">
+                          <p className="font-medium truncate">{group.name}</p>
+                          <p className="text-xs text-slate-500">{group.memberCount} members</p>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-xs h-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinGroup(group);
+                          }}
+                        >
+                          Join
+                        </Button>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
           </div>
         </aside>
 
         {/* Chat Area */}
-        <main className="flex-1 flex flex-col bg-slate-950 min-w-0 overflow-hidden">
+        <main className={`flex-1 flex flex-col min-w-0 overflow-hidden ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
           {selectedGroup ? (
             <>
               {/* Chat Header */}
-              <div className="h-16 border-b border-slate-800 bg-slate-900 flex items-center justify-between px-4 shrink-0">
+              <div className={`h-16 border-b flex items-center justify-between px-4 shrink-0 ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-300 bg-gray-50'}`}>
                 <div className="flex items-center gap-3">
                   <button onClick={() => setSelectedGroup(null)} className="lg:hidden">
-                    <ArrowLeft className="h-5 w-5 text-slate-400" />
+                    <ArrowLeft className={`h-5 w-5 ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`} />
                   </button>
-                  <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center overflow-hidden ${isDarkMode ? 'bg-slate-700' : 'bg-gray-300'}`}>
                     {selectedGroup.avatar ? (
                       <Image src={selectedGroup.avatar} alt={selectedGroup.name} width={40} height={40} className="h-full w-full object-cover" />
                     ) : (
-                      <span className="text-lg font-bold text-white">{selectedGroup.name.charAt(0)}</span>
+                      <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>{selectedGroup.name.charAt(0)}</span>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">{selectedGroup.name}</h3>
-                    <p className="text-xs text-slate-400">
+                    <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedGroup.name}</h3>
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                       {selectedGroup.type === 'channel' ? 'Channel' : 'Group'} • {selectedGroup.memberCount} members
                     </p>
                   </div>
@@ -897,7 +964,7 @@ export default function CommunityPage() {
                     variant="ghost"
                     size="sm"
                     onClick={openGroupInfo}
-                    className="text-slate-400 hover:text-white"
+                    className={isDarkMode ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}
                   >
                     <Info className="h-5 w-5" />
                   </Button>
@@ -905,7 +972,7 @@ export default function CommunityPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowMembersPanel(!showMembersPanel)}
-                    className="text-slate-400 hover:text-white"
+                    className={isDarkMode ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}
                   >
                     <Users className="h-5 w-5" />
                   </Button>
@@ -926,25 +993,26 @@ export default function CommunityPage() {
               <div 
                 ref={messagesContainerRef}
                 onScroll={handleMessagesScroll}
-                className="flex-1 overflow-y-auto p-4 space-y-4"
+                className={`flex-1 overflow-y-auto p-4 space-y-4 ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}
               >
                 {Object.entries(groupedMessages).map(([date, msgs]) => (
                   <div key={date}>
                     <div className="flex items-center justify-center my-4">
-                      <span className="text-xs text-slate-500 bg-slate-800 px-3 py-1 rounded-full">{date}</span>
+                      <span className={`text-xs px-3 py-1 rounded-full ${isDarkMode ? 'text-slate-500 bg-slate-800' : 'text-gray-600 bg-gray-200'}`}>{date}</span>
                     </div>
 {msgs.map(msg => (
                       <div key={msg.id} className={`flex gap-3 mb-4 min-w-0 ${(msg.senderId ? Number(msg.senderId) : Number(msg.sender?.id)) === user?.id ? 'flex-row-reverse' : ''}`}>
-                        <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0 text-sm font-bold text-white">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-gray-300 text-gray-700'}`}>
                           {msg.sender?.name?.charAt(0) || '?'}
                         </div>
                       <div className={`min-w-0 max-w-[70%] w-full ${(msg.senderId ? Number(msg.senderId) : Number(msg.sender?.id)) === user?.id ? 'items-end' : 'items-start'}`}>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-slate-300">{msg.sender?.name}</span>
-                            <span className="text-xs text-slate-500">{formatTime(msg.createdAt)}</span>
+                            <span className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>{msg.sender?.name}</span>
+                            <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{formatTime(msg.createdAt)}</span>
                             {msg.isPinned && <Pin className="h-3 w-3 text-yellow-500" />}
-                            {msg.isEdited && <span className="text-xs text-slate-600">(edited)</span>}
+                            {msg.isEdited && <span className={`text-xs ${isDarkMode ? 'text-slate-600' : 'text-gray-400'}`}>(edited)</span>}
                           </div>
+                          
                           
                           {/* Edit mode - inline editing */}
                           {editingMessage?.id === msg.id ? (
@@ -979,10 +1047,10 @@ export default function CommunityPage() {
                             <>
                               {/* Reply indicator */}
                               {(msg as any).replyTo && (
-                                <div className="flex items-center gap-1 mb-1 px-3 py-1.5 bg-slate-800/50 rounded-t-xl border-l-2 border-emerald-500">
+                                <div className={`flex items-center gap-1 mb-1 px-3 py-1.5 rounded-t-xl border-l-2 border-emerald-500 ${isDarkMode ? 'bg-slate-800/50' : 'bg-gray-100'}`}>
                                   <MessageCircle className="h-3 w-3 text-emerald-400" />
-                                  <span className="text-xs text-slate-400">
-                                    <span className="text-slate-300">{(msg as any).replyTo.sender?.name}</span>
+                                  <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
+                                    <span className={isDarkMode ? 'text-slate-300' : 'text-gray-700'}>{(msg as any).replyTo.sender?.name}</span>
                                     {' - '}
                                     {((msg as any).replyTo.content || '').substring(0, 50)}
                                     {((msg as any).replyTo.content || '').length > 50 ? '...' : ''}
@@ -992,7 +1060,7 @@ export default function CommunityPage() {
                               <div className={`px-4 py-2 rounded-2xl ${
                                 (msg.senderId ? Number(msg.senderId) : Number(msg.sender?.id)) === user?.id 
                                   ? 'bg-emerald-500 text-white rounded-br-md' 
-                                  : 'bg-slate-800 text-slate-200 rounded-bl-md'
+                                  : isDarkMode ? 'bg-slate-800 text-slate-200 rounded-bl-md' : 'bg-gray-200 text-gray-800 rounded-bl-md'
                               }`}>
                                 <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                                 
@@ -1013,7 +1081,7 @@ export default function CommunityPage() {
                                       </div>
                                     ) : (
                                       /* File attachment (non-image) */
-                                      <div className="flex items-center gap-2 p-2 bg-slate-900/50 rounded-lg border border-slate-700 max-w-[280px]">
+                                      <div className={`flex items-center gap-2 p-2 rounded-lg border max-w-[280px] ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-100 border-gray-300'}`}>
                                         <div className="flex items-center gap-2 flex-1 min-w-0">
                                           <div className="p-2 bg-slate-800 rounded shrink-0">
                                             <Paperclip className="h-5 w-5 text-emerald-400" />
@@ -1245,13 +1313,13 @@ export default function CommunityPage() {
                     onChange={handleFileSelect}
                   />
                   {attachment && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-800 rounded-lg mb-2">
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg mb-2 ${isDarkMode ? 'bg-slate-800' : 'bg-gray-200'}`}>
                       <div className="flex-1 flex items-center gap-2">
                         <Paperclip className="h-4 w-4 text-emerald-400" />
-                        <span className="text-sm text-white truncate max-w-[200px]">{attachment.name}</span>
-                        <span className="text-xs text-slate-400">({Math.round(attachment.size / 1024)} KB)</span>
+                        <span className={`text-sm truncate max-w-[200px] ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{attachment.name}</span>
+                        <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>({Math.round(attachment.size / 1024)} KB)</span>
                       </div>
-                      <button type="button" onClick={handleClearAttachment} className="text-slate-400 hover:text-red-400">
+                      <button type="button" onClick={handleClearAttachment} className={isDarkMode ? 'text-slate-400 hover:text-red-400' : 'text-gray-500 hover:text-red-500'}>
                         <X className="h-4 w-4" />
                       </button>
                     </div>
@@ -1260,14 +1328,14 @@ export default function CommunityPage() {
                     <button 
                       type="button" 
                       onClick={() => fileInputRef.current?.click()}
-                      className={`p-2 ${attachment ? 'text-emerald-400' : 'text-slate-400 hover:text-white'}`}
+                      className={`p-2 ${attachment ? 'text-emerald-400' : isDarkMode ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                       <Paperclip className="h-5 w-5" />
                     </button>
                     <button 
                       type="button" 
                       onClick={() => fileInputRef.current?.click()}
-                      className={`p-2 ${attachment ? 'text-emerald-400' : 'text-slate-400 hover:text-white'}`}
+                      className={`p-2 ${attachment ? 'text-emerald-400' : isDarkMode ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
                       title="Attach image"
                     >
                       <ImageIcon className="h-5 w-5" />
@@ -1278,7 +1346,11 @@ export default function CommunityPage() {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder={replyToMessage ? `Reply to ${replyToMessage.sender?.name}...` : attachment ? "Add a message..." : "Type a message..."}
-                      className="flex-1 bg-slate-800 border-none rounded-full px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className={`flex-1 border-none rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                        isDarkMode 
+                          ? 'bg-slate-800 text-white placeholder-slate-400' 
+                          : 'bg-gray-200 text-gray-900 placeholder-gray-500'
+                      }`}
                     />
                     <Button 
                       type="submit" 
@@ -1290,7 +1362,7 @@ export default function CommunityPage() {
                   </div>
                 </form>
               ) : (
-                <div className="p-4 border-t border-slate-800 bg-slate-900 text-center">
+                <div className={`p-4 border-t ${isDarkMode ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-gray-300 bg-gray-50 text-gray-700'} text-center`}>
                   <Button onClick={() => handleJoinGroup(selectedGroup)} className="bg-emerald-500">
                     Join Group to Send Messages
                   </Button>
@@ -1298,11 +1370,11 @@ export default function CommunityPage() {
               )}
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-slate-500">
+            <div className={`flex-1 flex items-center justify-center`}>
               <div className="text-center">
-                <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">Select a group to start chatting</p>
-                <p className="text-sm mt-2">Or create a new group to connect with others</p>
+                <MessageCircle className={`h-16 w-16 mx-auto mb-4 opacity-50 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
+                <p className={`text-lg ${isDarkMode ? 'text-slate-500' : 'text-gray-600'}`}>Select a group to start chatting</p>
+                <p className={`text-sm mt-2 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Or create a new group to connect with others</p>
               </div>
             </div>
           )}
