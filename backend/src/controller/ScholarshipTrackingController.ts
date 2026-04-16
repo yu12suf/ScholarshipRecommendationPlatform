@@ -26,6 +26,29 @@ export class ScholarshipTrackingController {
         }
     }
 
+    static async untrack(req: Request, res: Response, next: NextFunction) {
+        try {
+            const scholarshipId = req.params.scholarshipId as string;
+            const student = await StudentRepository.findByUserId(req.user!.id);
+            if (!student) {
+                res.status(404).json({ error: "Student profile not found" });
+                return;
+            }
+
+            await ScholarshipTrackingService.untrackScholarship(student.id, parseInt(scholarshipId));
+            res.json({
+                status: "success",
+                message: "Scholarship removed from watchlist"
+            });
+        } catch (error: any) {
+            if (error.message === "Scholarship not found in watchlist") {
+                res.status(404).json({ error: error.message });
+            } else {
+                next(error);
+            }
+        }
+    }
+
     static async getWatchlist(req: Request, res: Response, next: NextFunction) {
         try {
             const student = await StudentRepository.findByUserId(req.user!.id);
@@ -34,7 +57,7 @@ export class ScholarshipTrackingController {
                 return;
             }
 
-            const watchlist = await ScholarshipTrackingService.getWatchlist(student.id);
+            const watchlist = await ScholarshipTrackingService.getWatchlist(student.id, req.user!.id);
             res.json({
                 status: "success",
                 data: watchlist

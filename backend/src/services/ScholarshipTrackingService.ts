@@ -12,8 +12,41 @@ export class ScholarshipTrackingService {
         return ScholarshipTrackingRepository.trackScholarship(studentId, scholarshipId);
     }
 
-    static async getWatchlist(studentId: number): Promise<TrackedScholarship[]> {
-        return ScholarshipTrackingRepository.getTrackedScholarships(studentId);
+    static async untrackScholarship(studentId: number, scholarshipId: number): Promise<void> {
+        const result = await ScholarshipTrackingRepository.untrackScholarship(studentId, scholarshipId);
+        if (result === 0) {
+            throw new Error("Scholarship not found in watchlist");
+        }
+    }
+
+    static async getWatchlist(studentId: number, userId: number): Promise<any[]> {
+        const watchlist = await ScholarshipTrackingRepository.getTrackedScholarships(studentId);
+        
+        // Hydrate matches for each tracked item to avoid 0% scores
+        const { MatchingService } = await import("./MatchingService.js");
+        const hydrated = await Promise.all(watchlist.map(async (item) => {
+            const plainItem = item.toJSON();
+            try {
+                // Use the userId passed from controller for matching consistency
+                const matchData = await MatchingService.getMatchById(userId, plainItem.scholarshipId);
+                if (matchData && plainItem.scholarship) {
+                    plainItem.scholarship.matchScore = matchData.matchScore;
+                    plainItem.scholarship.matchReason = matchData.matchReason;
+                }
+            } catch (err) {
+                console.warn(`[Watchlist] Failed to hydrate match for ${item.scholarshipId}:`, err);
+            }
+            return plainItem;
+        }));
+
+        // Sort by match score descending so top matches are first
+        hydrated.sort((a, b) => {
+            const scoreA = a.scholarship?.matchScore ?? 0;
+            const scoreB = b.scholarship?.matchScore ?? 0;
+            return scoreB - scoreA;
+        });
+
+        return hydrated;
     }
 
     static async updateDeadline(id: number, studentId: number, manualDeadline: Date): Promise<TrackedScholarship> {
@@ -23,8 +56,16 @@ export class ScholarshipTrackingService {
     }
 
     static async updateStatus(id: number, studentId: number, status: string): Promise<TrackedScholarship> {
-        const [count, results] = await ScholarshipTrackingRepository.updateTrackedScholarship(id, studentId, { status });
-        if (count === 0 || !results || results.length === 0) throw new Error("Tracked scholarship not found");
+        // First try finding by tracking record PK, then by scholarshipId
+        let tracked = await ScholarshipTrackingRepository.findTrackedById(id, studentId);
+        if (!tracked) {
+            tracked = await ScholarshipTrackingRepository.findByScholarshipId(studentId, id);
+        }
+
+        if (!tracked) throw new Error("Tracked scholarship not found");
+
+        const [count, results] = await ScholarshipTrackingRepository.updateTrackedScholarship(tracked.id, studentId, { status });
+        if (count === 0 || !results || results.length === 0) throw new Error("Update failed");
         return results[0] as TrackedScholarship;
     }
 

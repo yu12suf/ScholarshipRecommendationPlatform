@@ -91,6 +91,13 @@ export class User extends Model {
     @Column({
         type: DataType.STRING(255),
         allowNull: true,
+        field: 'avatar_url'
+    })
+    declare avatarUrl?: string;
+
+    @Column({
+        type: DataType.STRING(255),
+        allowNull: true,
         field: 'fcm_token'
     })
     declare fcmToken?: string;

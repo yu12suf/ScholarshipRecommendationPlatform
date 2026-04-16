@@ -19,4 +19,17 @@ router.patch("/read-all", authenticate, NotificationController.markAllAsRead);
 // POST /api/notifications/token
 router.post("/token", authenticate, NotificationController.updateToken);
 
+// POST /api/notifications/test (Temporary for testing)
+router.post("/test", authenticate, async (req, res) => {
+  const { NotificationService } = await import("../services/NotificationService.js");
+  const notification = await NotificationService.createNotification(
+    (req as any).user.id,
+    "New Scholarship Match!",
+    "We found a 98% match for the 'Global Excellence Scholarship'. Tap to view details.",
+    "SCHOLARSHIP_MATCH",
+    12
+  );
+  res.status(200).json({ status: "success", data: notification });
+});
+
 export default router;

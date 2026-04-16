@@ -75,7 +75,7 @@ export class OnboardingController {
         
         const files: { [key: string]: UploadedFile } = {};
         if (req.files) {
-            const possibleFiles = ['cv', 'transcript', 'certificate', 'degreeCertificate', 'languageCertificate'];
+            const possibleFiles = ['cv', 'transcript', 'certificate', 'degreeCertificate', 'languageCertificate', 'avatar'];
             possibleFiles.forEach(key => {
                 if (req.files![key]) {
                     files[key] = (Array.isArray(req.files![key]) ? req.files![key][0] : req.files![key]) as UploadedFile;
