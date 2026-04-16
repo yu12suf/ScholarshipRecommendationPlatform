@@ -21,13 +21,13 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
   final List<Widget> _screens = [
     const DashboardScreen(),
     const DiscoverScreen(),
-    const InterviewScreen(), // Pathway
+    const Center(
+      child: Text('Pathway', style: TextStyle(color: Colors.white)),
+    ),
     const Center(
       child: Text('Mentors', style: TextStyle(color: Colors.white)),
     ),
-    const Center(
-      child: Text('Inbox', style: TextStyle(color: Colors.white)),
-    ),
+    const InterviewScreen(),
   ];
 
   @override
@@ -71,7 +71,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
                 Expanded(child: _buildNavItem(LucideIcons.compass, "Discover", 1, currentIndex)),
                 Expanded(child: _buildNavItem(LucideIcons.trendingUp, "Pathway", 2, currentIndex)),
                 Expanded(child: _buildNavItem(LucideIcons.graduationCap, "Mentors", 3, currentIndex)),
-                Expanded(child: _buildNavItem(LucideIcons.mail, "Inbox", 4, currentIndex)),
+                Expanded(child: _buildNavItem(LucideIcons.mic, "Interview", 4, currentIndex)),
               ],
             ),
           ),
