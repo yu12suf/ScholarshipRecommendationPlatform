@@ -17,7 +17,6 @@ import {
   X,
   ShieldCheck,
   ClipboardList,
-  Home,
   MessageCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,7 +30,6 @@ export function CounselorSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const menuItems = [
-    { name: 'Home', href: '/', icon: Home },
     { name: 'Dashboard', href: '/dashboard/counselor', icon: LayoutDashboard },
     { name: 'My Students', href: '/dashboard/students', icon: Users },
     { name: 'Schedule Explorer', href: '/dashboard/calendar', icon: Calendar },

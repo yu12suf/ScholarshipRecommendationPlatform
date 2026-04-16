@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   getUpcomingBookings, 
   updateBookingStatus 
@@ -13,23 +14,64 @@ import {
   X, 
   Loader2,
   CalendarDays,
-  CheckCircle2,
-  XCircle,
-  Video
+  Video,
+  Timer
 } from 'lucide-react';
 import { Button, Card, CardBody } from '@/components/ui';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format, parseISO, differenceInMinutes, isPast, isFuture } from 'date-fns';
+
+const getSessionCountdown = (startTime: string) => {
+  try {
+    const start = parseISO(startTime);
+    const now = new Date();
+    const diffMinutes = differenceInMinutes(start, now);
+    
+    if (diffMinutes <= 0) return null;
+    
+    if (diffMinutes < 60) {
+      return { text: `${diffMinutes} min`, className: 'text-warning' };
+    } else if (diffMinutes < 1440) {
+      const hours = Math.floor(diffMinutes / 60);
+      return { text: `${hours} hr`, className: 'text-primary' };
+    } else {
+      const days = Math.floor(diffMinutes / 1440);
+      return { text: `${days} day${days > 1 ? 's' : ''}`, className: 'text-success' };
+    }
+  } catch {
+    return null;
+  }
+};
+
+const getSessionStatus = (startTime: string) => {
+  try {
+    const start = parseISO(startTime);
+    const now = new Date();
+    const diffMinutes = differenceInMinutes(start, now);
+    
+    if (diffMinutes <= 0 && diffMinutes > -120) return 'in_progress';
+    if (diffMinutes <= -120) return 'completed';
+    if (diffMinutes <= 10) return 'starting_soon';
+    return 'upcoming';
+  } catch {
+    return 'unknown';
+  }
+};
 
 export const BookingManager = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
 
   const fetchBookings = async () => {
     try {
       const data = await getUpcomingBookings();
-      setBookings(data.data || []);
+      console.log('[BookingManager] getUpcomingBookings response:', data);
+      // Data is already unwrapped by API interceptor - it's directly the array
+      setBookings(Array.isArray(data) ? data : []);
     } catch (error) {
+      console.error('[BookingManager] Error fetching bookings:', error);
       toast.error('Failed to load bookings');
     } finally {
       setLoading(false);
@@ -99,10 +141,10 @@ export const BookingManager = () => {
                   {/* Student info */}
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center font-black text-primary text-xl">
-                      {booking.Student?.User?.name?.charAt(0) || 'S'}
+                      {booking.student?.name?.charAt(0) || 'S'}
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground">{booking.Student?.User?.name || 'Student'}</h3>
+                      <h3 className="font-bold text-foreground">{booking.student?.name || 'Student'}</h3>
                       <p className="text-xs text-muted-foreground">International Applicant</p>
                     </div>
                   </div>
@@ -112,7 +154,7 @@ export const BookingManager = () => {
                     <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
                       <Calendar size={16} className="text-primary/60" />
                       <span className="text-sm font-medium">
-                        {new Date(booking.startTime).toLocaleDateString(undefined, { 
+                        {new Date(booking.slot?.startTime).toLocaleDateString(undefined, { 
                           weekday: 'short', 
                           month: 'short', 
                           day: 'numeric' 
@@ -122,10 +164,31 @@ export const BookingManager = () => {
                     <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
                       <Clock size={16} className="text-primary/60" />
                       <span className="text-sm font-medium">
-                        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                        {new Date(booking.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(booking.slot?.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                        {new Date(booking.slot?.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
+                    {booking.slot?.startTime && (
+                      <div className="flex items-center gap-2">
+                        <Timer size={14} className="text-primary/60" />
+                        {(() => {
+                          const sessionStatus = getSessionStatus(booking.slot.startTime);
+                          const countdown = getSessionCountdown(booking.slot.startTime);
+                          if (sessionStatus === 'completed') {
+                            return <span className="text-xs text-muted-foreground">Session completed</span>;
+                          } else if (sessionStatus === 'in_progress') {
+                            return <span className="text-xs text-success font-medium">In progress - Click to join</span>;
+                          } else if (countdown) {
+                            return (
+                              <span className={`text-xs font-medium ${countdown.className}`}>
+                                Starts in {countdown.text}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <Video size={16} className="text-primary/60" />
                       <span className="text-sm font-medium">Virtual Consultation</span>
@@ -155,15 +218,23 @@ export const BookingManager = () => {
                     </div>
                   )}
 
-                  {booking.status === 'confirmed' && (
-                    <Button
-                      size="sm"
-                      className="w-full primary-gradient text-white font-bold h-10"
-                      onClick={() => toast.success('Joining session...')}
-                    >
-                      <Video size={16} className="mr-2" />
-                      Join Session
-                    </Button>
+                  {booking.status === 'confirmed' && booking.slot?.startTime && (
+                    (() => {
+                      const sessionStatus = getSessionStatus(booking.slot.startTime);
+                      const countdown = getSessionCountdown(booking.slot.startTime);
+                      const canJoin = sessionStatus === 'in_progress' || sessionStatus === 'starting_soon' || countdown === null;
+                      
+                      return (
+                        <Button
+                          size="sm"
+                          className={`w-full font-bold h-10 ${sessionStatus === 'in_progress' ? 'bg-success hover:bg-success/90 text-white' : 'primary-gradient text-white'}`}
+                          onClick={() => router.push(`/dashboard/counselor/session/${booking.id}`)}
+                        >
+                          <Video size={16} className="mr-2" />
+                          {sessionStatus === 'in_progress' ? 'Join Now' : sessionStatus === 'starting_soon' ? 'Join Session' : 'View Session'}
+                        </Button>
+                      );
+                    })()
                   )}
                 </CardBody>
               </Card>

@@ -65,6 +65,7 @@ router.put('/slots/:id', validate(idParamValidation), validate(updateSlotValidat
 router.delete('/slots/:id', validate(idParamValidation), CounselorController.deleteSlot);
 
 router.get('/students', CounselorController.getStudents);
+router.get('/students/:id', validate(idParamValidation), CounselorController.getStudentDetails);
 router.get('/students/:id/progress', validate(idParamValidation), CounselorController.getStudentProgress);
 
 router.get('/dashboard/documents', CounselorController.getDashboardDocuments);

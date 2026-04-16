@@ -17,7 +17,6 @@ import {
   Settings,
   MessageSquare,
   Calendar,
-  Home,
   MessageCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,7 +29,6 @@ export function StudentSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const menuItems = [
-    { name: 'Home', href: '/', icon: Home },
     { name: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
     { name: 'Scholarships', href: '/dashboard/scholarships', icon: GraduationCap },
     { name: 'Counselors', href: '/dashboard/counselors', icon: Users },

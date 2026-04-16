@@ -10,14 +10,16 @@ import {
   User, 
   ArrowLeft, 
   Loader2, 
-  Send
+  Send,
+  Timer,
+  PlayCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { getBookingDetails, getBookingThread, sendBookingMessage } from '@/features/counselor/api/counselor-api';
 import { VideoCall } from '@/components/video/VideoCall';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInMinutes } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/providers/auth-context';
 
@@ -62,6 +64,44 @@ export default function CounselorSessionPage({ params }: { params: Promise<{ id:
   const [sendingMessage, setSendingMessage] = useState(false);
   const [inCall, setInCall] = useState(false);
 
+  const getSessionCountdown = (startTime: string) => {
+    try {
+      const start = parseISO(startTime);
+      const now = new Date();
+      const diffMinutes = differenceInMinutes(start, now);
+      
+      if (diffMinutes <= 0) return null;
+      
+      if (diffMinutes < 60) {
+        return { text: `${diffMinutes} min`, className: 'text-warning' };
+      } else if (diffMinutes < 1440) {
+        const hours = Math.floor(diffMinutes / 60);
+        const mins = diffMinutes % 60;
+        return { text: `${hours}h ${mins}m`, className: 'text-primary' };
+      } else {
+        const days = Math.floor(diffMinutes / 1440);
+        return { text: `${days} day${days > 1 ? 's' : ''}`, className: 'text-success' };
+      }
+    } catch {
+      return null;
+    }
+  };
+
+  const getSessionStatus = (startTime: string) => {
+    try {
+      const start = parseISO(startTime);
+      const now = new Date();
+      const diffMinutes = differenceInMinutes(start, now);
+      
+      if (diffMinutes <= 0 && diffMinutes > -120) return 'in_progress';
+      if (diffMinutes <= -120) return 'completed';
+      if (diffMinutes <= 10) return 'starting_soon';
+      return 'upcoming';
+    } catch {
+      return 'unknown';
+    }
+  };
+
   useEffect(() => {
     fetchBookingDetails();
     fetchMessages();
@@ -69,10 +109,9 @@ export default function CounselorSessionPage({ params }: { params: Promise<{ id:
 
   const fetchBookingDetails = async () => {
     try {
-      const response = await getBookingDetails(bookingId);
-      if (response.success) {
-        setBooking(response.data);
-      }
+      // API interceptor already unwraps the response
+      const bookingData = await getBookingDetails(bookingId as number);
+      setBooking(bookingData);
     } catch (error) {
       console.error('Failed to fetch booking:', error);
       toast.error('Failed to load booking details');
@@ -83,10 +122,9 @@ export default function CounselorSessionPage({ params }: { params: Promise<{ id:
 
   const fetchMessages = async () => {
     try {
-      const response = await getBookingThread(bookingId);
-      if (response.success) {
-        setMessages(response.data || []);
-      }
+      // API interceptor already unwraps the response
+      const messagesData = await getBookingThread(bookingId as number);
+      setMessages(messagesData || []);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
     }
@@ -244,7 +282,43 @@ export default function CounselorSessionPage({ params }: { params: Promise<{ id:
                 </div>
                 <div>
                   <label className="text-sm text-muted-foreground">Status</label>
-                  <p className="font-medium capitalize">{booking.status}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {booking.slot?.startTime && (() => {
+                      const sessionStatus = getSessionStatus(booking.slot.startTime);
+                      const countdown = getSessionCountdown(booking.slot.startTime);
+                      
+                      if (sessionStatus === 'completed') {
+                        return <span className="text-muted-foreground">Session completed</span>;
+                      } else if (sessionStatus === 'in_progress') {
+                        return (
+                          <span className="flex items-center gap-2">
+                            <span className="h-2 w-2 bg-success rounded-full animate-pulse" />
+                            <span className="text-success font-medium">In progress</span>
+                          </span>
+                        );
+                      } else if (sessionStatus === 'starting_soon') {
+                        return (
+                          <span className="flex items-center gap-2">
+                            <Timer size={14} className="text-warning" />
+                            <span className="text-warning font-medium">Starting soon</span>
+                          </span>
+                        );
+                      } else if (countdown) {
+                        return (
+                          <span className="flex items-center gap-2">
+                            <Timer size={14} className={countdown.className} />
+                            <span className={`font-medium ${countdown.className}`}>
+                              Starts in {countdown.text}
+                            </span>
+                          </span>
+                        );
+                      }
+                      return <span className="font-medium capitalize">{booking.status}</span>;
+                    })()}
+                    {!booking.slot?.startTime && (
+                      <p className="font-medium capitalize">{booking.status}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -264,25 +338,45 @@ export default function CounselorSessionPage({ params }: { params: Promise<{ id:
                 )}
 
                 <div className="pt-8">
-                  {['confirmed', 'started'].includes(booking.status) ? (
-                    <Button
-                      onClick={() => setInCall(true)}
-                      className="w-full primary-gradient text-primary-foreground h-12"
-                    >
-                      <Video className="h-5 w-5 mr-2" />
-                      Start Video Call
-                    </Button>
-                  ) : booking.status === 'completed' ? (
+                  {booking.slot?.startTime && (() => {
+                    const sessionStatus = getSessionStatus(booking.slot.startTime);
+                    
+                    if (sessionStatus === 'completed') {
+                      return (
+                        <div className="text-center text-muted-foreground py-4 bg-muted/50 rounded-lg">
+                          This session has been completed.
+                        </div>
+                      );
+                    } else if (sessionStatus === 'in_progress' || sessionStatus === 'starting_soon') {
+                      return (
+                        <Button
+                          onClick={() => setInCall(true)}
+                          className="w-full bg-success hover:bg-success/90 text-white h-12 font-bold"
+                        >
+                          <Video className="h-5 w-5 mr-2" />
+                          {sessionStatus === 'in_progress' ? 'Join Now' : 'Join Session'}
+                        </Button>
+                      );
+                    } else {
+                      const countdown = getSessionCountdown(booking.slot.startTime);
+                      return (
+                        <div className="space-y-3">
+                          {countdown && (
+                            <div className={`text-center py-3 rounded-lg bg-muted ${countdown.className}`}>
+                              <div className="text-sm font-medium">Session starts in</div>
+                              <div className="text-2xl font-bold">{countdown.text}</div>
+                            </div>
+                          )}
+                          <div className="text-center text-muted-foreground text-sm">
+                            You can join the session when it starts.
+                          </div>
+                        </div>
+                      );
+                    }
+                  })()}
+                  {!booking.slot?.startTime && (
                     <div className="text-center text-muted-foreground">
-                      This session has been completed.
-                    </div>
-                  ) : booking.status === 'cancelled' ? (
-                    <div className="text-center text-destructive">
-                      This session was cancelled.
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      This session cannot be joined at this time.
+                      Session time not available
                     </div>
                   )}
                 </div>

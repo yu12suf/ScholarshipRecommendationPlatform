@@ -51,9 +51,17 @@ api.interceptors.request.use(
 // Add a response interceptor to handle token refresh and data unwrapping
 api.interceptors.response.use(
   (response) => {
+    console.log('[api interceptor] Raw response:', response.config.url, response.data);
     // Automatically unwrap the standard JSend-like { status: 'success', data: ... } or { success: true, data: ... } format
     if (response.data && (response.data.status === 'success' || response.data.success === true) && response.data.data !== undefined) {
-      return { ...response, data: response.data.data };
+      // Preserve pagination and other top-level properties from response.data
+      const { data: payloadData, success, status, ...rest } = response.data;
+      console.log('[api interceptor] Unwrapped data:', payloadData, 'Rest:', rest);
+      return { 
+        ...response, 
+        data: payloadData,
+        ...rest  // This preserves pagination, etc.
+      };
     }
     return response;
   },

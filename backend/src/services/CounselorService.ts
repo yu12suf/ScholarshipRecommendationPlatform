@@ -617,25 +617,119 @@ export class CounselorService {
     return this.formatBookingResponse(booking);
   }
 
-  static async getStudents(counselorId: number): Promise<any[]> {
-    const bookings = await BookingRepository.findUniqueStudentsByCounselor(counselorId);
-    const uniqueStudents = new Map<number, any>();
-    bookings.forEach((booking) => {
-      if (!uniqueStudents.has(booking.studentId)) {
-        const student = (booking as any).student;
-        if (!student) return;
-        
-        uniqueStudents.set(booking.studentId, {
-          studentId: student.id || booking.studentId,
-          userId: student.userId,
-          name: student.user?.name || "Unknown",
-          email: student.user?.email || "Unknown",
-          lastBookingDate: booking.createdAt,
-          lastBookingStatus: booking.status,
-        });
-      }
+  // Get students assigned to counselor (unique students)
+  static async getStudents(
+    counselorId: number,
+    options?: {
+      status?: string | string[];
+      limit?: number;
+      offset?: number;
+      includeBookingHistory?: boolean;
+    }
+  ): Promise<{
+    students: any[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const limit = options?.limit || 20;
+    const offset = options?.offset || 0;
+    const page = Math.floor(offset / limit) + 1;
+
+    const result = await BookingRepository.findUniqueStudentsByCounselor(counselorId, {
+      status: options?.status,
+      limit,
+      offset,
+      includeBookingHistory: options?.includeBookingHistory
     });
-    return Array.from(uniqueStudents.values());
+
+    return {
+      students: result.students.map(s => this.formatCounselorStudentResponse(s)),
+      total: result.students.length,
+      page,
+      limit
+    };
+  }
+
+  static async getStudentsByUserId(
+    userId: number,
+    options?: {
+      status?: string | string[];
+      limit?: number;
+      offset?: number;
+      includeBookingHistory?: boolean;
+    }
+  ): Promise<{
+    students: any[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const counselor = await Counselor.findOne({ where: { userId } });
+    
+    if (!counselor) {
+      return { students: [], total: 0, page: 1, limit: 20 };
+    }
+    
+    return this.getStudents(counselor.id, options);
+  }
+
+  static async getStudentDetailsById(
+    counselorId: number,
+    studentId: number
+  ): Promise<{
+    student: any;
+    bookings: any[];
+    statistics: {
+      totalBookings: number;
+      completedSessions: number;
+      upcomingSessions: number;
+      cancelledSessions: number;
+      totalSpent: number;
+    };
+  } | null> {
+    const result = await BookingRepository.getStudentDetailsForCounselor(counselorId, studentId);
+    
+    if (!result) {
+      return null;
+    }
+
+    return {
+      student: this.formatCounselorStudentResponse(result.student),
+      bookings: result.bookings,
+      statistics: result.statistics
+    };
+  }
+
+  private static formatCounselorStudentResponse(student: any): any {
+    console.log('[CounselorService] formatCounselorStudentResponse input:', { 
+      studentId: student.studentId, 
+      id: student.id, 
+      userId: student.userId,
+      name: student.name 
+    });
+    return {
+      id: student.studentId,
+      studentId: student.studentId,
+      userId: student.userId,
+      name: student.name || 'Unknown',
+      email: student.email || '',
+      profileImageUrl: student.profileImageUrl || null,
+      phoneNumber: student.phoneNumber || null,
+      studyPreferences: student.studyPreferences || null,
+      countryInterest: student.countryInterest || null,
+      academicStatus: student.academicStatus || null,
+      firstBookingDate: student.firstBookingDate,
+      lastBookingDate: student.lastBookingDate,
+      totalBookings: student.totalBookings || 0,
+      completedSessions: student.completedSessions || 0,
+      upcomingSessions: student.upcomingSessions || 0,
+      cancelledSessions: student.cancelledSessions || 0,
+      lastBookingStatus: student.lastBookingStatus || 'unknown',
+      lastBookingId: student.lastBookingId || null,
+      lastSlotStartTime: student.lastSlotStartTime || null,
+      bookingHistory: student.bookingHistory || []
+    };
   }
 
   static async getStudentProgress(counselorId: number, studentId: number): Promise<StudentProgressResponse> {
@@ -731,13 +825,24 @@ export class CounselorService {
 
   static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]> {
     const now = new Date();
+    console.log('[CounselorService] getUpcomingBookings counselorId:', counselorId, 'now:', now);
     const bookings = await BookingRepository.findUpcomingByCounselor(counselorId, true);
+    console.log('[CounselorService] Raw bookings found:', bookings.length);
+    if (bookings.length > 0) {
+      console.log('[CounselorService] First booking student:', (bookings[0] as any).student);
+      console.log('[CounselorService] First booking student.user:', (bookings[0] as any).student?.user);
+    }
     return bookings
       .filter((booking) => {
         const start = (booking as any).slot?.startTime;
+        console.log('[CounselorService] Booking filter - slot startTime:', start, 'isFuture:', start && new Date(start) > now);
         return start && new Date(start) > now;
       })
-      .map((booking) => this.formatBookingResponse(booking));
+      .map((booking) => {
+        const formatted = this.formatBookingResponse(booking);
+        console.log('[CounselorService] Formatted booking:', { id: formatted.id, student: formatted.student });
+        return formatted;
+      });
   }
 
   static async updateBookingStatus(counselorId: number, bookingId: number, dto: BookingStatusDto): Promise<BookingResponse> {
@@ -853,22 +958,54 @@ export class CounselorService {
     if (!booking) throw httpError(404, "Booking not found");
     
     const student = await Student.findOne({ where: { userId } });
+    const counselor = await Counselor.findOne({ where: { userId } });
+    
+    console.log('[getBookingDetails] userId:', userId, 'role:', role, 'student.id:', student?.id, 'counselor.id:', counselor?.id, 'booking.studentId:', booking.studentId, 'booking.counselorId:', booking.counselorId);
     
     if (role === UserRole.STUDENT && student?.id !== booking.studentId) {
       throw httpError(403, "Unauthorized to view this booking");
     }
     
-    if (booking.counselorId && !booking.counselor) {
-      console.log('[getBookingDetails] fetching counselor, counselorId:', booking.counselorId);
-      const counselorWithUser = await CounselorRepository.findByIdWithUser(booking.counselorId);
-      console.log('[getBookingDetails] counselorWithUser:', counselorWithUser?.id, 'user:', counselorWithUser?.user?.name);
-      (booking as any).counselor = counselorWithUser;
-      (booking as any).counselor.user = counselorWithUser ? (await User.findByPk(counselorWithUser.userId)) : null;
+    if (role === UserRole.COUNSELOR && counselor?.id !== booking.counselorId) {
+      console.log('[getBookingDetails] Counselor check failed. counselor.id:', counselor?.id, 'booking.counselorId:', booking.counselorId);
+      throw httpError(403, "Unauthorized to view this booking");
     }
     
-    if (booking.slotId && !booking.slot) {
+    if (booking.counselorId && !(booking as any).counselor) {
+      console.log('[getBookingDetails] fetching counselor, counselorId:', booking.counselorId);
+      const counselorWithUser = await CounselorRepository.findByIdWithUser(booking.counselorId);
+      if (counselorWithUser) {
+        (booking as any).counselor = counselorWithUser;
+        (booking as any).counselor.user = await User.findByPk(counselorWithUser.userId);
+        console.log('[getBookingDetails] counselor fetched, user:', (booking as any).counselor.user?.name);
+      }
+    }
+    
+    if (booking.slotId && !(booking as any).slot) {
+      console.log('[getBookingDetails] fetching slot, slotId:', booking.slotId);
       const slot = await AvailabilitySlotRepository.findById(booking.slotId);
       (booking as any).slot = slot;
+      console.log('[getBookingDetails] slot fetched:', slot?.id);
+    }
+    
+    if (booking.studentId && !(booking as any).student) {
+      console.log('[getBookingDetails] fetching student, studentId:', booking.studentId);
+      
+      // Fetch student first
+      const studentRecord = await Student.findByPk(booking.studentId);
+      
+      if (studentRecord) {
+        // Then separately fetch the user
+        const userRecord = await User.findByPk(studentRecord.userId);
+        console.log('[getBookingDetails] student fetched:', studentRecord.id, 'user:', userRecord?.name);
+        
+        // Attach student with user explicitly
+        (booking as any).student = {
+          id: studentRecord.id,
+          userId: studentRecord.userId,
+          user: userRecord
+        };
+      }
     }
     
     return this.formatBookingResponse(booking);
@@ -1113,11 +1250,29 @@ export class CounselorService {
   }
 
   private static formatBookingResponse(booking: Booking): BookingResponse {
-    const slot = booking.slot as AvailabilitySlot | undefined;
-    const counselor = booking.counselor as Counselor | undefined;
-    const student = booking.student as Student | undefined;
+    const slot = (booking as any).slot as AvailabilitySlot | undefined;
+    const counselor = (booking as any).counselor as Counselor | undefined;
+    const student = (booking as any).student as any;
     
-    const counselorName = counselor?.user ? (counselor.user as User).name : `Counselor #${booking.counselorId}`;
+    console.log('[formatBookingResponse] student:', student ? { id: student.id, hasUser: !!student.user, userName: student.user?.name } : 'none');
+    console.log('[formatBookingResponse] slot:', slot ? { id: slot.id, startTime: slot.startTime } : 'none');
+    console.log('[formatBookingResponse] counselor:', counselor ? { id: counselor.id, hasUser: !!counselor.user } : 'none');
+    
+    const counselorUser = counselor?.user as User | undefined;
+    const counselorName = counselorUser?.name || counselor?.user?.dataValues?.name || `Counselor #${booking.counselorId}`;
+    const counselorEmail = counselorUser?.email || counselor?.user?.dataValues?.email || '';
+    const counselorUserId = counselorUser?.id || counselor?.user?.dataValues?.id;
+    
+    let studentName: string | undefined;
+    if (student) {
+      // Handle student user - could be in different locations
+      let studentUser = student.user;
+      if (!studentUser && (student as any).dataValues?.user) {
+        studentUser = (student as any).dataValues.user;
+      }
+      const studentUserData = studentUser?.dataValues || studentUser;
+      studentName = studentUserData?.name;
+    }
     
     return {
       id: booking.id,
@@ -1134,13 +1289,13 @@ export class CounselorService {
         endTime: slot.endTime.toISOString(),
         consultationMode: slot.consultationMode || 'video',
       } : undefined,
-      counselor: counselor?.user ? {
-        name: (counselor.user as User).name,
-        email: (counselor.user as User).email,
-        userId: (counselor.user as User).id,
+      counselor: counselor ? {
+        name: counselorName,
+        email: counselorEmail,
+        userId: counselorUserId,
       } : { name: `Counselor #${booking.counselorId}`, email: '' },
-      student: student?.user ? {
-        name: (student.user as User).name,
+      student: studentName ? {
+        name: studentName,
       } : undefined,
     };
   }

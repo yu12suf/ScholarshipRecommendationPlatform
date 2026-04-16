@@ -29,10 +29,13 @@ export const AvailabilityManager = () => {
         console.log('[AvailabilityManager] Fetching slots...');
         const data = await getCounselorSlots();
         console.log('[AvailabilityManager] Raw response:', data);
+        console.log('[AvailabilityManager] Is data.data array?:', Array.isArray(data?.data));
+        console.log('[AvailabilityManager] Is data an array?:', Array.isArray(data));
         
         // Handle both { success: true, data: [...] } and [...] response formats
-        const rawSlots = data.data || data || [];
+        const rawSlots = data || []; // Already unwrapped by interceptor in getCounselorSlots
         console.log('[AvailabilityManager] Raw slots:', rawSlots);
+        console.log('[AvailabilityManager] rawSlots length:', rawSlots.length);
         
         // Convert ISO8601 slots to time-only format for the UI
         // Group slots by day of week to show unique weekly patterns
@@ -129,7 +132,7 @@ export const AvailabilityManager = () => {
       
       // Refresh slots after saving - with deduplication like in fetchSlots
       const data = await getCounselorSlots();
-      const rawSlots = data.data || data || [];
+      const rawSlots = data || []; // Already unwrapped by interceptor
       
       const slotMap = new Map<string, { dayOfWeek: string; startTime: string; endTime: string }>();
       rawSlots.forEach((slot: any) => {
@@ -182,7 +185,8 @@ export const AvailabilityManager = () => {
               setLoading(true);
               try {
                 const data = await getCounselorSlots();
-                const rawSlots = data.data || [];
+                console.log('[AvailabilityManager] Refresh - data:', data);
+                const rawSlots = data || []; // Already unwrapped by interceptor
                 const formattedSlots = rawSlots.map((slot: any) => {
                   const start = new Date(slot.startTime);
                   const end = new Date(slot.endTime);

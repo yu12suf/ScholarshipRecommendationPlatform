@@ -175,7 +175,55 @@ export class CounselorController {
 
   static async getStudents(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await CounselorService.getStudents((req as any).counselor.id);
+      const userId = req.user!.id;
+      const { status, page, limit, includeHistory } = req.query;
+      
+      const options: any = {};
+      if (status) {
+        const statusStr = Array.isArray(status) ? (status as string[]).join(',') : status as string;
+        options.status = statusStr.split(',').filter(Boolean);
+      }
+      if (limit) {
+        options.limit = Math.min(Math.max(parseInt(limit as string) || 20, 1), 100);
+      }
+      if (page) {
+        options.offset = (Math.max(parseInt(page as string) || 1, 1) - 1) * (options.limit || 20);
+      }
+      if (includeHistory === 'true') {
+        options.includeBookingHistory = true;
+      }
+
+      const data = await CounselorService.getStudentsByUserId(userId, options);
+      
+      res.status(200).json({ 
+        success: true, 
+        data: data.students,
+        pagination: {
+          page: data.page,
+          limit: data.limit,
+          total: data.total,
+          totalPages: Math.ceil(data.total / data.limit)
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getStudentDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const counselorId = (req as any).counselor.id;
+      const studentId = Number(req.params.id);
+      
+      console.log('[CounselorController] getStudentDetails called, studentId:', studentId, 'counselorId:', counselorId);
+      
+      const data = await CounselorService.getStudentDetailsById(counselorId, studentId);
+      
+      if (!data) {
+        res.status(404).json({ success: false, message: 'Student not found' });
+        return;
+      }
+      
       res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);

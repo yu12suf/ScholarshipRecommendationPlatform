@@ -12,8 +12,54 @@ export interface CounselorStudent {
   userId: number;
   name: string;
   email: string;
+  profileImageUrl?: string | null;
+  phoneNumber?: string | null;
+  studyPreferences?: string | null;
+  countryInterest?: string | null;
+  academicStatus?: string | null;
+  firstBookingDate: string;
   lastBookingDate: string;
+  totalBookings: number;
+  completedSessions: number;
+  upcomingSessions: number;
+  cancelledSessions: number;
   lastBookingStatus: string;
+  lastBookingId: number;
+  lastSlotStartTime?: string | null;
+  bookingHistory?: {
+    id: number;
+    status: string;
+    createdAt: string;
+    startedAt?: string | null;
+    completedAt?: string | null;
+    slotId: number;
+    slotStartTime?: string | null;
+    slotEndTime?: string | null;
+    meetingLink?: string | null;
+    consultationMode: string;
+  }[];
+}
+
+export interface StudentListResponse {
+  students: CounselorStudent[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface StudentDetailsResponse {
+  student: CounselorStudent;
+  bookings: any[];
+  statistics: {
+    totalBookings: number;
+    completedSessions: number;
+    upcomingSessions: number;
+    cancelledSessions: number;
+    totalSpent: number;
+  };
 }
 
 export interface AvailabilitySlot {
@@ -68,13 +114,37 @@ export const getCounselorDashboardOverview = async (): Promise<CounselorDashboar
   return response.data;
 };
 
-export const getCounselorStudents = async (): Promise<CounselorStudent[]> => {
-  const response = await api.get('/counselors/students');
+export const getCounselorStudents = async (options?: {
+  status?: string;
+  page?: number;
+  limit?: number;
+  includeHistory?: boolean;
+}): Promise<StudentListResponse> => {
+  const params = new URLSearchParams();
+  if (options?.status) params.append('status', options.status);
+  if (options?.page) params.append('page', String(options.page));
+  if (options?.limit) params.append('limit', String(options.limit));
+  if (options?.includeHistory) params.append('includeHistory', 'true');
+  
+  const queryString = params.toString();
+  const url = queryString ? `/counselors/students?${queryString}` : '/counselors/students';
+  
+  const response = await api.get(url);
+  return response.data;
+};
+
+export const getCounselorStudentDetails = async (studentId: number): Promise<StudentDetailsResponse> => {
+  console.log('[counselor-api] getCounselorStudentDetails called with studentId:', studentId);
+  const response = await api.get(`/counselors/students/${studentId}`);
+  console.log('[counselor-api] Raw response:', response);
   return response.data;
 };
 
 export const getUpcomingBookings = async () => {
+  console.log('[counselor-api] getUpcomingBookings called');
   const response = await api.get('/counselors/bookings/upcoming');
+  console.log('[counselor-api] getUpcomingBookings response:', response);
+  console.log('[counselor-api] getUpcomingBookings response.data:', response.data);
   return response.data;
 };
 
@@ -90,6 +160,8 @@ export const updateCounselorProfile = async (data: any) => {
 
 export const getCounselorSlots = async () => {
   const response = await api.get('/counselors/slots');
+  console.log('[counselor-api] getCounselorSlots response:', response);
+  console.log('[counselor-api] getCounselorSlots response.data:', response.data);
   return response.data; // Returns { success: true, data: [...] }
 };
 
@@ -154,14 +226,15 @@ export const getMyUpcomingBookings = async (): Promise<{ success: boolean; data:
   return response.data;
 };
 
-export const getBookingDetails = async (bookingId: number): Promise<{ success: boolean; data: StudentBooking }> => {
+// API interceptor already unwraps { success: true, data: X } → X
+export const getBookingDetails = async (bookingId: number): Promise<StudentBooking> => {
   const response = await api.get(`/counselors/my-bookings/${bookingId}`);
-  return response.data;
+  return response.data as StudentBooking;
 };
 
-export const getBookingThread = async (bookingId: number): Promise<{ success: boolean; data: any[] }> => {
+export const getBookingThread = async (bookingId: number): Promise<any[]> => {
   const response = await api.get(`/counselors/my-bookings/${bookingId}/thread`);
-  return response.data;
+  return response.data || [];
 };
 
 export const joinSession = async (bookingId: number): Promise<{ success: boolean; data: { meetingLink: string } }> => {
