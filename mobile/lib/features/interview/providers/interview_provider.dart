@@ -1,80 +1,85 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-import '../../../providers/dependencies.dart';
+import 'package:mobile/features/interview/models/evaluation_model.dart';
+import 'package:mobile/features/interview/services/tts_service.dart';
+import 'package:mobile/features/interview/services/speech_service.dart';
+import 'package:mobile/features/interview/services/ai_service.dart';
 
 class InterviewState {
   final bool isLoading;
   final String? error;
-  final dynamic testData;
   final String currentPrompt;
   final bool isRecording;
   final bool isSending;
+  final bool isEvaluating;
+  final EvaluationModel? evaluationData;
+  final List<Map<String, dynamic>> messages;
 
   InterviewState({
     this.isLoading = false,
     this.error,
-    this.testData,
-    this.currentPrompt = "Press the mic and start speaking your response.",
+    this.currentPrompt = "Press the mic to start the interview.",
     this.isRecording = false,
     this.isSending = false,
+    this.isEvaluating = false,
+    this.evaluationData,
+    this.messages = const [],
   });
 
   InterviewState copyWith({
     bool? isLoading,
     String? error,
-    dynamic testData,
     String? currentPrompt,
     bool? isRecording,
     bool? isSending,
+    bool? isEvaluating,
+    EvaluationModel? evaluationData,
+    List<Map<String, dynamic>>? messages,
   }) {
     return InterviewState(
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
-      testData: testData ?? this.testData,
       currentPrompt: currentPrompt ?? this.currentPrompt,
       isRecording: isRecording ?? this.isRecording,
       isSending: isSending ?? this.isSending,
+      isEvaluating: isEvaluating ?? this.isEvaluating,
+      evaluationData: evaluationData ?? this.evaluationData,
+      messages: messages ?? this.messages,
     );
   }
 }
 
 class InterviewProvider extends StateNotifier<InterviewState> {
-  final Ref ref;
+  final TtsService _ttsService;
+  final SpeechService _speechService;
+  final AiService _aiService;
 
-  InterviewProvider(this.ref) : super(InterviewState());
+  InterviewProvider(this._ttsService, this._speechService, this._aiService)
+      : super(InterviewState()) {
+    _ttsService.init();
+  }
 
-  Future<void> generateTest({String examType = 'IELTS', String difficulty = 'easy'}) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final token = await ref.read(tokenStorageProvider).readAccessToken();
-      if (token == null) throw Exception('Not authenticated');
-
-      final res = await http.post(
-        Uri.parse('http://10.0.2.2:5000/api/assessment/generate'), // Adjust for iOS vs Android
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'examType': examType,
-          'difficulty': difficulty,
-        }),
-      );
-
-      if (res.statusCode == 201) {
-        final data = jsonDecode(res.body);
-        String initialPrompt = "Describe a time when you had to work with a difficult person.";
-        
-        // Extract prompt if backend provides initial speaking questions
-        if (data != null && data['questions'] != null && data['questions'].isNotEmpty) {
-           initialPrompt = data['questions'][0]['question_text'] ?? initialPrompt;
-        }
-
-        state = state.copyWith(isLoading: false, testData: data, currentPrompt: initialPrompt);
-      } else {
-        throw Exception(res.body);
+  Future<void> startInterview() async {
+    state = state.copyWith(isLoading: true, error: null, evaluationData: null);
+    
+    List<Map<String, dynamic>> initialMessages = [
+      {
+        "role": "system",
+        "content": "You are a visa officer conducting an interview. Ask one short question at a time. Keep the tone professional. Start by welcoming the candidate and asking for their passport."
       }
+    ];
+
+    try {
+      final response = await _aiService.getResponse(initialMessages);
+      initialMessages.add({"role": "assistant", "content": response});
+      
+      state = state.copyWith(
+        isLoading: false, 
+        currentPrompt: response,
+        messages: initialMessages
+      );
+      
+      await _ttsService.speak(response);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -82,39 +87,78 @@ class InterviewProvider extends StateNotifier<InterviewState> {
 
   void toggleRecording(bool isRecording) {
     state = state.copyWith(isRecording: isRecording);
+    if (isRecording) {
+      _ttsService.stop();
+    }
   }
 
   Future<void> submitAudio(String filePath) async {
+    if (state.isEvaluating || state.evaluationData != null) return;
     state = state.copyWith(isSending: true, error: null);
     try {
-      final token = await ref.read(tokenStorageProvider).readAccessToken();
-      if (token == null) throw Exception('Not authenticated');
-
-      final testId = state.testData?['test_id'];
-      if (testId == null) throw Exception('No test generated');
-
-      var request = http.MultipartRequest('POST', Uri.parse('http://10.0.2.2:5000/api/assessment/submit'));
-      request.headers['Authorization'] = 'Bearer $token';
+      final userText = await _speechService.transcribeAudio(filePath);
       
-      request.fields['test_id'] = testId;
-      request.fields['responses'] = jsonEncode([{"section": "Speaking", "text": "Audio attached."}]);
-      
-      request.files.add(await http.MultipartFile.fromPath('audio', filePath));
+      final updatedMessages = List<Map<String, dynamic>>.from(state.messages);
+      updatedMessages.add({"role": "user", "content": userText});
 
-      final streamedResponse = await request.send();
-      final res = await http.Response.fromStream(streamedResponse);
+      state = state.copyWith(currentPrompt: "You: $userText\n\n(Analyzing...)");
 
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        state = state.copyWith(isSending: false, currentPrompt: "Analysis complete! Check your dashboard for the band score.");
-      } else {
-        throw Exception(res.body);
-      }
+      final aiResponse = await _aiService.getResponse(updatedMessages);
+      updatedMessages.add({"role": "assistant", "content": aiResponse});
+
+      state = state.copyWith(
+        isSending: false, 
+        currentPrompt: aiResponse,
+        messages: updatedMessages
+      );
+
+      await _ttsService.speak(aiResponse);
+
     } catch (e) {
       state = state.copyWith(isSending: false, error: e.toString());
     }
   }
+
+  Future<void> endInterview() async {
+    state = state.copyWith(isEvaluating: true, error: null);
+    _ttsService.stop();
+    
+    try {
+      final evalMessages = List<Map<String, dynamic>>.from(state.messages);
+      evalMessages.add({
+        "role": "system",
+        "content": "The interview is now over. Based on the conversation history above, evaluate the user's performance. Output ONLY a valid JSON object with the following keys: 'score' (e.g., '7.5/10' or 'Band 7'), 'grammar' (e.g., 'Good use of vocabulary...'), 'confidence' (e.g., 'High'), and 'feedback' (detailed suggestions). Do not include any text outside the JSON."
+      });
+
+      final jsonResponse = await _aiService.getResponse(evalMessages, isJson: true);
+      
+      final parsed = jsonDecode(jsonResponse);
+      final evaluation = EvaluationModel.fromJson(parsed);
+
+      state = state.copyWith(
+        isEvaluating: false,
+        evaluationData: evaluation,
+      );
+    } catch (e) {
+      state = state.copyWith(isEvaluating: false, error: e.toString());
+    }
+  }
+  
+  @override
+  void dispose() {
+    _ttsService.stop();
+    super.dispose();
+  }
 }
 
+final ttsServiceProvider = Provider((ref) => TtsService());
+final speechServiceProvider = Provider((ref) => SpeechService());
+final aiServiceProvider = Provider((ref) => AiService());
+
 final interviewProvider = StateNotifierProvider<InterviewProvider, InterviewState>((ref) {
-  return InterviewProvider(ref);
+  return InterviewProvider(
+    ref.read(ttsServiceProvider),
+    ref.read(speechServiceProvider),
+    ref.read(aiServiceProvider),
+  );
 });
