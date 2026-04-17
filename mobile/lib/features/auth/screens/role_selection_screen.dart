@@ -10,16 +10,20 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DesignSystem.background,
-      body: Stack(
+    return Theme(
+      data: ThemeData.light(),
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: DesignSystem.themeBackground(context),
+            body: Stack(
         children: [
           // Background Glows
           Positioned(
             top: -100,
             left: -100,
             child: DesignSystem.buildBlurCircle(
-              DesignSystem.emerald.withOpacity(0.12),
+              DesignSystem.primary(context).withOpacity(0.12),
               350,
             ),
           ),
@@ -44,20 +48,20 @@ class RoleSelectionScreen extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: DesignSystem.glassWhite,
+                        color: DesignSystem.glassBackground(context),
                         shape: BoxShape.circle,
-                        border: Border.all(color: DesignSystem.glassBorder),
+                        border: Border.all(color: DesignSystem.glassBorder(context)),
                       ),
-                      child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 20),
+                      child: Icon(LucideIcons.chevronLeft, color: DesignSystem.mainText(context), size: 20),
                     ),
                   ),
                   const SizedBox(height: 48),
                   
-                  Text("Who are you?", style: DesignSystem.headingStyle()),
+                  Text("Who are you?", style: DesignSystem.headingStyle(buildContext: context)),
                   const SizedBox(height: 16),
                   Text(
                     "Choose your role to get started with your personalized experience.",
-                    style: DesignSystem.bodyStyle(color: Colors.white54, fontSize: 16),
+                    style: DesignSystem.bodyStyle(buildContext: context, fontSize: 16),
                   ),
                   const SizedBox(height: 48),
 
@@ -84,6 +88,9 @@ class RoleSelectionScreen extends StatelessWidget {
           ),
         ],
       ),
+          );
+        }
+      ),
     );
   }
 
@@ -103,10 +110,10 @@ class RoleSelectionScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: DesignSystem.emerald.withOpacity(0.1),
+                color: DesignSystem.primary(context).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, color: DesignSystem.emerald, size: 32),
+              child: Icon(icon, color: DesignSystem.primary(context), size: 32),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -115,23 +122,24 @@ class RoleSelectionScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: DesignSystem.headingStyle(fontSize: 20),
+                    style: DesignSystem.headingStyle(buildContext: context, fontSize: 20),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     description,
-                    style: DesignSystem.bodyStyle(color: Colors.white54, fontSize: 13),
+                    style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
                   ),
                 ],
               ),
             ),
-            const Icon(LucideIcons.chevronRight, color: Colors.white24, size: 20),
+            Icon(LucideIcons.chevronRight, color: DesignSystem.labelText(context), size: 20),
           ],
         ),
       ),
     );
   }
-}
+}
+
 
 
 

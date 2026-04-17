@@ -12,8 +12,12 @@ class LandingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DesignSystem.background,
+    return Theme(
+      data: ThemeData.light(),
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: DesignSystem.themeBackground(context),
       body: Stack(
         children: [
           // Background Glows
@@ -64,21 +68,21 @@ class LandingScreen extends StatelessWidget {
                         Text(
                           "Prepare Today.\nStudy Anywhere Tomorrow.",
                           textAlign: TextAlign.center,
-                          style: DesignSystem.headingStyle(),
+                          style: DesignSystem.headingStyle(buildContext: context),
                         ),
                         const SizedBox(height: 16),
                         
                         Text(
                           "Your guided path to international scholarship readiness.",
                           textAlign: TextAlign.center,
-                          style: DesignSystem.bodyStyle(color: Colors.white54, fontSize: 16),
+                          style: DesignSystem.bodyStyle(buildContext: context, color: DesignSystem.subText(context), fontSize: 16),
                         ),
                         const SizedBox(height: 48),
 
                         // Feature list with glass cards
-                        _buildFeatureCard(LucideIcons.checkCircle, "Scholarship readiness"),
-                        _buildFeatureCard(LucideIcons.bookOpen, "English & interview prep"),
-                        _buildFeatureCard(LucideIcons.shieldCheck, "Verified counselors"),
+                        _buildFeatureCard(context, LucideIcons.checkCircle, "Scholarship readiness"),
+                        _buildFeatureCard(context, LucideIcons.bookOpen, "English & interview prep"),
+                        _buildFeatureCard(context, LucideIcons.shieldCheck, "Verified counselors"),
 
                         const SizedBox(height: 48),
                         
@@ -93,12 +97,13 @@ class LandingScreen extends StatelessWidget {
                           child: RichText(
                             text: TextSpan(
                               text: "Already using it? ",
-                              style: DesignSystem.bodyStyle(color: Colors.white54),
+                              style: DesignSystem.bodyStyle(buildContext: context, color: DesignSystem.subText(context)),
                               children: [
                                 TextSpan(
                                   text: "Log in",
                                   style: DesignSystem.bodyStyle(
-                                    color: DesignSystem.emerald,
+                                    buildContext: context,
+                                    color: DesignSystem.primary(context),
                                     fontSize: 14,
                                   ).copyWith(fontWeight: FontWeight.bold),
                                 ),
@@ -115,10 +120,14 @@ class LandingScreen extends StatelessWidget {
           ),
         ],
       ),
+      ),
+          );
+        }
+      ),
     );
   }
 
-  Widget _buildFeatureCard(IconData icon, String title) {
+  Widget _buildFeatureCard(BuildContext context, IconData icon, String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: GlassContainer(
@@ -138,6 +147,7 @@ class LandingScreen extends StatelessWidget {
             Text(
               title,
               style: DesignSystem.bodyStyle(
+                buildContext: context,
                 fontSize: 15,
               ).copyWith(fontWeight: FontWeight.w600),
             ),

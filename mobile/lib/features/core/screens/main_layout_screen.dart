@@ -33,9 +33,10 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(navigationIndexProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: DesignSystem.background,
+      backgroundColor: isDark ? DesignSystem.background : DesignSystem.backgroundLight,
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
@@ -47,6 +48,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
   }
 
   Widget _buildBottomNav(int currentIndex) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Positioned(
       bottom: 0,
       left: 0,
@@ -57,10 +59,10 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
           child: Container(
             height: 64, // Compact professional height
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A).withOpacity(0.95),
+              color: (isDark ? const Color(0xFF0F172A) : Colors.white).withOpacity(0.95),
               border: Border(
                 top: BorderSide(
-                  color: Colors.white.withOpacity(0.05),
+                  color: DesignSystem.surface(context).withOpacity(0.1),
                   width: 1,
                 ),
               ),
@@ -82,7 +84,8 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
 
   Widget _buildNavItem(IconData icon, String label, int index, int currentIndex) {
     bool isActive = currentIndex == index;
-    final color = isActive ? const Color(0xFF10B981) : Colors.white.withOpacity(0.4);
+    final primaryColor = DesignSystem.primary(context);
+    final color = isActive ? primaryColor : DesignSystem.labelText(context);
 
     return GestureDetector(
       onTap: () => ref.read(navigationIndexProvider.notifier).state = index,

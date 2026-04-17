@@ -96,15 +96,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
+    final primaryColor = DesignSystem.primary(context);
 
     return Scaffold(
+      backgroundColor: DesignSystem.themeBackground(context),
       body: Stack(
         children: [
           // Background Blurs
           Positioned(
             top: -100,
             right: -100,
-            child: DesignSystem.buildBlurCircle(DesignSystem.emerald.withOpacity(0.1), 300),
+            child: DesignSystem.buildBlurCircle(primaryColor.withOpacity(0.1), 300),
           ),
           Positioned(
             bottom: -50,
@@ -121,15 +123,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        _buildAvatarSection(user),
+                        _buildAvatarSection(context, user),
                         const SizedBox(height: 40),
-                        _buildNameField(),
+                        _buildNameField(context),
                         const SizedBox(height: 20),
-                        _buildReadOnlyField("Email Address", user?.email ?? ""),
+                        _buildReadOnlyField(context, "Email Address", user?.email ?? ""),
                         const SizedBox(height: 20),
-                        _buildReadOnlyField("Account Role", user?.role.toUpperCase() ?? "STUDENT"),
+                        _buildReadOnlyField(context, "Account Role", user?.role.toUpperCase() ?? "STUDENT"),
                         const SizedBox(height: 40),
-                        _buildSaveButton(),
+                        _buildSaveButton(context),
                       ],
                     ),
                   ),
@@ -152,18 +154,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: DesignSystem.surface(context),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(color: DesignSystem.glassBorder(context)),
               ),
-              child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 20),
+              child: Icon(LucideIcons.chevronLeft, color: DesignSystem.mainText(context), size: 20),
             ),
           ),
           const SizedBox(width: 15),
           Text(
             "Edit Profile",
             style: GoogleFonts.plusJakartaSans(
-              color: Colors.white,
+              color: DesignSystem.mainText(context),
               fontSize: 22,
               fontWeight: FontWeight.w800,
             ),
@@ -173,9 +175,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildAvatarSection(dynamic user) {
+  Widget _buildAvatarSection(BuildContext context, dynamic user) {
     final avatarSeed = user?.name ?? "Alex";
     ImageProvider avatarImage;
+    final primaryColor = DesignSystem.primary(context);
 
     if (_selectedImagePath != null) {
       avatarImage = FileImage(File(_selectedImagePath!));
@@ -192,11 +195,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: DesignSystem.emerald.withOpacity(0.3), width: 2),
+              border: Border.all(color: primaryColor.withOpacity(0.3), width: 2),
             ),
             child: CircleAvatar(
               radius: 60,
-              backgroundColor: Colors.white.withOpacity(0.05),
+              backgroundColor: DesignSystem.surface(context),
               backgroundImage: avatarImage,
             ),
           ),
@@ -207,11 +210,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               onTap: _pickImage,
               child: Container(
                 padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: DesignSystem.emerald,
+                decoration: BoxDecoration(
+                  color: primaryColor,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(LucideIcons.camera, color: Colors.white, size: 20),
+                child: const Icon(LucideIcons.camera, color: Colors.black, size: 20),
               ),
             ),
           ),
@@ -220,29 +223,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildNameField() {
+  Widget _buildNameField(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           "Full Name",
-          style: GoogleFonts.inter(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w500),
+          style: DesignSystem.labelStyle(buildContext: context),
         ),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: DesignSystem.surface(context),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: DesignSystem.glassBorder(context)),
           ),
           child: TextField(
             controller: _nameController,
-            style: GoogleFonts.inter(color: Colors.white),
+            style: GoogleFonts.inter(color: DesignSystem.mainText(context)),
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               border: InputBorder.none,
               hintText: "Enter your full name",
-              hintStyle: GoogleFonts.inter(color: Colors.white24),
+              hintStyle: GoogleFonts.inter(color: DesignSystem.labelText(context)),
             ),
           ),
         ),
@@ -250,48 +253,48 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildReadOnlyField(String label, String value) {
+  Widget _buildReadOnlyField(BuildContext context, String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w500),
+          style: DesignSystem.labelStyle(buildContext: context),
         ),
         const SizedBox(height: 10),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.03),
+            color: DesignSystem.surface(context).withOpacity(0.03),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: DesignSystem.glassBorder(context)),
           ),
           child: Text(
             value,
-            style: GoogleFonts.inter(color: Colors.white60, fontSize: 15),
+            style: GoogleFonts.inter(color: DesignSystem.subText(context), fontSize: 15),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _saveProfile,
         style: ElevatedButton.styleFrom(
-          backgroundColor: DesignSystem.emerald,
+          backgroundColor: DesignSystem.primary(context),
           padding: const EdgeInsets.symmetric(vertical: 18),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,
         ),
         child: _isLoading
-            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
             : Text(
                 "Save Changes",
-                style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: GoogleFonts.plusJakartaSans(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
               ),
       ),
     );

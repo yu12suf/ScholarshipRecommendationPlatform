@@ -13,15 +13,17 @@ class NotificationScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsync = ref.watch(notificationProvider);
+    final primaryColor = DesignSystem.primary(context);
 
     return Scaffold(
+      backgroundColor: DesignSystem.themeBackground(context),
       body: Stack(
         children: [
           // Background Blurs
           Positioned(
             top: -100,
             right: -100,
-            child: DesignSystem.buildBlurCircle(DesignSystem.emerald.withOpacity(0.1), 300),
+            child: DesignSystem.buildBlurCircle(primaryColor.withOpacity(0.1), 300),
           ),
           Positioned(
             bottom: -50,
@@ -38,11 +40,11 @@ class NotificationScreen extends ConsumerWidget {
                     data: (notifications) => notifications.isEmpty
                         ? _buildEmptyState()
                         : _buildNotificationList(context, ref, notifications),
-                    loading: () => const Center(child: CircularProgressIndicator(color: DesignSystem.emerald)),
+                    loading: () => Center(child: CircularProgressIndicator(color: primaryColor)),
                     error: (err, stack) => Center(
                       child: Text(
                         "Error loading notifications",
-                        style: GoogleFonts.inter(color: Colors.white54),
+                        style: GoogleFonts.inter(color: DesignSystem.subText(context)),
                       ),
                     ),
                   ),
@@ -68,18 +70,18 @@ class NotificationScreen extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: DesignSystem.surface(context),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    border: Border.all(color: DesignSystem.glassBorder(context)),
                   ),
-                  child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 20),
+                  child: Icon(LucideIcons.chevronLeft, color: DesignSystem.mainText(context), size: 20),
                 ),
               ),
               const SizedBox(width: 15),
               Text(
                 "Notifications",
                 style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
+                  color: DesignSystem.mainText(context),
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                 ),
@@ -91,7 +93,7 @@ class NotificationScreen extends ConsumerWidget {
             child: Text(
               "Mark all as read",
               style: GoogleFonts.inter(
-                color: DesignSystem.emerald,
+                color: DesignSystem.primary(context),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -140,25 +142,21 @@ class NotificationScreen extends ConsumerWidget {
   }
 
   Widget _buildNotificationItem(BuildContext context, WidgetRef ref, NotificationModel notification) {
+    final primaryColor = DesignSystem.primary(context);
     return GestureDetector(
       onTap: () {
         if (!notification.isRead) {
           ref.read(notificationProvider.notifier).markAsRead(notification.id);
-        }
-        // Handle navigation based on type
-        if (notification.type == 'SCHOLARSHIP_MATCH' && notification.relatedId != null) {
-          // Navigate to scholarship detail
-          // context.push('/scholarship/${notification.relatedId}');
         }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: notification.isRead ? Colors.white.withOpacity(0.03) : DesignSystem.emerald.withOpacity(0.08),
+          color: notification.isRead ? DesignSystem.surface(context) : primaryColor.withOpacity(0.08),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: notification.isRead ? Colors.white.withOpacity(0.05) : DesignSystem.emerald.withOpacity(0.2),
+            color: notification.isRead ? DesignSystem.glassBorder(context) : primaryColor.withOpacity(0.2),
           ),
         ),
         child: Row(
@@ -167,12 +165,12 @@ class NotificationScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: notification.isRead ? Colors.white.withOpacity(0.05) : DesignSystem.emerald.withOpacity(0.15),
+                color: notification.isRead ? DesignSystem.surface(context) : primaryColor.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _getIconForType(notification.type),
-                color: notification.isRead ? Colors.white60 : DesignSystem.emerald,
+                color: notification.isRead ? DesignSystem.subText(context) : primaryColor,
                 size: 20,
               ),
             ),
@@ -188,7 +186,7 @@ class NotificationScreen extends ConsumerWidget {
                         child: Text(
                           notification.title,
                           style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
+                            color: DesignSystem.mainText(context),
                             fontSize: 15,
                             fontWeight: notification.isRead ? FontWeight.w600 : FontWeight.w700,
                           ),
@@ -196,7 +194,7 @@ class NotificationScreen extends ConsumerWidget {
                       ),
                       Text(
                         notification.timeAgo,
-                        style: GoogleFonts.inter(color: Colors.white38, fontSize: 11),
+                        style: GoogleFonts.inter(color: DesignSystem.labelText(context), fontSize: 11),
                       ),
                     ],
                   ),
@@ -204,7 +202,7 @@ class NotificationScreen extends ConsumerWidget {
                   Text(
                     notification.message,
                     style: GoogleFonts.inter(
-                      color: notification.isRead ? Colors.white54 : Colors.white70,
+                      color: notification.isRead ? DesignSystem.subText(context) : DesignSystem.mainText(context).withOpacity(0.7),
                       fontSize: 13,
                       height: 1.4,
                     ),

@@ -55,24 +55,28 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DesignSystem.background,
+      backgroundColor: DesignSystem.themeBackground(context),
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(LucideIcons.sparkles, color: DesignSystem.emerald, size: 20),
+            Icon(LucideIcons.sparkles, color: DesignSystem.primary(context), size: 20),
             const SizedBox(width: 8),
-            Text("Pathfinder AI", style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text("Pathfinder AI", style: GoogleFonts.plusJakartaSans(color: DesignSystem.mainText(context), fontWeight: FontWeight.bold)),
           ],
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(LucideIcons.chevronLeft, color: DesignSystem.mainText(context)),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Stack(
         children: [
           Positioned(
             top: 100,
             left: -50,
-            child: DesignSystem.buildBlurCircle(DesignSystem.emerald.withOpacity(0.05), 300),
+            child: DesignSystem.buildBlurCircle(DesignSystem.primary(context).withOpacity(0.05), 300),
           ),
           Column(
             children: [
@@ -88,9 +92,9 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
                 ),
               ),
               if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 20),
-                  child: Center(child: CircularProgressIndicator(color: DesignSystem.emerald)),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Center(child: CircularProgressIndicator(color: DesignSystem.primary(context))),
                 ),
               _buildInputArea(),
             ],
@@ -101,6 +105,7 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
   }
 
   Widget _buildMessageBubble(String text, bool isUser) {
+    final primaryColor = DesignSystem.primary(context);
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -108,18 +113,18 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
         padding: const EdgeInsets.all(16),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isUser ? DesignSystem.emerald.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+          color: isUser ? primaryColor.withOpacity(0.2) : DesignSystem.surface(context),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
             bottomLeft: isUser ? const Radius.circular(20) : Radius.zero,
             bottomRight: isUser ? Radius.zero : const Radius.circular(20),
           ),
-          border: Border.all(color: isUser ? DesignSystem.emerald.withOpacity(0.5) : Colors.white.withOpacity(0.1)),
+          border: Border.all(color: isUser ? primaryColor.withOpacity(0.5) : DesignSystem.glassBorder(context)),
         ),
         child: Text(
           text,
-          style: GoogleFonts.inter(color: Colors.white, height: 1.4, fontSize: 14),
+          style: GoogleFonts.inter(color: DesignSystem.mainText(context), height: 1.4, fontSize: 14),
         ),
       ),
     );
@@ -129,8 +134,8 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        border: const Border(top: BorderSide(color: Colors.white10)),
+        color: DesignSystem.themeBackground(context).withOpacity(0.8),
+        border: Border(top: BorderSide(color: DesignSystem.glassBorder(context))),
       ),
       child: Row(
         children: [
@@ -140,10 +145,10 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TextField(
                 controller: _controller,
-                style: GoogleFonts.inter(color: Colors.white),
+                style: GoogleFonts.inter(color: DesignSystem.mainText(context)),
                 decoration: InputDecoration(
                   hintText: "Type your message...",
-                  hintStyle: GoogleFonts.inter(color: Colors.white38),
+                  hintStyle: GoogleFonts.inter(color: DesignSystem.labelText(context)),
                   border: InputBorder.none,
                 ),
                 onSubmitted: _sendMessage,
@@ -155,9 +160,9 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
             onTap: () => _sendMessage(_controller.text),
             child: Container(
               padding: const EdgeInsets.all(14),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: DesignSystem.emerald,
+                color: DesignSystem.primary(context),
               ),
               child: const Icon(LucideIcons.send, color: Colors.black, size: 20),
             ),
