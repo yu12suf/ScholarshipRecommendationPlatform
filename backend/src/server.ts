@@ -28,7 +28,7 @@ async function start() {
   // Initialize Socket.io
   SocketService.initialize(server);
 
-  server.listen(Number(finalPort), () => {
+  server.listen(Number(finalPort), '0.0.0.0', () => {
     console.log(`Server listening on port ${finalPort}`);
     console.log(
       `Health check available at: http://0.0.0.0:${finalPort}/health`,
