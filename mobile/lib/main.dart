@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:mobile/core/providers/router_provider.dart';
 import 'package:mobile/features/core/theme/design_system.dart';
+import 'package:mobile/features/core/providers/theme_provider.dart';
 
 void main() {
   runApp(
@@ -19,18 +20,34 @@ class AppRoot extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeState = ref.watch(themeProvider);
 
     return MaterialApp.router(
       title: 'EduPathway',
       debugShowCheckedModeBanner: false,
+      themeMode: themeState.themeMode,
       theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeState.accentColor,
+          brightness: Brightness.light,
+          primary: themeState.accentColor,
+        ),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
+          displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: const Color(0xFF0F172A)),
+          bodyLarge: GoogleFonts.inter(color: const Color(0xFF334155)),
+        ),
+      ),
+      darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
         scaffoldBackgroundColor: DesignSystem.background,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: DesignSystem.emerald,
+          seedColor: themeState.accentColor,
           brightness: Brightness.dark,
-          primary: DesignSystem.emerald,
+          primary: themeState.accentColor,
           surface: DesignSystem.background,
         ),
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(

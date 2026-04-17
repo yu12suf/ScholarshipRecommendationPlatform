@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -61,12 +62,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         const SizedBox(height: 20),
                         _buildActiveContent(user),
                         const SizedBox(height: 40),
-                        _buildLogoutButton(),
-                        const SizedBox(height: 40),
                       ],
                     ),
                   ),
                 ),
+                if (_activeTab == 'Account')
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: _buildLogoutButton(),
+                  ),
               ],
             ),
           ),
@@ -438,20 +442,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: () async {
         final confirmed = await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: DesignSystem.surface(context),
-            title: Text("Logout", style: DesignSystem.headingStyle(buildContext: context, fontSize: 18)),
-            content: Text("Are you sure you want to log out?", style: DesignSystem.bodyStyle(buildContext: context)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text("Cancel", style: DesignSystem.labelStyle(buildContext: context)),
+          builder: (context) => BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: AlertDialog(
+              backgroundColor: DesignSystem.overlayBackground(context),
+              surfaceTintColor: Colors.transparent, // Prevents Material 3 tinting over the custom color
+              elevation: 24,
+              shadowColor: Colors.black.withOpacity(0.4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(
+                  color: DesignSystem.primary(context).withOpacity(0.3), 
+                  width: 1.5
+                ),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text("Logout", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+              title: Row(
+                children: [
+                  Icon(LucideIcons.logOut, color: Colors.redAccent, size: 24),
+                  const SizedBox(width: 10),
+                  Text("Logout", style: DesignSystem.headingStyle(buildContext: context, fontSize: 20)),
+                ],
               ),
-            ],
+              content: Text("Are you sure you want to log out of your account?", style: DesignSystem.bodyStyle(buildContext: context, fontSize: 15)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  child: Text("Cancel", style: DesignSystem.labelStyle(buildContext: context, fontSize: 14)),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(0.1),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(color: Colors.redAccent.withOpacity(0.3)),
+                  ),
+                  child: const Text("Logout", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
+              ],
+            ),
           ),
         );
 

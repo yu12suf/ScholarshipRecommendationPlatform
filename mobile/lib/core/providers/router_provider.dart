@@ -60,7 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
       } else {
         if (!_publicPaths.contains(loc)) {
-          return '/login';
+          return '/';
         }
       }
 

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/features/core/theme/design_system.dart';
 
 class CustomTextField extends StatelessWidget {
@@ -32,7 +30,7 @@ class CustomTextField extends StatelessWidget {
       child: Container(
         height: maxLines > 1 ? null : 56,
         decoration: BoxDecoration(
-          color: DesignSystem.inputBackground,
+          color: DesignSystem.inputFill(context),
           borderRadius: BorderRadius.circular(18),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -44,15 +42,24 @@ class CustomTextField extends StatelessWidget {
           keyboardType: keyboardType,
           maxLines: maxLines,
           autofillHints: autofillHints,
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+          style: DesignSystem.bodyStyle(
+            buildContext: context,
+            fontSize: 15,
+            color: DesignSystem.mainText(context),
+          ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: GoogleFonts.inter(
-              color: Colors.white38,
+            hintStyle: DesignSystem.bodyStyle(
+              buildContext: context,
+              color: DesignSystem.labelText(context),
               fontSize: 14,
             ),
-            prefixIcon: prefixIcon != null 
-                ? Icon(prefixIcon, color: Colors.white38, size: 20) 
+            prefixIcon: prefixIcon != null
+                ? Icon(
+                    prefixIcon,
+                    color: DesignSystem.labelText(context),
+                    size: 20,
+                  )
                 : null,
             border: InputBorder.none,
             isDense: true,
@@ -63,5 +70,3 @@ class CustomTextField extends StatelessWidget {
     );
   }
 }
-
-

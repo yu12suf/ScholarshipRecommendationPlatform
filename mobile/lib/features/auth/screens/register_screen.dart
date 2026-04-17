@@ -81,16 +81,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DesignSystem.background,
-      body: Stack(
+    return Theme(
+      data: ThemeData.light(),
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: DesignSystem.themeBackground(context),
+            body: Stack(
         children: [
           // Background Glows
           Positioned(
             top: -100,
             right: -100,
             child: DesignSystem.buildBlurCircle(
-              DesignSystem.emerald.withOpacity(0.08),
+              DesignSystem.primary(context).withOpacity(0.08),
               350,
             ),
           ),
@@ -116,20 +120,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: DesignSystem.glassWhite,
+                        color: DesignSystem.glassBackground(context),
                         shape: BoxShape.circle,
-                        border: Border.all(color: DesignSystem.glassBorder),
+                        border: Border.all(color: DesignSystem.glassBorder(context)),
                       ),
-                      child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 20),
+                      child: Icon(LucideIcons.chevronLeft, color: DesignSystem.mainText(context), size: 20),
                     ),
                   ),
                   const SizedBox(height: 40),
                   
-                  Text("Create Account", style: DesignSystem.headingStyle()),
+                  Text("Create Account", style: DesignSystem.headingStyle(buildContext: context)),
                   const SizedBox(height: 12),
                   Text(
                     "Join our community and start your journey.",
-                    style: DesignSystem.bodyStyle(color: Colors.white54, fontSize: 16),
+                    style: DesignSystem.bodyStyle(buildContext: context, fontSize: 16),
                   ),
                   const SizedBox(height: 12),
                   _buildRoleBadge(_roleForApi),
@@ -137,43 +141,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                   GlassContainer(
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Full Name", style: DesignSystem.labelStyle()),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          hintText: "Enter your full name",
-                          prefixIcon: LucideIcons.user,
-                          controller: _nameController,
-                        ),
-                        
-                        const SizedBox(height: 8),
-                        Text("Email Address", style: DesignSystem.labelStyle()),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          hintText: "Enter your email",
-                          prefixIcon: LucideIcons.mail,
-                          controller: _emailController,
-                        ),
-                        
-                        const SizedBox(height: 8),
-                        Text("Password", style: DesignSystem.labelStyle()),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          hintText: "Create a password",
-                          isPassword: true,
-                          prefixIcon: LucideIcons.lock,
-                          controller: _passwordController,
-                        ),
-                        
-                        const SizedBox(height: 32),
-                        PrimaryButton(
-                          text: "Register Now",
-                          isLoading: _submitting,
-                          onPressed: _createAccount,
-                        ),
-                      ],
+                    child: AutofillGroup(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Full Name", style: DesignSystem.labelStyle(buildContext: context)),
+                          const SizedBox(height: 12),
+                          CustomTextField(
+                            hintText: "Enter your full name",
+                            prefixIcon: LucideIcons.user,
+                            controller: _nameController,
+                            autofillHints: const [AutofillHints.name],
+                          ),
+                          
+                          const SizedBox(height: 8),
+                          Text("Email Address", style: DesignSystem.labelStyle(buildContext: context)),
+                          const SizedBox(height: 12),
+                          CustomTextField(
+                            hintText: "Enter your email",
+                            prefixIcon: LucideIcons.mail,
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                          ),
+                          
+                          const SizedBox(height: 8),
+                          Text("Password", style: DesignSystem.labelStyle(buildContext: context)),
+                          const SizedBox(height: 12),
+                          CustomTextField(
+                            hintText: "Create a password",
+                            isPassword: true,
+                            prefixIcon: LucideIcons.lock,
+                            controller: _passwordController,
+                            autofillHints: const [AutofillHints.newPassword],
+                          ),
+                          
+                          const SizedBox(height: 32),
+                          PrimaryButton(
+                            text: "Register Now",
+                            isLoading: _submitting,
+                            onPressed: _createAccount,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   
@@ -184,12 +194,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       child: RichText(
                         text: TextSpan(
                           text: "Already have an account? ",
-                          style: DesignSystem.bodyStyle(color: Colors.white54),
+                          style: DesignSystem.bodyStyle(buildContext: context),
                           children: [
                             TextSpan(
                               text: "Log in",
                               style: DesignSystem.bodyStyle(
-                                color: DesignSystem.emerald,
+                                buildContext: context,
+                                color: DesignSystem.primary(context),
                               ).copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -204,29 +215,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ],
       ),
+          );
+        }
+      ),
     );
   }
 
   Widget _buildRoleBadge(String role) {
+    final primaryColor = DesignSystem.primary(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: DesignSystem.emerald.withOpacity(0.1),
+        color: primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: DesignSystem.emerald.withOpacity(0.2)),
+        border: Border.all(color: primaryColor.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             role == 'counselor' ? LucideIcons.userCheck : LucideIcons.graduationCap,
-            color: DesignSystem.emerald,
+            color: primaryColor,
             size: 14,
           ),
           const SizedBox(width: 8),
           Text(
             "Registering as ${role.toUpperCase()}",
-            style: DesignSystem.labelStyle(color: DesignSystem.emerald, fontSize: 10),
+            style: DesignSystem.labelStyle(buildContext: context, color: primaryColor, fontSize: 10),
           ),
         ],
       ),

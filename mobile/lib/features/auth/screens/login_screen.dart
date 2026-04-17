@@ -65,16 +65,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DesignSystem.background,
-      body: Stack(
+    return Theme(
+      data: ThemeData.light(),
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: DesignSystem.themeBackground(context),
+            body: Stack(
         children: [
           // Background Glows
           Positioned(
             top: -50,
             left: -100,
             child: DesignSystem.buildBlurCircle(
-              DesignSystem.emerald.withOpacity(0.08),
+              DesignSystem.primary(context).withOpacity(0.08),
               300,
             ),
           ),
@@ -101,67 +105,73 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: DesignSystem.glassWhite,
+                        color: DesignSystem.glassBackground(context),
                         shape: BoxShape.circle,
-                        border: Border.all(color: DesignSystem.glassBorder),
+                        border: Border.all(color: DesignSystem.glassBorder(context)),
                       ),
-                      child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 20),
+                      child: Icon(LucideIcons.chevronLeft, color: DesignSystem.mainText(context), size: 20),
                     ),
                   ),
                   const SizedBox(height: 40),
                   
-                  Text("Welcome Back", style: DesignSystem.headingStyle()),
+                  Text("Welcome Back", style: DesignSystem.headingStyle(buildContext: context)),
                   const SizedBox(height: 12),
                   Text(
                     "Log in to continue your journey.",
-                    style: DesignSystem.bodyStyle(color: Colors.white54, fontSize: 16),
+                    style: DesignSystem.bodyStyle(buildContext: context, fontSize: 16),
                   ),
                   const SizedBox(height: 40),
                   
                   GlassContainer(
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Email Address", style: DesignSystem.labelStyle()),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          hintText: "Email Address",
-                          prefixIcon: LucideIcons.mail,
-                          controller: _emailController,
-                        ),
-                        
-                        const SizedBox(height: 8),
-                        Text("Password", style: DesignSystem.labelStyle()),
-                        const SizedBox(height: 12),
-                        CustomTextField(
-                          hintText: "Password",
-                          isPassword: true,
-                          prefixIcon: LucideIcons.lock,
-                          controller: _passwordController,
-                        ),
-                        
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              "Forgot password?",
-                              style: DesignSystem.bodyStyle(
-                                color: DesignSystem.emerald,
-                                fontSize: 13,
-                              ).copyWith(fontWeight: FontWeight.bold),
+                    child: AutofillGroup(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Email Address", style: DesignSystem.labelStyle(buildContext: context)),
+                          const SizedBox(height: 12),
+                          CustomTextField(
+                            hintText: "Email Address",
+                            prefixIcon: LucideIcons.mail,
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                          ),
+                          
+                          const SizedBox(height: 8),
+                          Text("Password", style: DesignSystem.labelStyle(buildContext: context)),
+                          const SizedBox(height: 12),
+                          CustomTextField(
+                            hintText: "Password",
+                            isPassword: true,
+                            prefixIcon: LucideIcons.lock,
+                            controller: _passwordController,
+                            autofillHints: const [AutofillHints.password],
+                          ),
+                          
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {},
+                              child: Text(
+                                "Forgot password?",
+                                style: DesignSystem.bodyStyle(
+                                  buildContext: context,
+                                  color: DesignSystem.primary(context),
+                                  fontSize: 13,
+                                ).copyWith(fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        PrimaryButton(
-                          text: "Login",
-                          isLoading: _submitting,
-                          onPressed: _signIn,
-                        ),
-                      ],
+                          const SizedBox(height: 24),
+                          
+                          PrimaryButton(
+                            text: "Login",
+                            isLoading: _submitting,
+                            onPressed: _signIn,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   
@@ -172,12 +182,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: RichText(
                         text: TextSpan(
                           text: "Don't have an account? ",
-                          style: DesignSystem.bodyStyle(color: Colors.white54),
+                          style: DesignSystem.bodyStyle(buildContext: context),
                           children: [
                             TextSpan(
                               text: "Register",
                               style: DesignSystem.bodyStyle(
-                                color: DesignSystem.emerald,
+                                buildContext: context,
+                                color: DesignSystem.primary(context),
                               ).copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -191,6 +202,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ],
+      ),
+          );
+        }
       ),
     );
   }
