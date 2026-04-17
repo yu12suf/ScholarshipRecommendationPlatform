@@ -59,7 +59,7 @@ export class AdminController {
 
   static async unblockIP(req: Request, res: Response, next: NextFunction) {
     try {
-      const { ip } = req.params;
+      const ip = req.params.ip as string;
       const result = await AdminService.unblockIP(ip);
       res.json(result);
     } catch (error) {

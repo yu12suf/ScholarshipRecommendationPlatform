@@ -85,4 +85,8 @@ export class CounselorRepository {
             : reviews.reduce((acc, item) => acc + item.rating, 0) / reviews.length;
         await Counselor.update({ rating: Number(avg.toFixed(2)) }, { where: { id: counselorId } });
     }
+
+    static async countPendingVerification(): Promise<number> {
+        return Counselor.count({ where: { verificationStatus: 'pending' } });
+    }
 }

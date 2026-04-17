@@ -115,6 +115,10 @@ export class UserRepository {
         return User.count({ where: { role } });
     }
 
+    static async countActive(): Promise<number> {
+        return User.count({ where: { isVerified: true } });
+    }
+
     static async findBookedStudents(counselorId: number): Promise<User[]> {
         return User.findAll({
             include: [{

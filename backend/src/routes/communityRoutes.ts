@@ -1,7 +1,7 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 import { sequelize } from "../config/sequelize.js";
 import { authenticate } from "../middlewares/authMiddleware.js";
-import { Op } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import path from "path";
 
 const router: Router = express.Router();
@@ -32,7 +32,7 @@ router.get("/groups", authenticate, async (req: Request, res: Response, next: Ne
         
         const groups = await sequelize.query(query, {
             bind: [userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         res.json({ groups });
@@ -62,7 +62,7 @@ router.get("/my-groups", authenticate, async (req: Request, res: Response, next:
         
         const groups = await sequelize.query(query, {
             bind: [userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         res.json({ groups });
@@ -152,7 +152,7 @@ router.get("/groups/:id", authenticate, async (req: Request, res: Response, next
         `;
         const groups = await sequelize.query(groupQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (groups.length === 0) {
@@ -168,7 +168,7 @@ router.get("/groups/:id", authenticate, async (req: Request, res: Response, next
         `;
         const memberships = await sequelize.query(memberQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         const isMember = memberships.length > 0;
@@ -187,7 +187,7 @@ router.get("/groups/:id", authenticate, async (req: Request, res: Response, next
         `;
         const members = await sequelize.query(membersQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         // Transform to include user object
@@ -232,7 +232,7 @@ router.put("/groups/:id", authenticate, async (req: Request, res: Response, next
         `;
         const members = await sequelize.query(memberQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (members.length === 0) {
@@ -280,7 +280,7 @@ router.put("/groups/:id", authenticate, async (req: Request, res: Response, next
                     is_active as "isActive", add_members_permission as "addMembersPermission",
                     created_at as "createdAt", updated_at as "updatedAt" 
              FROM community_groups WHERE id = $1`,
-            { bind: [groupId], type: sequelize.QueryTypes.SELECT }
+            { bind: [groupId], type: QueryTypes.SELECT }
         );
 
         res.json({ group: group[0] });
@@ -299,7 +299,7 @@ router.delete("/groups/:id", authenticate, async (req: Request, res: Response, n
         const groupQuery = `SELECT created_by FROM community_groups WHERE id = $1`;
         const groups = await sequelize.query(groupQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (groups.length === 0) {
@@ -315,7 +315,7 @@ router.delete("/groups/:id", authenticate, async (req: Request, res: Response, n
         `;
         const members = await sequelize.query(memberQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         const isAdmin = members.length > 0;
@@ -346,7 +346,7 @@ router.post("/groups/:id/join", authenticate, async (req: Request, res: Response
         const groupQuery = `SELECT * FROM community_groups WHERE id = $1 AND is_active = true`;
         const groups = await sequelize.query(groupQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (groups.length === 0) {
@@ -360,7 +360,7 @@ router.post("/groups/:id/join", authenticate, async (req: Request, res: Response
         `;
         const existing = await sequelize.query(existingQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (existing.length > 0) {
@@ -374,7 +374,7 @@ router.post("/groups/:id/join", authenticate, async (req: Request, res: Response
         `;
         const previous = await sequelize.query(previousQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (previous.length > 0) {
@@ -416,7 +416,7 @@ router.post("/groups/:id/leave", authenticate, async (req: Request, res: Respons
         `;
         const memberships = await sequelize.query(membershipQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (memberships.length === 0) {
@@ -462,7 +462,7 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
         `;
         const members = await sequelize.query(memberQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (members.length === 0) {
@@ -494,7 +494,7 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
         console.log('[community] Executing messages query');
         const messages = await sequelize.query(query, {
             bind: bindParams,
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         console.log('[community] Got messages:', messages.length);
@@ -512,7 +512,7 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
             `;
             const allReactions = await sequelize.query(allReactionsQuery, {
                 bind: messageIds,
-                type: sequelize.QueryTypes.SELECT
+                type: QueryTypes.SELECT
             });
             
             // Group reactions by message_id
@@ -551,7 +551,7 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
             `;
             const replies = await sequelize.query(repliesQuery, {
                 bind: replyToIds,
-                type: sequelize.QueryTypes.SELECT
+                type: QueryTypes.SELECT
             });
             
             for (const r of replies as any[]) {
@@ -641,7 +641,7 @@ router.post("/groups/:id/messages", authenticate, async (req: Request, res: Resp
         `;
         const members = await sequelize.query(memberQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (members.length === 0) {
@@ -672,7 +672,7 @@ router.post("/groups/:id/messages", authenticate, async (req: Request, res: Resp
         const userQuery = `SELECT id, name, email FROM users WHERE id = $1`;
         const users = await sequelize.query(userQuery, {
             bind: [userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (users[0]?.[0]) {
@@ -721,7 +721,7 @@ router.put("/groups/:id/messages/:messageId", authenticate, async (req: Request,
         `;
         const members = await sequelize.query(memberQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
         
         console.log('[community] Members check:', members);
@@ -734,7 +734,7 @@ router.put("/groups/:id/messages/:messageId", authenticate, async (req: Request,
         const msgQuery = `SELECT * FROM community_messages WHERE id = $1 AND group_id = $2`;
         const messages = await sequelize.query(msgQuery, {
             bind: [messageId, groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (messages.length === 0) {
@@ -756,12 +756,12 @@ router.put("/groups/:id/messages/:messageId", authenticate, async (req: Request,
 
         const updated = await sequelize.query(
             `SELECT * FROM community_messages WHERE id = $1`,
-            { bind: [messageId], type: sequelize.QueryTypes.SELECT }
+            { bind: [messageId], type: QueryTypes.SELECT }
         );
 
         const users = await sequelize.query(
             `SELECT id, name, email FROM users WHERE id = $1`,
-            { bind: [userId], type: sequelize.QueryTypes.SELECT }
+            { bind: [userId], type: QueryTypes.SELECT }
         );
 
         let result = null;
@@ -791,7 +791,7 @@ router.delete("/groups/:id/messages/:messageId", authenticate, async (req: Reque
         const msgQuery = `SELECT * FROM community_messages WHERE id = $1 AND group_id = $2`;
         const messages = await sequelize.query(msgQuery, {
             bind: [messageId, groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (messages.length === 0) {
@@ -808,7 +808,7 @@ router.delete("/groups/:id/messages/:messageId", authenticate, async (req: Reque
             `;
             const admins = await sequelize.query(adminQuery, {
                 bind: [groupId, userId],
-                type: sequelize.QueryTypes.SELECT
+                type: QueryTypes.SELECT
             });
             canDelete = admins.length > 0;
         }
@@ -843,7 +843,7 @@ router.post("/groups/:id/messages/:messageId/react", authenticate, async (req: R
         const msgQuery = `SELECT * FROM community_messages WHERE id = $1 AND group_id = $2`;
         const messages = await sequelize.query(msgQuery, {
             bind: [messageId, groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (messages.length === 0) {
@@ -857,7 +857,7 @@ router.post("/groups/:id/messages/:messageId/react", authenticate, async (req: R
         `;
         const existing = await sequelize.query(existingQuery, {
             bind: [messageId, userId, emoji],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (existing.length > 0) {
@@ -904,7 +904,7 @@ router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Req
         `;
         const admins = await sequelize.query(adminQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (admins.length === 0) {
@@ -914,7 +914,7 @@ router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Req
         const msgQuery = `SELECT * FROM community_messages WHERE id = $1 AND group_id = $2`;
         const messages = await sequelize.query(msgQuery, {
             bind: [messageId, groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (messages.length === 0) {
@@ -928,7 +928,7 @@ router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Req
 
         const updated = await sequelize.query(
             `SELECT * FROM community_messages WHERE id = $1`,
-            { bind: [messageId], type: sequelize.QueryTypes.SELECT }
+            { bind: [messageId], type: QueryTypes.SELECT }
         );
 
         res.json({ message: updated[0] });
@@ -960,7 +960,7 @@ router.get("/groups/search", authenticate, async (req: Request, res: Response, n
         
         const groups = await sequelize.query(searchQuery, {
             bind: [userId, `%${q}%`],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         res.json({ groups });
@@ -980,7 +980,7 @@ router.get("/groups/:id/users", authenticate, async (req: Request, res: Response
         const groupQuery = `SELECT add_members_permission, created_by FROM community_groups WHERE id = $1`;
         const groups = await sequelize.query(groupQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (groups.length === 0) {
@@ -996,7 +996,7 @@ router.get("/groups/:id/users", authenticate, async (req: Request, res: Response
         `;
         const members = await sequelize.query(memberQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         const isCreator = group.created_by === userId;
@@ -1039,7 +1039,7 @@ router.get("/groups/:id/users", authenticate, async (req: Request, res: Response
 
         const users = await sequelize.query(userQuery, {
             bind: bindParams,
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         res.json({ users });
@@ -1063,7 +1063,7 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
         const groupInfoQuery = `SELECT add_members_permission FROM community_groups WHERE id = $1`;
         const groupInfo = await sequelize.query(groupInfoQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (groupInfo.length === 0) {
@@ -1083,7 +1083,7 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
             `;
             const members = await sequelize.query(memberQuery, {
                 bind: [groupId, userId],
-                type: sequelize.QueryTypes.SELECT
+                type: QueryTypes.SELECT
             });
             canAddMembers = members.length > 0;
         } else {
@@ -1094,7 +1094,7 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
             `;
             const admins = await sequelize.query(adminQuery, {
                 bind: [groupId, userId],
-                type: sequelize.QueryTypes.SELECT
+                type: QueryTypes.SELECT
             });
             canAddMembers = admins.length > 0;
         }
@@ -1107,7 +1107,7 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
         const groupQuery = `SELECT * FROM community_groups WHERE id = $1 AND is_active = true`;
         const groups = await sequelize.query(groupQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (groups.length === 0) {
@@ -1118,7 +1118,7 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
         const userQuery = `SELECT id, name, email FROM users WHERE id = $1`;
         const users = await sequelize.query(userQuery, {
             bind: [targetUserId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (users.length === 0) {
@@ -1132,7 +1132,7 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
         `;
         const existing = await sequelize.query(existingQuery, {
             bind: [groupId, targetUserId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (existing.length > 0) {
@@ -1146,7 +1146,7 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
         `;
         const previous = await sequelize.query(previousQuery, {
             bind: [groupId, targetUserId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (previous.length > 0) {
@@ -1200,7 +1200,7 @@ router.delete("/groups/:id/members/:userId", authenticate, async (req: Request, 
         `;
         const admins = await sequelize.query(adminQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (admins.length === 0) {
@@ -1211,7 +1211,7 @@ router.delete("/groups/:id/members/:userId", authenticate, async (req: Request, 
         const groupQuery = `SELECT created_by FROM community_groups WHERE id = $1`;
         const groups = await sequelize.query(groupQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (groups.length === 0) {
@@ -1230,7 +1230,7 @@ router.delete("/groups/:id/members/:userId", authenticate, async (req: Request, 
         `;
         const targets = await sequelize.query(targetQuery, {
             bind: [groupId, targetUserId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (targets.length === 0) {
@@ -1281,7 +1281,7 @@ router.put("/groups/:id/members/:userId", authenticate, async (req: Request, res
         `;
         const admins = await sequelize.query(adminQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (admins.length === 0) {
@@ -1295,7 +1295,7 @@ router.put("/groups/:id/members/:userId", authenticate, async (req: Request, res
         `;
         const targets = await sequelize.query(targetQuery, {
             bind: [groupId, targetUserId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (targets.length === 0) {
@@ -1324,7 +1324,7 @@ router.get("/groups/:id/invite", authenticate, async (req: Request, res: Respons
         const groupQuery = `SELECT invite_link, created_by FROM community_groups WHERE id = $1`;
         const groups = await sequelize.query(groupQuery, {
             bind: [groupId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (groups.length === 0) {
@@ -1342,7 +1342,7 @@ router.get("/groups/:id/invite", authenticate, async (req: Request, res: Respons
             `;
             const members = await sequelize.query(memberQuery, {
                 bind: [groupId, userId],
-                type: sequelize.QueryTypes.SELECT
+                type: QueryTypes.SELECT
             });
 
             if (members.length === 0) {
@@ -1369,7 +1369,7 @@ router.post("/groups/:id/invite", authenticate, async (req: Request, res: Respon
         `;
         const admins = await sequelize.query(adminQuery, {
             bind: [groupId, userId],
-            type: sequelize.QueryTypes.SELECT
+            type: QueryTypes.SELECT
         });
 
         if (admins.length === 0) {

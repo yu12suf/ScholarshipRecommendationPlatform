@@ -66,6 +66,14 @@ export class AvailabilitySlot extends Model {
     })
     declare meetingLink: string | null;
 
+    @Column({
+        type: DataType.STRING(20),
+        allowNull: true,
+        defaultValue: 'video',
+        field: 'consultation_mode'
+    })
+    declare consultationMode: string | null;
+
     @CreatedAt
     @Column({
         type: DataType.DATE,

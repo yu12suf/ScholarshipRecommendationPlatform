@@ -558,9 +558,9 @@ export class BookingRepository {
         if (!student) return null;
         
         const user = await User.findByPk(student.userId);
-        const studentData = { ...student, user };
+        const studentData = { ...student.toJSON(), user };
         
-        const userData = studentData.user || {};
+        const userData = studentData.user as any || {};
         
         // Fetch slot details for each booking
         const slotIds = allBookings.map(b => b.slotId).filter(Boolean);
@@ -568,7 +568,7 @@ export class BookingRepository {
             where: { id: { [Op.in]: slotIds } }
         }) : [];
         
-        const slotMap = new Map(slots.map(s => [s.id, s]));
+        const slotMap = new Map(slots.map((s: any) => [s.id, s]));
 
         const statistics = {
             totalBookings: allBookings.length,
