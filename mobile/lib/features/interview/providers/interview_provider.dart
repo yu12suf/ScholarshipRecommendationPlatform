@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/interview/models/evaluation_model.dart';
 import 'package:mobile/features/interview/services/tts_service.dart';
@@ -37,6 +38,7 @@ class InterviewState {
   final int remainingSeconds;
   final bool isMuted;
   final InterviewMetrics metrics;
+  final List<dynamic> history;
 
   InterviewState({
     this.isLoading = false,
@@ -50,6 +52,7 @@ class InterviewState {
     this.messages = const [],
     this.remainingSeconds = 600, // 10 minutes
     this.isMuted = false,
+    this.history = const [],
     InterviewMetrics? metrics,
   }) : metrics = metrics ?? InterviewMetrics();
 
@@ -66,6 +69,7 @@ class InterviewState {
     int? remainingSeconds,
     bool? isMuted,
     InterviewMetrics? metrics,
+    List<dynamic>? history,
   }) {
     return InterviewState(
       isLoading: isLoading ?? this.isLoading,
@@ -80,6 +84,7 @@ class InterviewState {
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       isMuted: isMuted ?? this.isMuted,
       metrics: metrics ?? this.metrics,
+      history: history ?? this.history,
     );
   }
 }
@@ -94,6 +99,26 @@ class InterviewProvider extends StateNotifier<InterviewState> {
   InterviewProvider(this._ttsService, this._speechService, this._aiService, this._apiClient)
       : super(InterviewState()) {
     _ttsService.init();
+    fetchHistory();
+  }
+
+  void fetchHistory() async {
+    try {
+      final response = await _apiClient.get('/api/visa/history');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body)['data'] as List;
+        state = state.copyWith(history: data);
+      }
+    } catch (e) {
+      debugPrint("Fetch History Error: $e");
+    }
+  }
+
+  void loadInterview(Map<String, dynamic> interviewData) {
+    if (interviewData['aiEvaluation'] != null) {
+      final evaluation = EvaluationModel.fromJson(interviewData['aiEvaluation']);
+      state = state.copyWith(evaluationData: evaluation);
+    }
   }
 
   Future<void> startInterview({String country = "USA", String university = "Full-ride University"}) async {
@@ -142,6 +167,13 @@ class InterviewProvider extends StateNotifier<InterviewState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  void reset() {
+    _timer?.cancel();
+    _ttsService.stop();
+    state = InterviewState(history: state.history);
+    fetchHistory(); // Refresh history
   }
 
   void _startTimer() {
@@ -213,6 +245,14 @@ class InterviewProvider extends StateNotifier<InterviewState> {
 
   Future<void> endInterview() async {
     if (state.interviewId == null) return;
+
+    // Check if the user has spoken anything
+    bool hasUserSpoken = state.messages.any((m) => m['role'] == 'user');
+    if (!hasUserSpoken) {
+      reset();
+      return;
+    }
+
     _timer?.cancel();
     state = state.copyWith(isEvaluating: true, error: null);
     _ttsService.stop();
@@ -236,6 +276,7 @@ class InterviewProvider extends StateNotifier<InterviewState> {
         isEvaluating: false,
         evaluationData: evaluation,
       );
+      fetchHistory(); // Update history list after successful interview
     } catch (e) {
       state = state.copyWith(isEvaluating: false, error: e.toString());
     }

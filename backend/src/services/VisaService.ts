@@ -91,6 +91,29 @@ Rules:
       throw new Error("Interview not found");
     }
 
+    const hasUserSpoken = transcript.some(m => m.role === 'user');
+    if (!hasUserSpoken) {
+      const emptyEvaluation: InterviewEvaluation = {
+        score: "0/10",
+        grammar: "N/A",
+        confidence: "None",
+        feedback: "No speech detected. Please participate in the interview by speaking into the microphone to receive an evaluation.",
+        confidence_score: 0,
+        country_specific_flags: ["No user input"],
+        focus_areas: ["Engagement"],
+        improvements: ["Ensure microphone permissions are granted and speak clearly during the interview."],
+        evaluation_source: "system_validation"
+      };
+      
+      await interview.update({
+        transcript,
+        aiEvaluation: emptyEvaluation,
+        status: "Evaluated"
+      });
+      
+      return emptyEvaluation;
+    }
+
     const evaluationPrompt = `
       You are an expert Visa Interview evaluator. Analyze the following interview transcript.
       You MUST provide your response in valid JSON format ONLY with the following schema:
@@ -142,5 +165,12 @@ Rules:
       });
       throw error;
     }
+  }
+
+  static async getStudentHistory(studentId: number) {
+    return await VisaMockInterview.findAll({
+      where: { studentId, status: "Evaluated" },
+      order: [["createdAt", "DESC"]],
+    });
   }
 }

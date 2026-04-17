@@ -153,4 +153,25 @@ export class VisaController {
       next(error);
     }
   }
+
+  static async getHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const student = await Student.findOne({ where: { userId } });
+      if (!student) {
+        res.status(404).json({ error: "Student not found" });
+        return;
+      }
+
+      const history = await VisaService.getStudentHistory(student.id);
+      res.json({ status: "success", data: history });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

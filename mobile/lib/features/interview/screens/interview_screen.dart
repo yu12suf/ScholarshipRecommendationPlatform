@@ -89,20 +89,22 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
   Widget build(BuildContext context) {
     final state = ref.watch(interviewProvider);
 
-    return Scaffold(
-      backgroundColor: DesignSystem.background,
-      body: Stack(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      color: isDark ? DesignSystem.background : DesignSystem.backgroundLight,
+      child: Stack(
         children: [
           // Background Glows
           Positioned(
             top: 200, 
             left: 50, 
-            child: DesignSystem.buildBlurCircle(DesignSystem.emerald.withOpacity(0.08), 300)
+            child: DesignSystem.buildBlurCircle(DesignSystem.primary(context).withOpacity(0.08), 300)
           ),
 
           SafeArea(
             child: state.isLoading
-                ? const Center(child: CircularProgressIndicator(color: DesignSystem.emerald))
+                ? Center(child: CircularProgressIndicator(color: DesignSystem.primary(context)))
                 : state.evaluationData != null 
                     ? _buildEvaluationResults(state.evaluationData!)
                     : _buildLiveInterface(state),
@@ -114,93 +116,170 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
 
   Widget _buildLiveInterface(InterviewState state) {
     if (state.messages.isEmpty && !state.isLoading) {
-      return _buildSetupView();
+      return _buildSetupView(state);
     }
 
     return Column(
       children: [
-        const SizedBox(height: 20),
-        _buildHeader(state.remainingSeconds),
-        const SizedBox(height: 40),
-        _buildQuestionCard(state.currentPrompt),
-        const Spacer(),
+        const SizedBox(height: 10),
+        _buildHeader(context, state.remainingSeconds),
         
-        // THE GLOWING AI ORB
-        GestureDetector(
-          onLongPressStart: (_) => _startRecording(),
-          onLongPressEnd: (_) => _stopRecording(),
-          child: _buildAIOrb(state.isRecording, state.isMuted),
-        ),
-        
-        const SizedBox(height: 20),
-        Text(
-          state.isMuted 
-              ? "Microphone Muted" 
-              : (state.isRecording ? "Listening..." : (state.isSending ? "Processing..." : "Hold to Talk")),
-          style: GoogleFonts.inter(
-            color: state.isMuted ? Colors.redAccent : DesignSystem.emerald.withOpacity(0.7), 
-            fontWeight: FontWeight.bold, 
-            letterSpacing: 1
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                _buildQuestionCard(state.currentPrompt),
+                const SizedBox(height: 20),
+                
+                // THE GLOWING AI ORB
+                GestureDetector(
+                  onLongPressStart: (_) => _startRecording(),
+                  onLongPressEnd: (_) => _stopRecording(),
+                  child: _buildAIOrb(state.isRecording, state.isMuted),
+                ),
+                
+                const SizedBox(height: 20),
+                Text(
+                  state.isMuted 
+                      ? "Microphone Muted" 
+                      : (state.isRecording ? "Listening..." : (state.isSending ? "Processing..." : "Hold to Talk")),
+                  style: DesignSystem.headingStyle(
+                    buildContext: context,
+                    color: state.isMuted ? Colors.redAccent : DesignSystem.primary(context).withOpacity(0.7), 
+                    fontSize: 14,
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                _buildLiveMetrics(context, state.metrics),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
         
-        const Spacer(),
-        _buildLiveMetrics(state.metrics),
-        const SizedBox(height: 40),
         _buildControlBar(state.isMuted),
-        const SizedBox(height: 20),
+        const SizedBox(height: 74), // Space for main bottom navigation bar
       ],
     );
   }
 
-  Widget _buildSetupView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: GlassContainer(
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("INTERVIEW SETUP", style: DesignSystem.headingStyle(fontSize: 20, color: DesignSystem.emerald)),
-              const SizedBox(height: 25),
-              _buildInputField("Target Country", _countryController),
-              const SizedBox(height: 15),
-              _buildInputField("University Name", _universityController),
-              const SizedBox(height: 30),
-              ElevatedButton.icon(
-                onPressed: () => ref.read(interviewProvider.notifier).startInterview(
-                  country: _countryController.text,
-                  university: _universityController.text,
+  Widget _buildSetupView(InterviewState state) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.only(left: 30, right: 30, top: 40, bottom: 100),
+          child: GlassContainer(
+            padding: const EdgeInsets.all(30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("INTERVIEW SETUP", style: DesignSystem.headingStyle(buildContext: context, fontSize: 20, color: DesignSystem.primary(context))),
+                const SizedBox(height: 25),
+                _buildInputField(context, "Target Country", _countryController),
+                const SizedBox(height: 15),
+                _buildInputField(context, "University Name", _universityController),
+                const SizedBox(height: 30),
+                ElevatedButton.icon(
+                  onPressed: () => ref.read(interviewProvider.notifier).startInterview(
+                    country: _countryController.text,
+                    university: _universityController.text,
+                  ),
+                  icon: const Icon(LucideIcons.play),
+                  label: Text("Start Speaking Lab", style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: DesignSystem.primary(context),
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
                 ),
-                icon: const Icon(LucideIcons.play),
-                label: Text("Start Speaking Lab", style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: DesignSystem.emerald,
-                  foregroundColor: Colors.black,
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
-            ],
+                if (state.history.isNotEmpty) ...[
+                  const SizedBox(height: 40),
+                  Row(
+                    children: [
+                      Icon(LucideIcons.history, color: DesignSystem.primary(context), size: 18),
+                      const SizedBox(width: 10),
+                      Text("PREVIOUS INTERVIEWS", style: DesignSystem.labelStyle(buildContext: context, fontSize: 14)),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  ...state.history
+                      .where((interview) {
+                        final scoreStr = interview['aiEvaluation']?['score']?.split('/')[0] ?? "0";
+                        final score = int.tryParse(scoreStr) ?? 0;
+                        return score > 0;
+                      })
+                      .take(5)
+                      .map((interview) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      onTap: () => ref.read(interviewProvider.notifier).loadInterview(interview),
+                      borderRadius: BorderRadius.circular(15),
+                      child: GlassContainer(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: DesignSystem.primary(context).withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                interview['aiEvaluation']?['score']?.split('/')[0] ?? "0",
+                                style: GoogleFonts.plusJakartaSans(color: DesignSystem.primary(context), fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    interview['country'] ?? "Mock Interview",
+                                    style: DesignSystem.headingStyle(buildContext: context, fontSize: 13),
+                                  ),
+                                  Text(
+                                    interview['createdAt'] != null 
+                                      ? DateTime.parse(interview['createdAt']).toString().split(' ')[0]
+                                      : "Recent",
+                                    style: DesignSystem.labelStyle(buildContext: context, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(LucideIcons.chevronRight, color: DesignSystem.labelText(context), size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )).toList(),
+                  const SizedBox(height: 20),
+                ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller) {
+  Widget _buildInputField(BuildContext context, String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+        Text(label, style: DesignSystem.labelStyle(buildContext: context, fontSize: 12)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          style: GoogleFonts.inter(color: Colors.white),
+          style: DesignSystem.bodyStyle(buildContext: context),
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.black26,
+            fillColor: DesignSystem.surface(context),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
@@ -209,23 +288,23 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
     );
   }
 
-  Widget _buildHeader(int remainingSeconds) {
+  Widget _buildHeader(BuildContext context, int remainingSeconds) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+            icon: Icon(LucideIcons.arrowLeft, color: DesignSystem.mainText(context)),
             onPressed: () => Navigator.pop(context),
           ),
           Column(
             children: [
-              Text("SPEAKING LAB", style: GoogleFonts.plusJakartaSans(color: DesignSystem.emerald, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
-              Text(_formatTime(remainingSeconds), style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text("SPEAKING LAB", style: GoogleFonts.plusJakartaSans(color: DesignSystem.primary(context), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+              Text(_formatTime(remainingSeconds), style: DesignSystem.headingStyle(buildContext: context, fontSize: 18)),
             ],
           ),
-          const Icon(LucideIcons.settings, color: Colors.white38),
+          Icon(LucideIcons.settings, color: DesignSystem.labelText(context)),
         ],
       ),
     );
@@ -239,7 +318,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
         child: Text(
           "\"$question\"",
           textAlign: TextAlign.center,
-          style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700, height: 1.4),
+          style: DesignSystem.headingStyle(buildContext: context, fontSize: 18, color: DesignSystem.mainText(context)),
         ),
       ),
     );
@@ -250,7 +329,8 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
       animation: _pulseController,
       builder: (context, child) {
         double pulseVal = isPulse ? _pulseController.value : 0.0;
-        Color orbColor = isMuted ? Colors.redAccent : DesignSystem.emerald;
+        final primaryColor = DesignSystem.primary(context);
+        Color orbColor = isMuted ? Colors.redAccent : primaryColor;
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -264,7 +344,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [orbColor, isMuted ? Colors.red.shade900 : const Color(0xFF059669)],
+                  colors: [orbColor, isMuted ? Colors.red.shade900 : primaryColor.withOpacity(0.8)],
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -274,7 +354,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                   ),
                 ],
               ),
-              child: Icon(isMuted ? LucideIcons.micOff : LucideIcons.mic, color: isMuted ? Colors.white : Colors.black, size: 40),
+              child: Icon(isMuted ? LucideIcons.micOff : LucideIcons.mic, color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white, size: 40),
             ),
           ],
         );
@@ -288,34 +368,35 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: (color ?? DesignSystem.emerald).withOpacity(opacity), width: 2),
+        border: Border.all(color: (color ?? DesignSystem.primary(context)).withOpacity(opacity), width: 2),
       ),
     );
   }
 
-  Widget _buildLiveMetrics(InterviewMetrics metrics) {
+  Widget _buildLiveMetrics(BuildContext context, InterviewMetrics metrics) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildMetric("FLUENCY", metrics.fluency),
-          _buildMetric("PACE", metrics.pace),
-          _buildMetric("GRAMMAR", metrics.grammar),
+          _buildMetric(context, "FLUENCY", metrics.fluency),
+          _buildMetric(context, "PACE", metrics.pace),
+          _buildMetric(context, "GRAMMAR", metrics.grammar),
         ],
       ),
     );
   }
 
-  Widget _buildMetric(String label, double val) {
+  Widget _buildMetric(BuildContext context, String label, double val) {
+    final primaryColor = DesignSystem.primary(context);
     return Column(
       children: [
         SizedBox(
           width: 50, height: 50,
-          child: CircularProgressIndicator(value: val, strokeWidth: 3, backgroundColor: Colors.white10, valueColor: const AlwaysStoppedAnimation(DesignSystem.emerald)),
+          child: CircularProgressIndicator(value: val, strokeWidth: 3, backgroundColor: DesignSystem.surface(context), valueColor: AlwaysStoppedAnimation(primaryColor)),
         ),
         const SizedBox(height: 10),
-        Text(label, style: GoogleFonts.inter(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
+        Text(label, style: DesignSystem.labelStyle(buildContext: context, fontSize: 8)),
       ],
     );
   }
@@ -330,19 +411,28 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
-              icon: Icon(isMuted ? LucideIcons.micOff : LucideIcons.mic, color: isMuted ? Colors.redAccent : Colors.white38),
+              icon: Icon(isMuted ? LucideIcons.micOff : LucideIcons.mic, color: isMuted ? Colors.redAccent : DesignSystem.mainText(context).withOpacity(0.5)),
               onPressed: () => ref.read(interviewProvider.notifier).toggleMute(),
+            ),
+            IconButton(
+              icon: Icon(LucideIcons.pause, color: DesignSystem.mainText(context).withOpacity(0.5)),
+              onPressed: () {
+                // Implement pause logic if needed, for now just show a hint
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Interview Paused"), duration: Duration(seconds: 1)),
+                );
+              },
             ),
             GestureDetector(
               onTap: () => ref.read(interviewProvider.notifier).endInterview(),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.redAccent.withOpacity(0.2))),
-                child: Text("END SESSION", style: GoogleFonts.plusJakartaSans(color: Colors.redAccent, fontWeight: FontWeight.w900, fontSize: 12)),
+                child: Text("END SESSION", style: GoogleFonts.plusJakartaSans(color: Colors.redAccent, fontWeight: FontWeight.w900, fontSize: 11)),
               ),
             ),
             IconButton(
-              icon: const Icon(LucideIcons.sparkles, color: DesignSystem.emerald),
+              icon: Icon(LucideIcons.sparkles, color: DesignSystem.primary(context)),
               onPressed: () {
                 final state = ref.read(interviewProvider);
                 String hint = "Try to expand on your reasons.";
@@ -352,7 +442,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(hint),
-                    backgroundColor: DesignSystem.background,
+                    backgroundColor: DesignSystem.overlayBackground(context),
                     behavior: SnackBarBehavior.floating,
                   )
                 );
@@ -366,16 +456,41 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
 
   Widget _buildEvaluationResults(EvaluationModel eval) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 40),
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 150),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(LucideIcons.award, size: 64, color: DesignSystem.emerald),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => ref.read(interviewProvider.notifier).reset(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: DesignSystem.surface(context),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: DesignSystem.surface(context).withOpacity(0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.chevronLeft, color: DesignSystem.mainText(context), size: 20),
+                    const SizedBox(width: 4),
+                    Text("Back", style: DesignSystem.labelStyle(buildContext: context, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 4),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Icon(LucideIcons.award, size: 64, color: DesignSystem.primary(context)),
           const SizedBox(height: 16),
           Text(
             "Interview Complete",
             textAlign: TextAlign.center,
-            style: DesignSystem.headingStyle(fontSize: 24),
+            style: DesignSystem.headingStyle(buildContext: context, fontSize: 24),
           ),
           const SizedBox(height: 32),
           
@@ -384,11 +499,11 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStatRow(LucideIcons.barChart, "Band Score", eval.bandScore),
-                const Divider(height: 32, color: Colors.white12),
-                _buildStatRow(LucideIcons.checkSquare, "Grammar", eval.grammar),
-                const Divider(height: 32, color: Colors.white12),
-                _buildStatRow(LucideIcons.smile, "Confidence", eval.confidence),
+                _buildStatRow(context, LucideIcons.barChart, "Band Score", eval.bandScore),
+                Divider(height: 32, color: DesignSystem.surface(context)),
+                _buildStatRow(context, LucideIcons.checkSquare, "Grammar", eval.grammar),
+                Divider(height: 32, color: DesignSystem.surface(context)),
+                _buildStatRow(context, LucideIcons.smile, "Confidence", eval.confidence),
               ],
             ),
           ),
@@ -396,28 +511,28 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
           const SizedBox(height: 32),
           Text(
             "Detailed Feedback",
-            style: DesignSystem.headingStyle(fontSize: 18),
+            style: DesignSystem.headingStyle(buildContext: context, fontSize: 18),
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.2),
+              color: DesignSystem.surface(context),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               eval.feedback,
-              style: GoogleFonts.inter(height: 1.6, color: Colors.white70, fontSize: 15),
+              style: DesignSystem.bodyStyle(buildContext: context, fontSize: 15).copyWith(height: 1.6),
             ),
           ),
           const SizedBox(height: 40),
           ElevatedButton(
             onPressed: () {
-              ref.read(interviewProvider.notifier).startInterview();
+              ref.read(interviewProvider.notifier).reset();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: DesignSystem.emerald,
-              foregroundColor: Colors.black,
+              backgroundColor: DesignSystem.primary(context),
+              foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
@@ -428,25 +543,26 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
     );
   }
 
-  Widget _buildStatRow(IconData icon, String label, String value) {
+  Widget _buildStatRow(BuildContext context, IconData icon, String label, String value) {
+    final primaryColor = DesignSystem.primary(context);
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: DesignSystem.emerald.withOpacity(0.1),
+            color: primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: DesignSystem.emerald, size: 24),
+          child: Icon(icon, color: primaryColor, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: GoogleFonts.inter(color: Colors.white54, fontSize: 14)),
+              Text(label, style: DesignSystem.labelStyle(buildContext: context, fontSize: 14)),
               const SizedBox(height: 4),
-              Text(value, style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(value, style: DesignSystem.headingStyle(buildContext: context, fontSize: 16)),
             ],
           ),
         ),
