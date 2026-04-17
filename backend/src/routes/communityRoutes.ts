@@ -6,6 +6,11 @@ import path from "path";
 
 const router: Router = express.Router();
 
+const parseParamId = (param: string | string[] | undefined): number => {
+    if (!param) return 0;
+    return parseInt(Array.isArray(param) ? param[0] : param);
+};
+
 const generateInviteLink = (): string => {
     return `https://admas.community/join/${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`;
 };
@@ -96,11 +101,11 @@ router.post("/groups", authenticate, async (req: Request, res: Response, next: N
                     generateInviteLink(),
                     addMembersPermission || "admin"
                 ],
-                type: sequelize.QueryTypes.INSERT
+                type: QueryTypes.INSERT
             }
         );
 
-        const group = groupResult[0][0];
+        const group = (groupResult[0] as any)?.[0];
 
         // Add creator as admin member
         await sequelize.query(
@@ -108,7 +113,7 @@ router.post("/groups", authenticate, async (req: Request, res: Response, next: N
              VALUES ($1, $2, 'admin', 'active', NOW(), NOW())`,
             {
                 bind: [group.id, userId],
-                type: sequelize.QueryTypes.INSERT
+                type: QueryTypes.INSERT
             }
         );
 
@@ -141,7 +146,7 @@ router.post("/groups", authenticate, async (req: Request, res: Response, next: N
 router.get("/groups/:id", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
 
         const groupQuery = `
             SELECT id, name, description, avatar, type, privacy, created_by as "createdBy",
@@ -222,7 +227,7 @@ router.get("/groups/:id", authenticate, async (req: Request, res: Response, next
 router.put("/groups/:id", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
         const { name, description, avatar, privacy, addMembersPermission } = req.body;
 
         // Check admin
@@ -270,7 +275,7 @@ router.put("/groups/:id", authenticate, async (req: Request, res: Response, next
             
             await sequelize.query(
                 `UPDATE community_groups SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
-                { bind: values, type: sequelize.QueryTypes.UPDATE }
+                { bind: values, type: QueryTypes.UPDATE }
             );
         }
 
@@ -293,7 +298,7 @@ router.put("/groups/:id", authenticate, async (req: Request, res: Response, next
 router.delete("/groups/:id", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
 
         // Get group details
         const groupQuery = `SELECT created_by FROM community_groups WHERE id = $1`;
@@ -328,7 +333,7 @@ router.delete("/groups/:id", authenticate, async (req: Request, res: Response, n
         // Soft delete - set is_active to false
         await sequelize.query(
             `UPDATE community_groups SET is_active = false, updated_at = NOW() WHERE id = $1`,
-            { bind: [groupId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [groupId], type: QueryTypes.UPDATE }
         );
 
         res.json({ message: "Group deleted successfully" });
@@ -341,7 +346,7 @@ router.delete("/groups/:id", authenticate, async (req: Request, res: Response, n
 router.post("/groups/:id/join", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
 
         const groupQuery = `SELECT * FROM community_groups WHERE id = $1 AND is_active = true`;
         const groups = await sequelize.query(groupQuery, {
@@ -381,19 +386,19 @@ router.post("/groups/:id/join", authenticate, async (req: Request, res: Response
             await sequelize.query(
                 `UPDATE community_members SET status = 'active', role = 'member', updated_at = NOW() 
                  WHERE group_id = $1 AND user_id = $2`,
-                { bind: [groupId, userId], type: sequelize.QueryTypes.UPDATE }
+                { bind: [groupId, userId], type: QueryTypes.UPDATE }
             );
         } else {
             await sequelize.query(
                 `INSERT INTO community_members (group_id, user_id, role, status, joined_at, updated_at)
                  VALUES ($1, $2, 'member', 'active', NOW(), NOW())`,
-                { bind: [groupId, userId], type: sequelize.QueryTypes.INSERT }
+                { bind: [groupId, userId], type: QueryTypes.INSERT }
             );
         }
 
         await sequelize.query(
             `UPDATE community_groups SET member_count = member_count + 1 WHERE id = $1`,
-            { bind: [groupId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [groupId], type: QueryTypes.UPDATE }
         );
 
         res.json({ message: "Joined successfully" });
@@ -406,7 +411,7 @@ router.post("/groups/:id/join", authenticate, async (req: Request, res: Response
 router.post("/groups/:id/leave", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
 
         const membershipQuery = `
             SELECT cm.*, cg.created_by
@@ -431,12 +436,12 @@ router.post("/groups/:id/leave", authenticate, async (req: Request, res: Respons
         await sequelize.query(
             `UPDATE community_members SET status = 'left', updated_at = NOW() 
              WHERE group_id = $1 AND user_id = $2`,
-            { bind: [groupId, userId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [groupId, userId], type: QueryTypes.UPDATE }
         );
 
         await sequelize.query(
             `UPDATE community_groups SET member_count = GREATEST(member_count - 1, 0) WHERE id = $1`,
-            { bind: [groupId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [groupId], type: QueryTypes.UPDATE }
         );
 
         res.json({ message: "Left successfully" });
@@ -450,7 +455,7 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
     console.log('[community] GET /groups/:id/messages called', { params: req.params, query: req.query });
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
         const { limit = 50, before } = req.query;
 
         console.log('[community] Checking membership for user:', userId, 'group:', groupId);
@@ -582,7 +587,7 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
 router.post("/groups/:id/messages", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
         
         console.log('[community] POST message - req.body:', JSON.stringify(req.body));
         console.log('[community] POST message - req.files:', JSON.stringify((req as any).files));
@@ -662,11 +667,11 @@ router.post("/groups/:id/messages", authenticate, async (req: Request, res: Resp
                     attachmentName || null,
                     replyToId || null
                 ],
-                type: sequelize.QueryTypes.INSERT
+                type: QueryTypes.INSERT
             }
         );
 
-        const message = result[0][0] as any;
+        const message = (result[0] as any)?.[0] as any;
 
         // Get sender info
         const userQuery = `SELECT id, name, email FROM users WHERE id = $1`;
@@ -704,8 +709,8 @@ router.post("/groups/:id/messages", authenticate, async (req: Request, res: Resp
 router.put("/groups/:id/messages/:messageId", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
-        const messageId = parseInt(req.params.messageId);
+        const groupId = parseParamId(req.params.id);
+        const messageId = parseParamId(req.params.messageId);
         const { content } = req.body;
 
         console.log('[community] Edit message - userId:', userId, 'groupId:', groupId, 'messageId:', messageId, 'content:', content);
@@ -750,7 +755,7 @@ router.put("/groups/:id/messages/:messageId", authenticate, async (req: Request,
             `UPDATE community_messages SET content = $1, is_edited = true, updated_at = NOW() WHERE id = $2`,
             { 
                 bind: [content.trim(), messageId], 
-                type: sequelize.QueryTypes.UPDATE 
+                type: QueryTypes.UPDATE 
             }
         );
 
@@ -785,8 +790,8 @@ router.put("/groups/:id/messages/:messageId", authenticate, async (req: Request,
 router.delete("/groups/:id/messages/:messageId", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
-        const messageId = parseInt(req.params.messageId);
+        const groupId = parseParamId(req.params.id);
+        const messageId = parseParamId(req.params.messageId);
 
         const msgQuery = `SELECT * FROM community_messages WHERE id = $1 AND group_id = $2`;
         const messages = await sequelize.query(msgQuery, {
@@ -819,7 +824,7 @@ router.delete("/groups/:id/messages/:messageId", authenticate, async (req: Reque
 
         await sequelize.query(`DELETE FROM community_messages WHERE id = $1`, {
             bind: [messageId],
-            type: sequelize.QueryTypes.DELETE
+            type: QueryTypes.DELETE
         });
 
         res.json({ message: "Message deleted" });
@@ -832,8 +837,8 @@ router.delete("/groups/:id/messages/:messageId", authenticate, async (req: Reque
 router.post("/groups/:id/messages/:messageId/react", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
-        const messageId = parseInt(req.params.messageId);
+        const groupId = parseParamId(req.params.id);
+        const messageId = parseParamId(req.params.messageId);
         const { emoji } = req.body;
 
         if (!emoji) {
@@ -864,11 +869,11 @@ router.post("/groups/:id/messages/:messageId/react", authenticate, async (req: R
             // Remove reaction
             await sequelize.query(
                 `DELETE FROM community_message_reactions WHERE message_id = $1 AND user_id = $2 AND emoji = $3`,
-                { bind: [messageId, userId, emoji], type: sequelize.QueryTypes.DELETE }
+                { bind: [messageId, userId, emoji], type: QueryTypes.DELETE }
             );
             await sequelize.query(
                 `UPDATE community_messages SET reactions_count = GREATEST(reactions_count - 1, 0) WHERE id = $1`,
-                { bind: [messageId], type: sequelize.QueryTypes.UPDATE }
+                { bind: [messageId], type: QueryTypes.UPDATE }
             );
             return res.json({ message: "Reaction removed" });
         }
@@ -877,12 +882,12 @@ router.post("/groups/:id/messages/:messageId/react", authenticate, async (req: R
         await sequelize.query(
             `INSERT INTO community_message_reactions (message_id, user_id, emoji, created_at)
              VALUES ($1, $2, $3, NOW())`,
-            { bind: [messageId, userId, emoji], type: sequelize.QueryTypes.INSERT }
+            { bind: [messageId, userId, emoji], type: QueryTypes.INSERT }
         );
         
         await sequelize.query(
             `UPDATE community_messages SET reactions_count = reactions_count + 1 WHERE id = $1`,
-            { bind: [messageId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [messageId], type: QueryTypes.UPDATE }
         );
 
         res.json({ message: "Reaction added" });
@@ -895,8 +900,8 @@ router.post("/groups/:id/messages/:messageId/react", authenticate, async (req: R
 router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
-        const messageId = parseInt(req.params.messageId);
+        const groupId = parseParamId(req.params.id);
+        const messageId = parseParamId(req.params.messageId);
 
         const adminQuery = `
             SELECT * FROM community_members 
@@ -923,7 +928,7 @@ router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Req
 
         await sequelize.query(
             `UPDATE community_messages SET is_pinned = true, updated_at = NOW() WHERE id = $1`,
-            { bind: [messageId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [messageId], type: QueryTypes.UPDATE }
         );
 
         const updated = await sequelize.query(
@@ -973,7 +978,7 @@ router.get("/groups/search", authenticate, async (req: Request, res: Response, n
 router.get("/groups/:id/users", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
         const { q, limit = 50 } = req.query;
 
         // Get group details to check permission
@@ -1001,7 +1006,7 @@ router.get("/groups/:id/users", authenticate, async (req: Request, res: Response
 
         const isCreator = group.created_by === userId;
         const isMember = members.length > 0;
-        const userRole = members[0]?.role;
+        const userRole = (members[0] as any)?.role;
 
         // If not a member and not creator, deny access
         if (!isMember && !isCreator) {
@@ -1052,7 +1057,7 @@ router.get("/groups/:id/users", authenticate, async (req: Request, res: Response
 router.post("/groups/:id/members", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
         const { userId: targetUserId, role = 'member' } = req.body;
 
         if (!targetUserId) {
@@ -1153,31 +1158,31 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
             await sequelize.query(
                 `UPDATE community_members SET status = 'active', role = $1, updated_at = NOW() 
                  WHERE group_id = $2 AND user_id = $3`,
-                { bind: [role, groupId, targetUserId], type: sequelize.QueryTypes.UPDATE }
+                { bind: [role, groupId, targetUserId], type: QueryTypes.UPDATE }
             );
         } else {
             await sequelize.query(
                 `INSERT INTO community_members (group_id, user_id, role, status, joined_at, updated_at)
                  VALUES ($1, $2, $3, 'active', NOW(), NOW())`,
-                { bind: [groupId, targetUserId, role], type: sequelize.QueryTypes.INSERT }
+                { bind: [groupId, targetUserId, role], type: QueryTypes.INSERT }
             );
         }
 
         // Update member count
         await sequelize.query(
             `UPDATE community_groups SET member_count = member_count + 1 WHERE id = $1`,
-            { bind: [groupId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [groupId], type: QueryTypes.UPDATE }
         );
 
         const newMember = {
-            id: previous.length > 0 ? previous[0].id : Date.now(),
+            id: previous.length > 0 ? (previous[0] as any)?.id : Date.now(),
             group_id: groupId,
             user_id: targetUserId,
             role,
             status: 'active',
             joined_at: new Date(),
             updated_at: new Date(),
-            user: users[0]
+            user: (users[0] as any[])?.[0]
         };
 
         res.status(201).json({ member: newMember });
@@ -1190,8 +1195,8 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
 router.delete("/groups/:id/members/:userId", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
-        const targetUserId = parseInt(req.params.userId);
+        const groupId = parseParamId(req.params.id);
+        const targetUserId = parseParamId(req.params.userId);
 
         // Check if user is admin
         const adminQuery = `
@@ -1248,12 +1253,12 @@ router.delete("/groups/:id/members/:userId", authenticate, async (req: Request, 
         await sequelize.query(
             `UPDATE community_members SET status = 'removed', updated_at = NOW() 
              WHERE group_id = $1 AND user_id = $2`,
-            { bind: [groupId, targetUserId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [groupId, targetUserId], type: QueryTypes.UPDATE }
         );
 
         await sequelize.query(
             `UPDATE community_groups SET member_count = GREATEST(member_count - 1, 0) WHERE id = $1`,
-            { bind: [groupId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [groupId], type: QueryTypes.UPDATE }
         );
 
         res.json({ message: "Member removed successfully" });
@@ -1266,8 +1271,8 @@ router.delete("/groups/:id/members/:userId", authenticate, async (req: Request, 
 router.put("/groups/:id/members/:userId", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
-        const targetUserId = parseInt(req.params.userId);
+        const groupId = parseParamId(req.params.id);
+        const targetUserId = parseParamId(req.params.userId);
         const { role } = req.body;
 
         if (!role || !['admin', 'moderator', 'member'].includes(role)) {
@@ -1305,7 +1310,7 @@ router.put("/groups/:id/members/:userId", authenticate, async (req: Request, res
         await sequelize.query(
             `UPDATE community_members SET role = $1, updated_at = NOW() 
              WHERE group_id = $2 AND user_id = $3`,
-            { bind: [role, groupId, targetUserId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [role, groupId, targetUserId], type: QueryTypes.UPDATE }
         );
 
         res.json({ message: "Role updated successfully" });
@@ -1318,7 +1323,7 @@ router.put("/groups/:id/members/:userId", authenticate, async (req: Request, res
 router.get("/groups/:id/invite", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
 
         // First check if group exists
         const groupQuery = `SELECT invite_link, created_by FROM community_groups WHERE id = $1`;
@@ -1360,7 +1365,7 @@ router.get("/groups/:id/invite", authenticate, async (req: Request, res: Respons
 router.post("/groups/:id/invite", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const groupId = parseInt(req.params.id);
+        const groupId = parseParamId(req.params.id);
 
         // Check if user is admin
         const adminQuery = `
@@ -1380,7 +1385,7 @@ router.post("/groups/:id/invite", authenticate, async (req: Request, res: Respon
 
         await sequelize.query(
             `UPDATE community_groups SET invite_link = $1, updated_at = NOW() WHERE id = $2`,
-            { bind: [newInviteLink, groupId], type: sequelize.QueryTypes.UPDATE }
+            { bind: [newInviteLink, groupId], type: QueryTypes.UPDATE }
         );
 
         res.json({ inviteLink: newInviteLink });

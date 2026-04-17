@@ -119,6 +119,7 @@ export interface SlotResponse {
     status: 'available' | 'booked' | 'cancelled';
     reservedStudentId: number | null;
     meetingLink: string | null;
+    consultationMode?: string;
 }
 
 export interface BookingResponse {
