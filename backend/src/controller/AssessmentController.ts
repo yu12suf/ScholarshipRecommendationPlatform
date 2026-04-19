@@ -31,7 +31,7 @@ export class AssessmentController {
         return;
       }
 
-      if (req.user?.id) {
+      if (req.user?.id && !req.body?.force) {
         const student = await StudentRepository.findByUserId(req.user.id);
         if (student) {
           const path = await LearningPathRepository.findByStudentId(student.id);
@@ -102,6 +102,38 @@ export class AssessmentController {
         parsedResponses,
         student.id,
         audioData,
+      );
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async submitSection(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { test_id, skill, responses } = req.body;
+      const parsedResponses = typeof responses === "string" ? JSON.parse(responses) : responses;
+
+      let audioData: { buffer: Buffer; mimetype: string } | undefined;
+      if (req.files && req.files.audio) {
+        const audioFile = Array.isArray(req.files.audio) ? req.files.audio[0] : req.files.audio;
+        if (audioFile) {
+          audioData = { buffer: audioFile.data, mimetype: audioFile.mimetype };
+        }
+      }
+
+      const student = await StudentRepository.findByUserId(req.user!.id);
+      if (!student) {
+        res.status(404).json({ error: "Student profile not found" });
+        return;
+      }
+
+      const result = await AssessmentService.evaluateSkillSection(
+        test_id,
+        skill,
+        parsedResponses,
+        student.id,
+        audioData
       );
       res.json(result);
     } catch (error) {

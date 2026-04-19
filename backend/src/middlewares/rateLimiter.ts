@@ -56,7 +56,7 @@ export const emailVerificationLimiter = rateLimit({
 // Create account rate limiter (stricter to prevent spam)
 export const createAccountLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // Limit each IP to 3 account creations per hour
+    max: configs.NODE_ENV === "development" ? 50 : 3, // More permissive in dev
     message: {
         success: false,
         error: "Too many accounts created from this IP, please try again later.",

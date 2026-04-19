@@ -1,19 +1,47 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGroq } from "@langchain/groq";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { v4 as uuidv4 } from "uuid";
 import configs from "../config/configs.js";
 import { redisConnection, assessmentQueue } from "../config/redis.js";
-import { AssessmentResult } from "../models/AssessmentResult.js"; // Keeping for type if needed, or remove if unused
+import { AssessmentResult } from "../models/AssessmentResult.js"; 
 import { AssessmentRepository } from "../repositories/AssessmentRepository.js";
 import { LearningPathService } from "./LearningPathService.js";
 import { TTSService } from "./TTSService.js";
+import { Job } from "bullmq";
+import Groq from "groq-sdk";
+import fs from "fs";
+import path from "path";
+import os from "os";
 
-const model = new ChatGoogleGenerativeAI({
-  model: configs.GEMINI_MODEL as string,
+const groqClient = new Groq({
+  apiKey: configs.GROQ_API_KEY as string,
+});
+
+// Providers
+const geminiModel = new ChatGoogleGenerativeAI({
+  model: configs.GEMINI_MODEL as string || "gemini-1.5-flash",
   apiKey: configs.GEMINI_API_KEY as string,
-  temperature: 0.0,
-  maxOutputTokens: 16384, // Increased to avoid truncation on detailed evaluations
+  temperature: 0.1,
+  maxOutputTokens: 16384,
+  maxRetries: 2,
+});
+
+// Groq 8B (Speed Specialist for Writing)
+const groq8b = new ChatGroq({
+  apiKey: configs.GROQ_API_KEY as string,
+  model: "llama-3.1-8b-instant",
+  temperature: 0.1,
+  maxRetries: 2,
+});
+
+// Groq 70B (Pathfinder Brain for Reasoning/Matching)
+const groq70b = new ChatGroq({
+  apiKey: configs.GROQ_API_KEY as string,
+  model: "llama-3.3-70b-versatile",
+  temperature: 0.1,
+  maxRetries: 2,
 });
 
 export class AssessmentService {
@@ -23,15 +51,64 @@ export class AssessmentService {
     cleaned = cleaned.replace(/```json\s?/g, "");
     cleaned = cleaned.replace(/```\s?/g, "");
 
-    // 2. Extract the actual JSON block using first { and last }
+    // 2. Extract the actual JSON block by finding matching braces
     const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    if (firstBrace !== -1) {
+      let stack = 0;
+      let inString = false;
+      let escaped = false;
+      let lastBrace = -1;
+
+      for (let i = firstBrace; i < cleaned.length; i++) {
+        const char = cleaned[i];
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        if (char === "\\") {
+          escaped = true;
+          continue;
+        }
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+        if (!inString) {
+          if (char === "{") stack++;
+          if (char === "}") {
+            stack--;
+            if (stack === 0) {
+              lastBrace = i;
+              break;
+            }
+          }
+        }
+      }
+
+      if (lastBrace !== -1) {
+        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+      } else {
+        const finalBrace = cleaned.lastIndexOf("}");
+        if (finalBrace !== -1) {
+          cleaned = cleaned.substring(firstBrace, finalBrace + 1);
+        }
+      }
     }
 
-    // 3. Remove control characters
+    // 3. Final safety: If it still doesn't start with '{', find the first '{' and cut
+    const finalStart = cleaned.indexOf("{");
+    if (finalStart > 0) {
+      cleaned = cleaned.substring(finalStart);
+    }
+    const finalEnd = cleaned.lastIndexOf("}");
+    if (finalEnd !== -1 && finalEnd < cleaned.length - 1) {
+      cleaned = cleaned.substring(0, finalEnd + 1);
+    }
+
+    // 4. Remove control characters
     cleaned = cleaned.replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F]/g, "");
+
+    return cleaned.trim();
 
     return cleaned.trim();
   }
@@ -148,8 +225,18 @@ export class AssessmentService {
             - Do NOT add trailing commas at the end of JSON objects or arrays.
         `);
 
-    const chain = prompt.pipe(model).pipe(new StringOutputParser());
-    const response = await chain.invoke({ examType, difficulty, testId });
+    const chain = groq70b.pipe(new StringOutputParser());
+    let response: string;
+    try {
+      response = await chain.invoke(
+        await prompt.format({ examType, difficulty, testId }),
+        { response_format: { type: "json_object" } } as any
+      );
+    } catch (err) {
+      console.warn("Groq 70B failed for generation, falling back to Gemini...");
+      const fallbackChain = geminiModel.pipe(new StringOutputParser());
+      response = await fallbackChain.invoke(await prompt.format({ examType, difficulty, testId }));
+    }
 
     // Ensure response is valid JSON
     let blueprint;
@@ -166,7 +253,7 @@ export class AssessmentService {
         AssessmentService.sanitizeJSONString(rawJson),
       );
       throw new Error(
-        "Assessment generation failed due to invalid AI response.",
+        `Assessment generation failed due to invalid AI response. Raw: ${response.substring(0, 100)}...`,
       );
     }
 
@@ -189,12 +276,12 @@ export class AssessmentService {
       }
     }
 
-    // Store full blueprint in Redis for 2 hours
+    // Store full blueprint in Redis for 30 minutes (was 2 hours)
     await redisConnection.set(
       `test_id:${testId}`,
       JSON.stringify(blueprint),
       "EX",
-      7200,
+      1800,
     );
     // Sanitize for frontend
     const sanitized = JSON.parse(JSON.stringify(blueprint));
@@ -214,11 +301,8 @@ export class AssessmentService {
     studentId: number,
     audioData?: { buffer: Buffer; mimetype: string },
   ) {
-    // Fetch blueprint from Redis
     const blueprintData = await redisConnection.get(`test_id:${testId}`);
-    if (!blueprintData) {
-      throw new Error("Assessment not found or expired.");
-    }
+    if (!blueprintData) throw new Error("Assessment not found or expired.");
 
     const job = await assessmentQueue.add(
       "assessment-queue",
@@ -227,21 +311,69 @@ export class AssessmentService {
         blueprint: JSON.parse(blueprintData),
         responses,
         studentId,
-        audioData: audioData
-          ? {
-              base64: audioData.buffer.toString("base64"),
-              mimetype: audioData.mimetype,
-            }
-          : null,
+        audioData: audioData ? { base64: audioData.buffer.toString("base64"), mimetype: audioData.mimetype } : null,
       },
-      {
-        jobId: testId,
-        removeOnComplete: false,
-        removeOnFail: { age: 24 * 3600 },
-      },
+      { jobId: testId, removeOnComplete: { age: 3600 }, removeOnFail: { age: 24 * 3600 } },
     );
 
     return { status: "submitted", jobId: job.id, testId };
+  }
+
+  /**
+   * Evaluates a single skill immediately and returns the result.
+   */
+  static async evaluateSkillSection(
+    testId: string,
+    skill: string,
+    responses: any,
+    studentId: number,
+    audioData?: { buffer: Buffer; mimetype: string }
+  ) {
+    const blueprintData = await redisConnection.get(`test_id:${testId}`);
+    if (!blueprintData) throw new Error("Assessment not found or expired.");
+    const blueprint = JSON.parse(blueprintData);
+
+    const evaluation = await this.evaluateSingleSkill(
+      skill,
+      blueprint,
+      responses,
+      audioData ? { base64: audioData.buffer.toString("base64"), mimetype: audioData.mimetype } : undefined
+    );
+
+    // Save/Update progress in AssessmentResult table
+    let result = await AssessmentResult.findOne({ where: { testId } });
+    if (!result) {
+      result = await AssessmentResult.create({
+        studentId,
+        testId,
+        examType: blueprint.data?.exam_summary?.type || "IELTS",
+        difficulty: blueprint.data?.exam_summary?.difficulty || "Medium",
+        evaluation: { score_breakdown: {}, section_notes: {}, learning_mode: {} },
+        scoreBreakdown: {},
+        overallBand: 0,
+      });
+    }
+
+    const updatedEval = { ...result.evaluation };
+    updatedEval.score_breakdown[skill] = evaluation.score;
+    updatedEval.section_notes[skill] = evaluation.feedback;
+    updatedEval.learning_mode[skill] = evaluation.learning_mode;
+
+    const updatedBreakdown = { ...result.scoreBreakdown };
+    updatedBreakdown[skill] = evaluation.score;
+
+    await result.update({
+      evaluation: updatedEval,
+      scoreBreakdown: updatedBreakdown
+    });
+
+    return {
+      status: "success",
+      skill,
+      score: evaluation.score,
+      feedback: evaluation.feedback,
+      learning_mode: evaluation.learning_mode
+    };
   }
 
   static async evaluateAssessment(
@@ -249,227 +381,337 @@ export class AssessmentService {
     blueprint: any,
     responses: any,
     studentId: number,
+    job: Job,
     audioData?: { base64: string; mimetype: string },
   ) {
-    // ... (existing code omitted for brevity but actually kept in full
-  
+    const finalEvaluation: any = {
+      score_breakdown: {},
+      section_notes: {},
+      learning_mode: {},
+    };
+
+    const skills = ["reading", "listening", "writing", "speaking"];
+    
+    for (const skill of skills) {
+      await job.updateProgress({
+        status: "evaluating",
+        current_skill: skill,
+        testId,
+      });
+
+      console.log(`Evaluating skill: ${skill} for test: ${testId}`);
+      
+      const skillEvaluation = await this.evaluateSingleSkill(
+        skill,
+        blueprint,
+        responses,
+        skill === "speaking" ? audioData : undefined
+      );
+
+      // Merge scores and notes
+      finalEvaluation.score_breakdown[skill] = skillEvaluation.score;
+      finalEvaluation.section_notes[skill] = skillEvaluation.feedback;
+      finalEvaluation.learning_mode[skill] = skillEvaluation.learning_mode;
+    }
+
+    // Calculate Overall Band
+    const scores = Object.values(finalEvaluation.score_breakdown) as number[];
+    finalEvaluation.overall_band = scores.reduce((a, b) => a + b, 0) / (scores.length || 1);
+
+    // Step 5: Final Synthesis (Gap Analysis + Curriculum)
+    await job.updateProgress({
+      status: "synthesizing",
+      testId,
+    });
+
+    console.log(`Synthesizing final learning path for test: ${testId}`);
+    const synthesis = await this.synthesizeEvaluation(
+      finalEvaluation.score_breakdown,
+      finalEvaluation.section_notes,
+      blueprint.data?.exam_summary?.type || "IELTS"
+    );
+
+    finalEvaluation.competency_gap_analysis = synthesis.competency_gap_analysis;
+    finalEvaluation.adaptive_curriculum_map = synthesis.adaptive_curriculum_map;
+    finalEvaluation.feedback_report = synthesis.feedback_report;
+    finalEvaluation.adaptive_learning_tags = synthesis.adaptive_learning_tags;
+
+    // Post-processing (TTS etc.)
+    const learningModeListening = finalEvaluation.learning_mode.listening;
+    if (learningModeListening && learningModeListening.script) {
+      try {
+        const audioBase64 = await TTSService.generateAudioBase64(learningModeListening.script);
+        if (audioBase64) learningModeListening.audio_base64 = audioBase64;
+      } catch (e) {
+        console.error("TTS Error in learning mode:", e);
+      }
+    }
+
+    // Final Storage
+    await redisConnection.set(`evaluation:${testId}`, JSON.stringify(finalEvaluation), "EX", 7200);
+
+    try {
+      // Parallelize DB operations for speed
+      const dbOperations = [
+        AssessmentRepository.create({
+          studentId,
+          testId,
+          examType: blueprint.data?.exam_summary?.type || "Unknown",
+          difficulty: blueprint.data?.exam_summary?.difficulty || "Unknown",
+          evaluation: finalEvaluation,
+          scoreBreakdown: finalEvaluation.score_breakdown,
+          overallBand: finalEvaluation.overall_band,
+        }),
+        LearningPathService.generateForStudent(
+          studentId,
+          finalEvaluation,
+          (blueprint.data?.exam_summary?.type || "IELTS") as "IELTS" | "TOEFL"
+        )
+      ];
+
+      await Promise.all(dbOperations);
+    } catch (e) {
+      console.error("Storage/LearningPath Error:", e);
+    }
+
+    return finalEvaluation;
+  }
+
+  private static async evaluateSingleSkill(
+    skill: string,
+    blueprint: any,
+    responses: any,
+    audioData?: { base64: string; mimetype: string }
+  ) {
+    const miniBlueprint = this.stripBlueprintForEvaluation(blueprint);
+    const skillBlueprint = miniBlueprint.data?.sections[skill];
+    const skillResponse = responses[skill];
+
     const promptTemplate = PromptTemplate.fromTemplate(`
-    Role: Lead Adaptive Curriculum Architect
-    Task: Evaluate student responses, perform a Competency Gap Analysis, and create an Adaptive Curriculum Map for an Ethiopian student preparing for an international exam.
-    
-    Original Blueprint (Stripped for tokens): {blueprint}
-    Student Responses: {responses}
-    Audio Provided: {hasAudio}
-    
-    1. DIAGNOSTIC ASSESSMENT (GRADING):
-       - IELTS/TOEFL scoring logic...
-    
-    2. COMPETENCY GAP ANALYSIS:
-       - Proficiency Profile and CEFR standards...
-    
-    3. ADAPTIVE CURRICULUM MAP:
-       - Structured Sprints and Decision Logic...
-    
-    4. INSTRUCTIONAL NOTES & FEEDBACK:
-       - Skill-specific actionable notes (min 500 characters) in Ethiopian context.
-    
-    5. LEARNING MODE PRACTICE:
-       - Generate 3-5 original practice questions.
-    
-    Return JSON in the following schema:
-    {{
-      "evaluation": {{
-        "overall_band": 0.0,
-        "score_breakdown": {{ "reading": 0.0, "listening": 0.0, "writing": 0.0, "speaking": 0.0 }},
-        "competency_gap_analysis": {{
-          "proficiency_profile": "string",
-          "weaknesses": ["string"],
-          "section_analysis": {{ "reading": "string", "listening": "string", "writing": "string", "speaking": "string" }}
-        }},
-        "adaptive_curriculum_map": {{
-          "sprints": [ {{ "week": 1, "goal": "string", "tasks": ["string"], "is_remedial": false }} ],
-          "vocabulary_packs": [ {{ "topic": "string", "words": [ {{ "word": "string", "meaning": "string", "example": "string" }} ] }} ]
-        }},
-        "feedback_report": "Overall feedback summary",
-        "section_notes": {{ 
-          "reading": "string", 
-          "listening": "string", 
-          "writing": "string", 
-          "speaking": "string" 
-        }},
-        "learning_mode": {{
-          "reading": [ {{ "question": "string", "options": [], "answer": "string", "explanation": "string" }} ],
-          "listening": {{
-            "script": "string",
-            "questions": [ {{ "question": "string", "options": [], "answer": "string", "explanation": "string" }} ]
-          }},
-          "writing": [ {{ "prompt": "string", "sample_answer": "string", "explanation": "string" }} ],
-          "speaking": [ {{ "prompt": "string", "tips": "string", "sample_response": "string" }} ]
-        }},
-        "adaptive_learning_tags": ["string"]
+      Role: Senior {skill} Examiner
+      Task: Evaluate the student's {skill} section for an English Proficiency Exam.
+      
+      Blueprint (Grading Key): {blueprint}
+      Student Response: {response}
+      
+      Instructions:
+      1. Assign a score (0-9 for IELTS, 0-30 for TOEFL).
+      2. Provide detailed feedback (min 200 chars).
+      3. Generate "Learning Mode" content:
+         - For Reading: 3 practice questions with answers/explanations.
+         - For Listening: A script and 3 questions with answers/explanations.
+         - For Writing: A sample answer and explanation.
+         - For Speaking: A sample response and tips.
+
+      Return JSON schema:
+      {{
+        "score": 0.0,
+        "feedback": "string",
+        "learning_mode": {{ ... }} 
       }}
-    }}
 
-    CRITICAL JSON FORMATTING RULES:
-    - Return ONLY valid JSON.
-    - Escape newlines as \\n.
-`);
-
-
-    // OPTIMIZATION: Stripping blueprint text to save input tokens (~90% reduction)
-    const strippedBlueprint =
-      AssessmentService.stripBlueprintForEvaluation(blueprint);
+      CRITICAL: Return ONLY valid JSON. NO preamble, NO markdown blocks (\`\`\`json), and NO extra text.
+    `);
 
     const textPrompt = await promptTemplate.format({
-      blueprint: JSON.stringify(strippedBlueprint),
-      responses: JSON.stringify(responses),
-      hasAudio: audioData ? "Yes" : "No",
+      skill,
+      blueprint: JSON.stringify(skillBlueprint),
+      response: JSON.stringify(skillResponse),
     });
 
     const messagesContent: any[] = [{ type: "text", text: textPrompt }];
-    if (audioData && audioData.base64) {
-      messagesContent.push({
-        type: "media",
-        mimeType: audioData.mimetype || "audio/mp3",
-        data: audioData.base64,
-      });
-    }
-
-    // We use HumanMessage directly for multimodal structure instead of the plain String Output
-    const { HumanMessage } = await import("@langchain/core/messages");
-    const chain = model.pipe(new StringOutputParser());
-    const response = await chain.invoke([
-      new HumanMessage({ content: messagesContent }),
-    ]);
-
-    let evaluation;
-    let rawJson = "";
-    try {
-      rawJson = AssessmentService.sanitizeJSONString(response);
+    const { HumanMessage, SystemMessage } = await import("@langchain/core/messages");
+    
+    // Select Model based on Skill (Zero-Cost Specialist Stack)
+    let selectedModel: any = groq70b; // Reading/Listening use the Brain
+    if (skill === "writing") selectedModel = groq8b; // Writing uses the Speed Specialist
+    
+    let transcriptionText = "";
+    if (skill === "speaking" && audioData?.base64) {
+      console.log("Transcribing speaking audio with Groq Whisper...");
       try {
-        evaluation = JSON.parse(rawJson);
-      } catch (innerError) {
-        // AI truncated? Attempt rescue.
-        const rescued = AssessmentService.rescueTruncatedJSON(rawJson);
-        evaluation = JSON.parse(rescued);
-        console.warn("⚠️ AI response was truncated but rescued successfully.");
-      }
-      console.log("✅ Evaluation Parsed Successfully");
-    } catch (error) {
-      console.error("❌ Failed to parse evaluation AI response:", response);
-      console.error("Sanitized JSON that failed parsing:", rawJson);
-      throw new Error(
-        "Assessment evaluation failed due to invalid AI response.",
-      );
-    }
-
-    // Generate audio for learning mode listening script
-    const learningModeListening = evaluation.evaluation?.learning_mode?.listening;
-    if (learningModeListening && learningModeListening.script) {
-      try {
-        const audioBase64 = await TTSService.generateAudioBase64(
-          learningModeListening.script,
-        );
-        if (audioBase64) {
-          learningModeListening.audio_base64 = audioBase64;
-        }
-      } catch (ttsErr) {
-        console.error(
-          "Failed to generate audio for learning mode listening script:",
-          ttsErr,
-        );
+        const tempPath = path.join(os.tmpdir(), `speaking_${Date.now()}.m4a`);
+        fs.writeFileSync(tempPath, Buffer.from(audioData.base64, "base64"));
+        
+        const transcription = await groqClient.audio.transcriptions.create({
+          file: fs.createReadStream(tempPath),
+          model: "whisper-large-v3",
+          response_format: "json",
+        });
+        
+        transcriptionText = transcription.text;
+        fs.unlinkSync(tempPath); // Cleanup
+        console.log("Transcription successful:", transcriptionText.substring(0, 50) + "...");
+      } catch (err) {
+        console.error("Transcription failed:", err);
+        transcriptionText = "[Audio transcription failed, grading based on prompt intent]";
       }
     }
 
-    // Store result in Redis
-    await redisConnection.set(
-      `evaluation:${testId}`,
-      JSON.stringify(evaluation),
-      "EX",
-      7200,
+    const chain = selectedModel.pipe(new StringOutputParser());
+    
+    let responseText: string;
+    const systemInstruction = new SystemMessage(
+      "You are a strict JSON generator. Return ONLY valid JSON objects. NO markdown, NO preamble, NO explanations."
     );
 
-    // Persistent storage for student progress
+    const evaluationContent = skill === "speaking" 
+      ? `${textPrompt}\n\nSTUDENT SPOKEN TRANSCRIPTION: ${transcriptionText}`
+      : textPrompt;
+
     try {
-      const overallBand = evaluation.evaluation?.overall_band || 0;
-      const examType = blueprint.data?.exam_summary?.type || "Unknown";
-      const difficulty = blueprint.data?.exam_summary?.difficulty || "Unknown";
-
-      await AssessmentRepository.create({
-        studentId,
-        testId,
-        examType,
-        difficulty,
-        evaluation,
-        scoreBreakdown: evaluation.evaluation?.score_breakdown || null,
-        overallBand,
-      });
-
-      // Trigger Learning Path Generation
-      await LearningPathService.generateForStudent(
-        studentId,
-        evaluation,
-        (blueprint.data?.exam_summary?.type ||
-          blueprint.exam_summary?.type ||
-          "IELTS") as "IELTS" | "TOEFL",
+      const options: any = {};
+      options.response_format = { type: "json_object" };
+      
+      responseText = await chain.invoke(
+        [systemInstruction, new HumanMessage({ content: evaluationContent })],
+        options
       );
-    } catch (dbError: any) {
-      console.error(
-        "❌ Failed to store assessment result or generate learning path:",
-        dbError.message,
-      );
-      console.error(dbError);
+    } catch (err) {
+      console.warn(`Groq failed for ${skill}, attempting recovery...`);
+      // Since Gemini is 404, we don't fallback to it here, just throw or retry
+      throw err;
     }
 
-    return evaluation;
+    let sanitized = this.sanitizeJSONString(responseText);
+    try {
+      return JSON.parse(sanitized);
+    } catch (e) {
+      console.warn(`JSON Parse failed for ${skill} on ${selectedModel.model || selectedModel.modelName}. Attempting repair with Groq 70B...`);
+      
+      // If Groq 8B gave us bad JSON, let's try Groq 70B (The Brain) as a "Repair" model
+      if (selectedModel !== groq70b) {
+        const repairChain = groq70b.pipe(new StringOutputParser());
+        responseText = await repairChain.invoke(
+          [systemInstruction, new HumanMessage({ content: evaluationContent })],
+          { response_format: { type: "json_object" } } as any
+        );
+        sanitized = this.sanitizeJSONString(responseText);
+        return JSON.parse(sanitized);
+      }
+      
+      const rescued = this.rescueTruncatedJSON(sanitized);
+      return JSON.parse(rescued);
+    }
+  }
+
+  private static async synthesizeEvaluation(
+    scores: any,
+    notes: any,
+    examType: string
+  ) {
+    const prompt = PromptTemplate.fromTemplate(`
+      Role: Lead Curriculum Architect
+      Task: Create a final Learning Path based on these skill evaluations.
+      
+      Scores: {scores}
+      Section Notes: {notes}
+      Exam: {examType}
+      
+      Return ONLY a valid JSON object with this EXACT structure:
+      {{
+        "competency_gap_analysis": {{ "skill_name": "detailed analysis of gaps" }},
+        "adaptive_curriculum_map": {{ "week_1": ["topic_to_study"] }},
+        "feedback_report": "overall improvement strategy",
+        "adaptive_learning_tags": ["list", "of", "tags"]
+      }}
+      
+      Rules:
+      1. NO MARKDOWN (no \`\`\`json blocks).
+      2. NO PREAMBLE or post-text.
+      3. Be professional and encouraging.
+    `);
+
+    const chain = groq70b.pipe(new StringOutputParser());
+    let response: string;
+    try {
+      response = await chain.invoke(await prompt.format({
+        scores: JSON.stringify(scores),
+        notes: JSON.stringify(notes),
+        examType
+      }));
+    } catch (err) {
+      console.warn("Groq 70B failed for synthesis, falling back to Gemini...");
+      const fallbackChain = geminiModel.pipe(new StringOutputParser());
+      response = await fallbackChain.invoke(await prompt.format({
+        scores: JSON.stringify(scores),
+        notes: JSON.stringify(notes),
+        examType
+      }));
+    }
+
+    const sanitized = this.sanitizeJSONString(response);
+    try {
+      return JSON.parse(sanitized);
+    } catch (e) {
+      console.warn("JSON Parse failed in synthesis, attempting rescue...");
+      try {
+        const rescued = this.rescueTruncatedJSON(sanitized);
+        return JSON.parse(rescued);
+      } catch (rescueError) {
+        console.error("Final synthesis JSON parse failure:", response);
+        throw e;
+      }
+    }
   }
 
   static async getAssessmentResult(testId: string) {
-    // ... (existing code)
-    // Note: keeping existing logic for fetching from Redis/Queue for immediate result
-    // Try explicit Redis key first
+    // 1. Try Cache
     const storedResult = await redisConnection.get(`evaluation:${testId}`);
     if (storedResult) {
       return { status: "success", data: JSON.parse(storedResult) };
     }
 
-    const job = await assessmentQueue.getJob(testId);
-
-    if (!job) {
-      return {
-        status: "not_found",
-        message: "Assessment not found or expired",
-      };
+    // 2. Try Database (New Safety Fallback)
+    const dbResult = await AssessmentRepository.findByTestId(testId);
+    if (dbResult && dbResult.evaluation && Object.keys(dbResult.evaluation.score_breakdown || {}).length > 0) {
+      return { status: "success", data: dbResult.evaluation };
     }
 
-    const state = await job.getState(); // 'completed', 'failed', 'active', 'waiting'
+    // 3. Try Active Job
+    const job = await assessmentQueue.getJob(testId);
+    if (!job) {
+      // If no job and no DB result, it might be truly lost
+      return { status: "not_found", message: "Assessment not found or expired" };
+    }
+
+    const state = await job.getState();
+    const progress = await job.progress;
 
     if (state === "completed") {
-      return {
-        status: "success",
-        // This is where BullMQ stores the result of the worker's return statement
-        data: job.returnvalue,
-      };
+      // If completed but not in DB yet or empty, keep it active for the UI
+      if (!job.returnvalue || Object.keys(job.returnvalue.score_breakdown || {}).length === 0) {
+        return { 
+          status: "active", 
+          progress: progress || { status: "synthesizing", testId } 
+        };
+      }
+      return { status: "success", data: job.returnvalue };
     }
 
     if (state === "failed") {
-      return { status: "failed", reason: job.failedReason };
+      return { status: "failed", error: job.failedReason || "Assessment evaluation failed" };
     }
 
-    // Try database fallback if not in Redis or active queue
-    const persistentResult = await AssessmentRepository.findByTestId(testId);
-    if (persistentResult) {
-      return {
-        status: "success",
-        data: persistentResult.evaluation,
-      };
-    }
-
-    // Return the current state (waiting or active) instead of null
-    return { status: state };
+    return { 
+      status: state, // 'active' or 'waiting'
+      progress: progress // This will contain { status: "evaluating", current_skill: "reading", ... }
+    };
   }
 
   static async getStudentProgress(studentId: number, examType?: string) {
     return await AssessmentRepository.getStudentProgress(studentId, examType);
+  }
+
+  static async resetAssessment(studentId: number) {
+    // 1. Delete all assessment results
+    await AssessmentRepository.deleteByStudentId(studentId);
+    
+    // 2. Clear learning path (upsert handles it, but if we want to DELETE it completely:)
+    const { LearningPath } = await import("../models/LearningPath.js");
+    const { LearningPathProgress } = await import("../models/LearningPathProgress.js");
+    
+    await LearningPathProgress.destroy({ where: { studentId } });
+    await LearningPath.destroy({ where: { studentId } });
   }
 }

@@ -12,25 +12,13 @@ export const assessmentWorker = new Worker(
     const { testId, blueprint, responses, studentId, audioData } = job.data;
     console.log(`Processing evaluation for test_id: ${testId}`);
 
-    // Keep observable job activity during long-running LLM calls.
-    const heartbeat = setInterval(() => {
-      job
-        .updateProgress({
-          status: "processing",
-          testId,
-          timestamp: Date.now(),
-        })
-        .catch(() => {
-          // Ignore heartbeat update errors; worker completion/failure will handle final state.
-        });
-    }, 15000);
-
     try {
       const evaluation = await AssessmentService.evaluateAssessment(
         testId,
         blueprint,
         responses,
         studentId,
+        job, // Pass job for incremental progress updates
         audioData,
       );
       console.log(`✅ Evaluation complete for test_id: ${testId}`);
@@ -39,7 +27,7 @@ export const assessmentWorker = new Worker(
       console.error(`❌ Evaluation failed for test_id: ${testId}:`, error);
       throw error;
     } finally {
-      clearInterval(heartbeat);
+      // Job completion/failure handled by the worker
     }
   },
   {
