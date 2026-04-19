@@ -9,9 +9,8 @@ import {
     Default,
     CreatedAt,
     UpdatedAt,
-    HasMany,
 } from "sequelize-typescript";
-import { Scholarship } from "./Scholarship.js";
+import type { Scholarship } from "./Scholarship.js";
 
 @Table({
     tableName: "scholarship_sources",
@@ -67,6 +66,6 @@ export class ScholarshipSource extends Model {
     })
     declare updatedAt: Date;
 
-    @HasMany(() => Scholarship)
-    scholarships!: Scholarship[];
+    // Association defined in associations.ts
+    declare scholarships?: Scholarship[];
 }

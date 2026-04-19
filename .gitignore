@@ -18,9 +18,19 @@ backend/.env
 frontend/educationalpathway/.env
 backend/.env
 !**/.env.example
-#local testin gfiles
+
+# Local test files
 backend/check-env.js
 backend/test-db.js
+
+# One-time cleanup scripts (not needed in repo)
+backend/scripts/cleanup_slots.mjs
+backend/scripts/cleanup_slots.js
+backend/scripts/force_merge_duplicates.ts
+backend/src/scripts/force_merge_duplicates.ts
+backend/scripts/diagnose_slots.mjs
+backend/scripts/README_CLEANUP.md
+
 # IDE and System files
 .vscode/
 .idea/
@@ -31,6 +41,7 @@ backend/test-db.js
 *.sln
 *.sw?
 backend/uploads/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

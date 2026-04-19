@@ -62,7 +62,21 @@ export class ChatService {
     }
 
     static async getConversations(userId: number) {
-        return Conversation.findAll({
+        // First, get all conversation IDs that the user participates in
+        const userParticipations = await ConversationParticipant.findAll({
+            where: { userId },
+            attributes: ['conversationId']
+        });
+        
+        const conversationIds = userParticipations.map(p => p.conversationId);
+        
+        if (conversationIds.length === 0) {
+            return [];
+        }
+        
+        // Get all conversations with their participants
+        const conversations = await Conversation.findAll({
+            where: { id: { [Op.in]: conversationIds } },
             attributes: {
                 include: [
                     [
@@ -80,22 +94,51 @@ export class ChatService {
             include: [
                 {
                     model: ConversationParticipant,
-                    where: { userId },
-                    attributes: [] // Don't need the pivot itself
-                },
-                {
-                    model: User,
-                    through: { attributes: [] }, // Get other participants
-                    attributes: ['id', 'name', 'role', 'email']
+                    as: 'conversationParticipants',
+                    attributes: ['userId']
                 },
                 {
                     model: ChatMessage,
+                    as: 'messages',
                     limit: 1,
                     order: [['created_at', 'DESC']],
                     attributes: ['content', 'createdAt']
                 }
             ],
             order: [['updatedAt', 'DESC']]
+        });
+
+        // Get all user IDs from conversation participants
+        const allParticipantIds = await ConversationParticipant.findAll({
+            where: { conversationId: { [Op.in]: conversationIds } },
+            attributes: ['userId']
+        });
+        
+        const uniqueUserIds = [...new Set(allParticipantIds.map(p => p.userId))];
+        
+        // Get user details for all participants
+        const users = await User.findAll({
+            where: { id: { [Op.in]: uniqueUserIds } },
+            attributes: ['id', 'name', 'role', 'email']
+        });
+        
+        const userMap = new Map(users.map(u => [u.id, u]));
+
+        // Attach users to conversations, filtering out current user
+        return conversations.map((conv: any) => {
+            const allParticipants = conv.conversationParticipants || [];
+            const otherParticipantUserIds = allParticipants
+                .filter((p: any) => p.userId !== userId)
+                .map((p: any) => p.userId);
+            
+            const otherUsers = otherParticipantUserIds
+                .map(id => userMap.get(id))
+                .filter(Boolean);
+            
+            return {
+                ...conv.toJSON(),
+                users: otherUsers
+            };
         });
     }
 

@@ -24,14 +24,14 @@ router.get("/groups", authenticate, async (req: Request, res: Response, next: Ne
             SELECT 
                 cg.id, cg.name, cg.description, cg.avatar, cg.type, cg.privacy,
                 cg.created_by as "createdBy", cg.invite_link as "inviteLink", 
-                cg.member_count as "memberCount", cg.is_active as "isActive",
+                (SELECT COUNT(*) FROM community_members WHERE group_id = cg.id AND status = 'active') as "memberCount", cg.is_active as "isActive",
                 cg.add_members_permission as "addMembersPermission",
                 cg.created_at as "createdAt", cg.updated_at as "updatedAt",
                 CASE WHEN cm.id IS NOT NULL THEN true ELSE false END as "isMember"
             FROM community_groups cg
             LEFT JOIN community_members cm ON cg.id = cm.group_id AND cm.user_id = $1 AND cm.status = 'active'
             WHERE cg.is_active = true
-            ORDER BY cg.member_count DESC, cg.created_at DESC
+            ORDER BY "memberCount" DESC, cg.created_at DESC
             LIMIT 50
         `;
         
@@ -54,7 +54,7 @@ router.get("/my-groups", authenticate, async (req: Request, res: Response, next:
         const query = `
             SELECT cg.id, cg.name, cg.description, cg.avatar, cg.type, cg.privacy,
                    cg.created_by as "createdBy", cg.invite_link as "inviteLink", 
-                   cg.member_count as "memberCount", cg.is_active as "isActive",
+                   (SELECT COUNT(*) FROM community_members WHERE group_id = cg.id AND status = 'active') as "memberCount", cg.is_active as "isActive",
                    cg.add_members_permission as "addMembersPermission",
                    cg.created_at as "createdAt", cg.updated_at as "updatedAt",
                    cm.role, cm.joined_at as "joinedAt",
@@ -150,7 +150,8 @@ router.get("/groups/:id", authenticate, async (req: Request, res: Response, next
 
         const groupQuery = `
             SELECT id, name, description, avatar, type, privacy, created_by as "createdBy",
-                   invite_link as "inviteLink", member_count as "memberCount", 
+                   invite_link as "inviteLink", 
+                   (SELECT COUNT(*) FROM community_members WHERE group_id = community_groups.id AND status = 'active') as "memberCount", 
                    is_active as "isActive", add_members_permission as "addMembersPermission",
                    created_at as "createdAt", updated_at as "updatedAt" 
             FROM community_groups WHERE id = $1 AND is_active = true
@@ -281,7 +282,8 @@ router.put("/groups/:id", authenticate, async (req: Request, res: Response, next
 
         const group = await sequelize.query(
             `SELECT id, name, description, avatar, type, privacy, created_by as "createdBy",
-                    invite_link as "inviteLink", member_count as "memberCount", 
+                    invite_link as "inviteLink", 
+                    (SELECT COUNT(*) FROM community_members WHERE group_id = community_groups.id AND status = 'active') as "memberCount", 
                     is_active as "isActive", add_members_permission as "addMembersPermission",
                     created_at as "createdAt", updated_at as "updatedAt" 
              FROM community_groups WHERE id = $1`,
@@ -484,9 +486,9 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
         }
 
         const query = `
-            SELECT cm.id, cm.group_id, cm.sender_id, cm.content, cm.message_type, 
-                   cm.attachment_url, cm.attachment_name, cm.is_pinned, cm.is_edited,
-                   cm.reply_to_id, cm.reactions_count,
+            SELECT cm.id, cm.group_id as "groupId", cm.sender_id as "senderId", cm.content, cm.message_type as "messageType", 
+                   cm.attachment_url as "attachmentUrl", cm.attachment_name as "attachmentName", cm.is_pinned as "isPinned", cm.is_edited as "isEdited",
+                   cm.reply_to_id as "replyToId", cm.reactions_count as "reactionsCount",
                    cm.created_at as "createdAt", cm.updated_at as "updatedAt", 
                    u.name, u.email
             FROM community_messages cm
@@ -529,27 +531,19 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
             }
         }
 
-        // Attach reactions to messages
+        // Attach reactions and sender to messages
         for (const msg of messages as any[]) {
             msg.reactions = reactionsMap[msg.id] || [];
-            msg.sender = { id: msg.sender_id, name: msg.name, email: msg.email };
-            // Transform snake_case to camelCase for frontend compatibility
-            msg.attachmentUrl = msg.attachment_url;
-            msg.attachmentName = msg.attachment_name;
-            msg.senderId = msg.sender_id;
-            msg.groupId = msg.group_id;
-            msg.replyToId = msg.reply_to_id;
-            msg.isPinned = msg.is_pinned;
-            msg.isEdited = msg.is_edited;
+            msg.sender = { id: msg.senderId, name: msg.name, email: msg.email };
         }
 
         // Get reply-to messages (the originals being replied to)
-        const replyToIds = (messages as any[]).filter(m => m.reply_to_id).map(m => m.reply_to_id);
+        const replyToIds = (messages as any[]).filter(m => m.replyToId).map(m => m.replyToId);
         let repliesMap: Record<number, any> = {};
         
         if (replyToIds.length > 0) {
             const repliesQuery = `
-                SELECT cm.id, cm.content, cm.sender_id, u.name, u.email
+                SELECT cm.id, cm.content, cm.sender_id as "senderId", u.name, u.email
                 FROM community_messages cm
                 INNER JOIN users u ON cm.sender_id = u.id
                 WHERE cm.id IN (${replyToIds.map((_, i) => `$${i + 1}`).join(', ')})
@@ -563,15 +557,15 @@ router.get("/groups/:id/messages", authenticate, async (req: Request, res: Respo
                 repliesMap[r.id] = {
                     id: r.id,
                     content: r.content,
-                    sender: { id: r.sender_id, name: r.name, email: r.email }
+                    sender: { id: r.senderId, name: r.name, email: r.email }
                 };
             }
         }
 
         // Attach replyTo info to messages
         for (const msg of messages as any[]) {
-            if (msg.reply_to_id) {
-                msg.replyTo = repliesMap[msg.reply_to_id] || null;
+            if (msg.replyToId) {
+                msg.replyTo = repliesMap[msg.replyToId] || null;
             }
         }
 
@@ -615,13 +609,27 @@ router.post("/groups/:id/messages", authenticate, async (req: Request, res: Resp
             const uploadsDir = path.join(process.cwd(), 'uploads');
             const filePath = path.join(uploadsDir, uniqueFileName);
             
+            // Ensure directory exists
+            const fs = await import('fs');
+            if (!fs.existsSync(uploadsDir)) {
+                fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+            
             // Move the file to the uploads directory
             await uploadedFile.mv(filePath);
             
+            // Verify file was saved
+            if (fs.existsSync(filePath)) {
+                console.log('[community] File saved successfully:', filePath);
+            } else {
+                console.error('[community] File save FAILED:', filePath);
+            }
+            
             // Use the request protocol and host to build full URL
             const protocol = req.protocol || 'http';
-            const host = req.get('host') || req.headers.host || 'localhost:3001';
+            const host = req.get('host') || 'localhost:8082';
             attachmentUrl = `${protocol}://${host}/uploads/${uniqueFileName}`;
+            console.log('[community] Attachment URL generated:', attachmentUrl);
             
             // Determine message type based on file
             if (uploadedFile.mimetype?.startsWith('image/')) {
@@ -680,8 +688,8 @@ router.post("/groups/:id/messages", authenticate, async (req: Request, res: Resp
             type: QueryTypes.SELECT
         });
 
-        if (users[0]?.[0]) {
-            message.sender = users[0][0];
+        if (users[0]) {
+            message.sender = users[0];
         }
 
         // Transform snake_case to camelCase for frontend compatibility
@@ -695,8 +703,31 @@ router.post("/groups/:id/messages", authenticate, async (req: Request, res: Resp
         message.groupId = message.group_id;
         message.createdAt = message.created_at;
         message.updatedAt = message.updated_at;
+        message.messageType = message.message_type;
 
-        console.log('[community] Created message with attachment:', { attachmentUrl: message.attachment_url, attachmentName: message.attachment_name, messageType: message.message_type });
+        // If this is a reply, fetch replyTo info
+        if (message.reply_to_id) {
+            const replyQuery = `
+                SELECT cm.id, cm.content, cm.sender_id, u.name, u.email
+                FROM community_messages cm
+                INNER JOIN users u ON cm.sender_id = u.id
+                WHERE cm.id = $1
+            `;
+            const replyResult = await sequelize.query(replyQuery, {
+                bind: [message.reply_to_id],
+                type: QueryTypes.SELECT
+            });
+            if (replyResult[0]) {
+                const r = replyResult[0] as any;
+                message.replyTo = {
+                    id: r.id,
+                    content: r.content,
+                    sender: { id: r.sender_id, name: r.name, email: r.email }
+                };
+            }
+        }
+
+        console.log('[community] Created message:', { ...message });
 
         res.status(201).json({ message });
     } catch (error) {
@@ -896,13 +927,14 @@ router.post("/groups/:id/messages/:messageId/react", authenticate, async (req: R
     }
 });
 
-// Pin message
+// Pin/unpin message
 router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
         const groupId = parseParamId(req.params.id);
         const messageId = parseParamId(req.params.messageId);
 
+        // First check if user is admin/moderator OR the message author
         const adminQuery = `
             SELECT * FROM community_members 
             WHERE group_id = $1 AND user_id = $2 AND status = 'active' AND role IN ('admin', 'moderator')
@@ -912,11 +944,16 @@ router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Req
             type: QueryTypes.SELECT
         });
 
-        if (admins.length === 0) {
-            return res.status(403).json({ error: "Only admins can pin messages" });
-        }
+        // Also check if user is the group creator
+        const groupCreatorQuery = `SELECT created_by FROM community_groups WHERE id = $1`;
+        const groupResult = await sequelize.query(groupCreatorQuery, {
+            bind: [groupId],
+            type: QueryTypes.SELECT
+        });
+        const isCreator = (groupResult[0] as any)?.created_by === userId;
 
-        const msgQuery = `SELECT * FROM community_messages WHERE id = $1 AND group_id = $2`;
+        // Check if user is the message author
+        const msgQuery = `SELECT sender_id FROM community_messages WHERE id = $1 AND group_id = $2`;
         const messages = await sequelize.query(msgQuery, {
             bind: [messageId, groupId],
             type: QueryTypes.SELECT
@@ -926,6 +963,20 @@ router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Req
             return res.status(404).json({ error: "Message not found" });
         }
 
+        const isAuthor = (messages[0] as any)?.sender_id === userId;
+
+        // Allow if admin, moderator, creator, or message author
+        if (admins.length === 0 && !isCreator && !isAuthor) {
+            return res.status(403).json({ error: "Only admins or message authors can pin messages" });
+        }
+
+        // First, unpin any existing pinned messages in this group
+        await sequelize.query(
+            `UPDATE community_messages SET is_pinned = false, updated_at = NOW() WHERE group_id = $1 AND is_pinned = true`,
+            { bind: [groupId], type: QueryTypes.UPDATE }
+        );
+
+        // Then pin the new message
         await sequelize.query(
             `UPDATE community_messages SET is_pinned = true, updated_at = NOW() WHERE id = $1`,
             { bind: [messageId], type: QueryTypes.UPDATE }
@@ -936,7 +987,21 @@ router.post("/groups/:id/messages/:messageId/pin", authenticate, async (req: Req
             { bind: [messageId], type: QueryTypes.SELECT }
         );
 
-        res.json({ message: updated[0] });
+        const msg = updated[0] as any;
+        // Transform to camelCase
+        msg.isPinned = msg.is_pinned;
+        msg.isEdited = msg.is_edited;
+        msg.senderId = msg.sender_id;
+        msg.groupId = msg.group_id;
+        msg.replyToId = msg.reply_to_id;
+        msg.reactionCount = msg.reactions_count;
+        msg.attachmentUrl = msg.attachment_url;
+        msg.attachmentName = msg.attachment_name;
+        msg.createdAt = msg.created_at;
+        msg.updatedAt = msg.updated_at;
+        msg.messageType = msg.message_type;
+
+        res.json({ message: msg });
     } catch (error) {
         next(error);
     }
@@ -954,12 +1019,16 @@ router.get("/groups/search", authenticate, async (req: Request, res: Response, n
 
         const searchQuery = `
             SELECT 
-                cg.*,
+                cg.id, cg.name, cg.description, cg.avatar, cg.type, cg.privacy,
+                cg.created_by as "createdBy", cg.invite_link as "inviteLink", 
+                (SELECT COUNT(*) FROM community_members WHERE group_id = cg.id AND status = 'active') as "memberCount",
+                cg.is_active as "isActive", cg.add_members_permission as "addMembersPermission",
+                cg.created_at as "createdAt", cg.updated_at as "updatedAt",
                 CASE WHEN cm.id IS NOT NULL THEN true ELSE false END as "isMember"
             FROM community_groups cg
             LEFT JOIN community_members cm ON cg.id = cm.group_id AND cm.user_id = $1 AND cm.status = 'active'
             WHERE cg.is_active = true AND cg.name ILIKE $2
-            ORDER BY cg.member_count DESC
+            ORDER BY "memberCount" DESC
             LIMIT 20
         `;
         
@@ -1160,19 +1229,23 @@ router.post("/groups/:id/members", authenticate, async (req: Request, res: Respo
                  WHERE group_id = $2 AND user_id = $3`,
                 { bind: [role, groupId, targetUserId], type: QueryTypes.UPDATE }
             );
+            // Reactivate: increment count since they were previously removed
+            await sequelize.query(
+                `UPDATE community_groups SET member_count = member_count + 1 WHERE id = $1`,
+                { bind: [groupId], type: QueryTypes.UPDATE }
+            );
         } else {
             await sequelize.query(
                 `INSERT INTO community_members (group_id, user_id, role, status, joined_at, updated_at)
                  VALUES ($1, $2, $3, 'active', NOW(), NOW())`,
                 { bind: [groupId, targetUserId, role], type: QueryTypes.INSERT }
             );
+            // New member: only increment count for new members
+            await sequelize.query(
+                `UPDATE community_groups SET member_count = member_count + 1 WHERE id = $1`,
+                { bind: [groupId], type: QueryTypes.UPDATE }
+            );
         }
-
-        // Update member count
-        await sequelize.query(
-            `UPDATE community_groups SET member_count = member_count + 1 WHERE id = $1`,
-            { bind: [groupId], type: QueryTypes.UPDATE }
-        );
 
         const newMember = {
             id: previous.length > 0 ? (previous[0] as any)?.id : Date.now(),
@@ -1326,7 +1399,7 @@ router.get("/groups/:id/invite", authenticate, async (req: Request, res: Respons
         const groupId = parseParamId(req.params.id);
 
         // First check if group exists
-        const groupQuery = `SELECT invite_link, created_by FROM community_groups WHERE id = $1`;
+        const groupQuery = `SELECT invite_link as "inviteLink", created_by as "createdBy" FROM community_groups WHERE id = $1`;
         const groups = await sequelize.query(groupQuery, {
             bind: [groupId],
             type: QueryTypes.SELECT
@@ -1336,8 +1409,19 @@ router.get("/groups/:id/invite", authenticate, async (req: Request, res: Respons
             return res.status(404).json({ error: "Group not found" });
         }
 
-        const group = groups[0] as any;
-        const isCreator = group.created_by === userId;
+        let group = groups[0] as any;
+        let inviteLink = group.inviteLink;
+        
+        // If no invite link exists, generate one and save it
+        if (!inviteLink) {
+            inviteLink = generateInviteLink();
+            await sequelize.query(
+                `UPDATE community_groups SET invite_link = $1, updated_at = NOW() WHERE id = $2`,
+                { bind: [inviteLink, groupId], type: QueryTypes.UPDATE }
+            );
+        }
+
+        const isCreator = group.createdBy === userId;
 
         // If not creator, check membership
         if (!isCreator) {
@@ -1355,7 +1439,7 @@ router.get("/groups/:id/invite", authenticate, async (req: Request, res: Respons
             }
         }
 
-        res.json({ inviteLink: group.invite_link });
+        res.json({ inviteLink });
     } catch (error) {
         next(error);
     }

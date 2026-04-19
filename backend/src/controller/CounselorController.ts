@@ -98,10 +98,27 @@ export class CounselorController {
 
   static async getSlots(req: Request, res: Response, next: NextFunction) {
     try {
-      console.log('[CounselorController] Getting slots for counselor:', (req as any).counselor.id);
-      const data = await CounselorService.getSlots((req as any).counselor.id, req.query.fromDate as string, req.query.toDate as string, req.query.status as string);
-      console.log('[CounselorController] Slots found:', data.length);
-      res.status(200).json({ success: true, data });
+      const counselorId = (req as any).counselor.id;
+      console.log('[CounselorController] Getting slots for counselor:', counselorId);
+      
+      // Get slots from availability_slots table
+      const data = await CounselorService.getSlots(counselorId, req.query.fromDate as string, req.query.toDate as string, req.query.status as string);
+      console.log('[CounselorController] Slots found from DB:', data.length);
+      
+      // Also get weeklySchedule from counselor profile
+      const counselor = (req as any).counselor;
+      let weeklyScheduleData: any[] = [];
+      if (counselor.weeklySchedule) {
+        try {
+          const parsed = JSON.parse(counselor.weeklySchedule);
+          weeklyScheduleData = parsed.slots || [];
+        } catch (e) {
+          console.log('[CounselorController] Failed to parse weeklySchedule');
+        }
+      }
+      console.log('[CounselorController] Weekly schedule slots:', weeklyScheduleData.length);
+      
+      res.status(200).json({ success: true, data, weeklySchedule: weeklyScheduleData });
     } catch (error) {
       console.error('[CounselorController] Get slots error:', error);
       next(error);

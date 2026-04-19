@@ -3,13 +3,12 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { Student } from "./Student.js";
-import { Video } from "./Video.js";
+import type { Student } from "./Student.js";
+import type { Video } from "./Video.js";
+
 
 @Table({
     tableName: "learning_path_progress",
@@ -23,21 +22,19 @@ export class LearningPathProgress extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => Student)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'student_id'
-    })
-    declare studentId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'student_id'
+})
+declare studentId: number;
 
-    @ForeignKey(() => Video)
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: true,
-        field: 'video_id'
-    })
-    declare videoId: number;
+@Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: 'video_id'
+})
+declare videoId: number;
 
     @Column({
         type: DataType.STRING(20),
@@ -67,9 +64,7 @@ export class LearningPathProgress extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => Student)
-    student!: Student;
-
-    @BelongsTo(() => Video)
-    video!: Video;
+    // Associations defined in associations.ts
+    declare student?: Student;
+    declare video?: Video;
 }

@@ -6,6 +6,7 @@ import {
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
+import type { LearningPathProgress } from "./LearningPathProgress.js";
 
 @Table({
     tableName: "videos",
@@ -66,4 +67,7 @@ export class Video extends Model {
         field: 'updated_at'
     })
     declare updatedAt: Date;
+
+    // Association defined in associations.ts
+    declare learningPathProgresses?: LearningPathProgress[];
 }

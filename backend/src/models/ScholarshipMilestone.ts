@@ -3,12 +3,11 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { TrackedScholarship } from "./TrackedScholarship.js";
+import type { TrackedScholarship } from "./TrackedScholarship.js";
+
 
 @Table({
     tableName: "scholarship_milestones",
@@ -22,13 +21,12 @@ export class ScholarshipMilestone extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => TrackedScholarship)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'tracked_scholarship_id'
-    })
-    declare trackedScholarshipId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'tracked_scholarship_id'
+})
+declare trackedScholarshipId: number;
 
     @Column({
         type: DataType.STRING(255),
@@ -77,6 +75,6 @@ export class ScholarshipMilestone extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => TrackedScholarship)
-    trackedScholarship!: TrackedScholarship;
+    // Association defined in associations.ts
+    declare trackedScholarship?: TrackedScholarship;
 }

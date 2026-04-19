@@ -6,11 +6,9 @@ import {
     PrimaryKey,
     AutoIncrement,
     Unique,
-    ForeignKey,
-    BelongsTo,
     CreatedAt,
 } from "sequelize-typescript";
-import { User } from "./User.js";
+import type { User } from "./User.js";
 
 @Table({
     tableName: "refresh_tokens",
@@ -23,16 +21,12 @@ export class RefreshToken extends Model {
     @Column(DataType.INTEGER)
     declare id: number;
 
-    @ForeignKey(() => User)
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
         field: 'user_id'
     })
     declare userId: number;
-
-    @BelongsTo(() => User)
-    user!: User;
 
     @Unique
     @Column({
@@ -54,4 +48,7 @@ export class RefreshToken extends Model {
         field: 'created_at'
     })
     declare createdAt: Date;
+
+    // Association defined in associations.ts
+    user?: User;
 }

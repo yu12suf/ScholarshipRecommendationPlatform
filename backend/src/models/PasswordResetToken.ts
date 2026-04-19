@@ -6,12 +6,11 @@ import {
     PrimaryKey,
     AutoIncrement,
     Unique,
-    ForeignKey,
-    BelongsTo,
     Default,
     CreatedAt,
 } from "sequelize-typescript";
-import { User } from "./User.js";
+import type { User } from "./User.js";
+
 
 @Table({
     tableName: "password_reset_tokens",
@@ -24,16 +23,15 @@ export class PasswordResetToken extends Model {
     @Column(DataType.INTEGER)
     declare id: number;
 
-    @ForeignKey(() => User)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'user_id'
-    })
-    declare userId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'user_id'
+})
+declare userId: number;
 
-    @BelongsTo(() => User)
-    user!: User;
+    // Association defined in associations.ts
+    user?: User;
 
     @Unique
     @Column({

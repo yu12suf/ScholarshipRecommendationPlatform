@@ -16,6 +16,61 @@ const model = new ChatGoogleGenerativeAI({
     maxOutputTokens: 8192,
 });
 
+const DEFAULT_MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+const MAX_DELAY_MS = 30000;
+
+function parseRetryAfterDelay(errorMessage: string): number {
+    const match = errorMessage.match(/Please retry in ([\d.]+)s/);
+    if (match && match[1]) {
+        const delay = parseFloat(match[1]) * 1000;
+        return Math.min(Math.max(delay, BASE_DELAY_MS), MAX_DELAY_MS);
+    }
+    return 0;
+}
+
+function isRateLimitError(error: any): boolean {
+    const message = error?.message || "";
+    return message.includes("429") || message.includes("Too Many Requests") || message.includes("quota");
+}
+
+async function withRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = DEFAULT_MAX_RETRIES,
+    baseDelay: number = BASE_DELAY_MS
+): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await operation();
+        } catch (error: any) {
+            lastError = error;
+            
+            if (attempt === maxRetries) {
+                break;
+            }
+            
+            if (isRateLimitError(error)) {
+                const retryDelay = parseRetryAfterDelay(error.message);
+                const delay = retryDelay > 0 ? retryDelay : baseDelay * Math.pow(2, attempt);
+                const actualDelay = Math.min(delay, MAX_DELAY_MS);
+                
+                console.warn(`[AssessmentService] Rate limit hit. Retrying in ${Math.round(actualDelay/1000)}s (attempt ${attempt + 1}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, actualDelay));
+            } else {
+                const delay = baseDelay * Math.pow(2, attempt);
+                const actualDelay = Math.min(delay, MAX_DELAY_MS);
+                
+                console.warn(`[AssessmentService] Error: ${error.message}. Retrying in ${Math.round(actualDelay/1000)}s (attempt ${attempt + 1}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, actualDelay));
+            }
+        }
+    }
+    
+    throw lastError;
+}
+
 export class AssessmentService {
     public static sanitizeJSONString(str: string): string {
         let cleaned = str.trim();
@@ -31,7 +86,42 @@ export class AssessmentService {
         // Replace unescaped control characters EXCEPT newlines and carriage returns
         cleaned = cleaned.replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F]/g, "");
 
+        // Fix truncated AI responses: close any unclosed strings at the end
+        const openQuotes = (cleaned.match(/"/g) || []).length;
+        if (openQuotes % 2 !== 0) {
+            cleaned = cleaned + '"';
+        }
+
         return cleaned.trim();
+    }
+
+    private static extractValidPartialJSON(jsonStr: string): any {
+        const sanitized = AssessmentService.sanitizeJSONString(jsonStr);
+        
+        // Try direct parse first
+        try {
+            return JSON.parse(sanitized);
+        } catch (e) { /* ignore */ }
+        
+        // Try to find complete objects by looking for balanced braces
+        let depth = 0;
+        let endIndex = -1;
+        for (let i = 0; i < sanitized.length; i++) {
+            if (sanitized[i] === '{') depth++;
+            else if (sanitized[i] === '}') depth--;
+            if (depth === 0 && sanitized.substring(0, i + 1).trim().startsWith('{')) {
+                endIndex = i + 1;
+            }
+        }
+        
+        if (endIndex > 0) {
+            const partial = sanitized.substring(0, endIndex);
+            try {
+                return JSON.parse(partial);
+            } catch (e) { /* ignore */ }
+        }
+        
+        return null;
     }
 
     /**
@@ -114,7 +204,11 @@ export class AssessmentService {
         `);
 
         const chain = prompt.pipe(model).pipe(new StringOutputParser());
-        const response = await chain.invoke({ examType, difficulty, testId });
+        const response = await withRetry(
+            () => chain.invoke({ examType, difficulty, testId }),
+            DEFAULT_MAX_RETRIES,
+            BASE_DELAY_MS
+        );
 
         // Ensure response is valid JSON
         let blueprint;
@@ -306,7 +400,11 @@ export class AssessmentService {
         // We use HumanMessage directly for multimodal structure instead of the plain String Output
         const { HumanMessage } = await import("@langchain/core/messages");
         const chain = model.pipe(new StringOutputParser());
-        const response = await chain.invoke([new HumanMessage({ content: messagesContent })]);
+        const response = await withRetry(
+            () => chain.invoke([new HumanMessage({ content: messagesContent })]),
+            DEFAULT_MAX_RETRIES,
+            BASE_DELAY_MS
+        );
 
         let evaluation;
         let rawJson = "";
@@ -315,12 +413,23 @@ export class AssessmentService {
             rawJson = jsonMatch ? jsonMatch[0] : response;
             evaluation = JSON.parse(AssessmentService.sanitizeJSONString(rawJson));
             console.log(evaluation);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to parse evaluation AI response:", response);
-
-console.error("Sanitized JSON that failed parsing:", AssessmentService.sanitizeJSONString(rawJson));
-            console.error(error);
-            throw new Error("Assessment evaluation failed due to invalid AI response.");
+            console.error("Sanitized JSON that failed parsing:", AssessmentService.sanitizeJSONString(rawJson));
+            
+            // Try to extract partial JSON (handle truncated AI responses)
+            try {
+                const partialJson = AssessmentService.extractValidPartialJSON(rawJson);
+                if (partialJson) {
+                    console.warn("⚠️ Successfully recovered partial JSON, using fallback evaluation");
+                    evaluation = partialJson;
+                } else {
+                    throw new Error("Assessment evaluation failed due to invalid AI response.");
+                }
+            } catch (fallbackError) {
+                console.error("Failed to recover partial JSON:", fallbackError);
+                throw new Error("Assessment evaluation failed due to invalid AI response.");
+            }
         }
 
         // Generate audio for learning mode listening questions

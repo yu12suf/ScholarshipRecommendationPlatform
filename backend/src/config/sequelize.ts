@@ -1,29 +1,6 @@
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
-import {
-  User,
-  RefreshToken,
-  PasswordResetToken,
-  Student,
-  Counselor,
-  AvailabilitySlot,
-  Booking,
-  CounselorReview,
-  Document,
-  CounselorMessage,
-  ScholarshipSource,
-  Scholarship,
-  AssessmentResult,
-  Consultation,
-  Notification,
-  Video,
-  LearningPath,
-  LearningPathProgress,
-  Conversation,
-  ConversationParticipant,
-  ChatMessage,
-  TrackedScholarship,
-  ScholarshipMilestone,
-} from "../models/index.js";
+import * as Models from "../models/index.js";
+import { initAssociations } from "../models/associations.js";
 import configs from "./configs.js";
 
 console.log('DB_PASSWORD from env:', process.env.DB_PASSWORD ? '****' : 'NOT SET');
@@ -52,31 +29,7 @@ export const sequelize = new Sequelize({
   dialect: "postgres",
   ...dbOptions,
   timezone: "+00:00", // Force UTC to avoid timezone issues
-  models: [
-    User,
-    RefreshToken,
-    PasswordResetToken,
-    Student,
-    Counselor,
-    AvailabilitySlot,
-    Booking,
-    CounselorReview,
-    Document,
-    CounselorMessage,
-    ScholarshipSource,
-    Scholarship,
-    AssessmentResult,
-    Consultation,
-    Notification,
-    Video,
-    LearningPath,
-    LearningPathProgress,
-    Conversation,
-    ConversationParticipant,
-    ChatMessage,
-    TrackedScholarship,
-    ScholarshipMilestone
-  ], // Add all models here
+  models: Object.values(Models).filter((m) => m && typeof m === 'function' && m.name),
 } as SequelizeOptions);
 
 export let hasVectorExtension = false;
@@ -85,6 +38,10 @@ export const connectSequelize = async () => {
   try {
     await sequelize.authenticate();
     console.log("Sequelize connected successfully");
+
+    // Initialize associations after all models are loaded
+    initAssociations();
+    console.log("Model associations initialized");
 
     // Enable pgvector extension
     try {

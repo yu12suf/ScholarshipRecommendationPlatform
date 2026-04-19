@@ -3,16 +3,21 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { Counselor } from "./Counselor.js";
+import type { Counselor } from "./Counselor.js";
+
 
 @Table({
     tableName: "availability_slots",
     timestamps: true,
+    indexes: [
+        {
+            unique: true,
+            fields: ['counselor_id', 'start_time', 'end_time']
+        }
+    ]
 })
 export class AvailabilitySlot extends Model {
     @Column({
@@ -22,13 +27,12 @@ export class AvailabilitySlot extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => Counselor)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'counselor_id'
-    })
-    declare counselorId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'counselor_id'
+})
+declare counselorId: number;
 
     @Column({
         type: DataType.DATE,
@@ -88,6 +92,6 @@ export class AvailabilitySlot extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => Counselor)
-    counselor!: Counselor;
+    // Association defined in associations.ts
+    declare counselor?: Counselor;
 }

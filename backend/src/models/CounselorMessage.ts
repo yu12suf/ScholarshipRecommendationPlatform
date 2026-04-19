@@ -3,12 +3,11 @@ import {
   Column,
   Model,
   DataType,
-  ForeignKey,
-  BelongsTo,
   CreatedAt,
   UpdatedAt,
 } from "sequelize-typescript";
-import { User } from "./User.js";
+import type { User } from "./User.js";
+
 
 @Table({
   tableName: "counselor_messages",
@@ -22,21 +21,19 @@ export class CounselorMessage extends Model {
   })
   declare id: number;
 
-  @ForeignKey(() => User)
-  @Column({
+@Column({
     type: DataType.INTEGER,
     allowNull: false,
     field: "sender_user_id",
-  })
-  declare senderUserId: number;
+})
+declare senderUserId: number;
 
-  @ForeignKey(() => User)
-  @Column({
+@Column({
     type: DataType.INTEGER,
     allowNull: false,
     field: "recipient_user_id",
-  })
-  declare recipientUserId: number;
+})
+declare recipientUserId: number;
 
   @Column({
     type: DataType.TEXT,
@@ -59,9 +56,7 @@ export class CounselorMessage extends Model {
   })
   declare updatedAt: Date;
 
-  @BelongsTo(() => User, { foreignKey: "senderUserId", as: "sender" })
-  sender!: User;
-
-  @BelongsTo(() => User, { foreignKey: "recipientUserId", as: "recipient" })
-  recipient!: User;
+// Associations defined in associations.ts
+  declare sender?: User;
+  declare recipient?: User;
 }

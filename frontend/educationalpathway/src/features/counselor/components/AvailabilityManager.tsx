@@ -27,15 +27,14 @@ export const AvailabilityManager = () => {
     const fetchSlots = async () => {
       try {
         console.log('[AvailabilityManager] Fetching slots...');
-        const data = await getCounselorSlots();
-        console.log('[AvailabilityManager] Raw response:', data);
-        console.log('[AvailabilityManager] Is data.data array?:', Array.isArray(data?.data));
-        console.log('[AvailabilityManager] Is data an array?:', Array.isArray(data));
+        const response = await getCounselorSlots();
+        console.log('[AvailabilityManager] Raw response:', response);
         
-        // Handle both { success: true, data: [...] } and [...] response formats
-        const rawSlots = data || []; // Already unwrapped by interceptor in getCounselorSlots
-        console.log('[AvailabilityManager] Raw slots:', rawSlots);
-        console.log('[AvailabilityManager] rawSlots length:', rawSlots.length);
+        // Handle { success, data, weeklySchedule } format
+        const rawSlots = response?.data || [];
+        const weeklySchedule = response?.weeklySchedule || [];
+        console.log('[AvailabilityManager] DB slots:', rawSlots.length);
+        console.log('[AvailabilityManager] Weekly schedule slots:', weeklySchedule.length);
         
         // Convert ISO8601 slots to time-only format for the UI
         // Group slots by day of week to show unique weekly patterns
@@ -55,9 +54,21 @@ export const AvailabilityManager = () => {
           }
         });
         
+        // Also include weeklySchedule slots if no DB slots exist
+        const allSlots = rawSlots.length > 0 ? rawSlots : weeklySchedule;
+        
         const formattedSlots = Array.from(slotMap.values());
         console.log('[AvailabilityManager] Formatted slots:', formattedSlots);
-        setSlots(formattedSlots);
+        if (formattedSlots.length === 0 && weeklySchedule.length > 0) {
+          // Show weekly schedule slots if no DB slots
+          weeklySchedule.forEach((slot: any) => {
+            const key = `${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`;
+            if (!slotMap.has(key)) {
+              slotMap.set(key, { dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime });
+            }
+          });
+        }
+        setSlots(Array.from(slotMap.values()));
       } catch (error: any) {
         console.error('[AvailabilityManager] Failed to load slots:', error);
         console.error('[AvailabilityManager] Error response:', error?.response?.data);
@@ -187,17 +198,22 @@ export const AvailabilityManager = () => {
                 const data = await getCounselorSlots();
                 console.log('[AvailabilityManager] Refresh - data:', data);
                 const rawSlots = data || []; // Already unwrapped by interceptor
-                const formattedSlots = rawSlots.map((slot: any) => {
+                // Deduplicate slots based on day + time combination (same as in initial load)
+                const slotMap = new Map<string, { dayOfWeek: string; startTime: string; endTime: string }>();
+                rawSlots.forEach((slot: any) => {
                   const start = new Date(slot.startTime);
-                  const end = new Date(slot.endTime);
                   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                  return {
-                    dayOfWeek: dayNames[start.getDay()],
-                    startTime: `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`,
-                    endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`
-                  };
+                  const dayOfWeek = dayNames[start.getDay()];
+                  const startTime = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+                  const end = new Date(slot.endTime);
+                  const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+                  
+                  const key = `${dayOfWeek}-${startTime}-${endTime}`;
+                  if (!slotMap.has(key)) {
+                    slotMap.set(key, { dayOfWeek, startTime, endTime });
+                  }
                 });
-                setSlots(formattedSlots);
+                setSlots(Array.from(slotMap.values()));
               } catch (error) {
                 toast.error('Failed to refresh slots');
               } finally {

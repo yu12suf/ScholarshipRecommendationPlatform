@@ -3,13 +3,12 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
     Default,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { User } from "./User.js";
+import type { User } from "./User.js";
+
 
 @Table({
     tableName: "students",
@@ -27,13 +26,12 @@ export class Student extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => User)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'user_id'
-    })
-    declare userId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'user_id'
+})
+declare userId: number;
 
     @Column({
         type: DataType.DECIMAL(3, 2),
@@ -383,7 +381,6 @@ export class Student extends Model {
     })
     declare updatedAt: Date;
 
-    // Association with explicit alias to match service queries
-    @BelongsTo(() => User, { as: 'user' })
-    user!: User;
+    // Association defined in associations.ts
+    declare user?: User;
 }

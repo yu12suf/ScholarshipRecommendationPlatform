@@ -6,12 +6,11 @@ import {
     PrimaryKey,
     AutoIncrement,
     Unique,
-    ForeignKey,
-    BelongsTo,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { ScholarshipSource } from "./ScholarshipSource.js";
+import type { ScholarshipSource } from "./ScholarshipSource.js";
+
 
 @Table({
     tableName: "scholarships",
@@ -29,13 +28,12 @@ export class Scholarship extends Model {
     @Column(DataType.INTEGER)
     declare id: number;
 
-    @ForeignKey(() => ScholarshipSource)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: true,
-        field: 'source_id'
-    })
-    declare sourceId: number | null;
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: 'source_id'
+})
+declare sourceId: number | null;
 
     @Column({
         type: DataType.STRING(512),
@@ -132,6 +130,6 @@ export class Scholarship extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => ScholarshipSource)
-    source!: ScholarshipSource;
+    // Association defined in associations.ts
+    declare source?: ScholarshipSource;
 }

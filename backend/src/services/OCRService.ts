@@ -221,7 +221,7 @@ export class OCRService {
   static async extractProfileFromDocument(
     fileBuffer: Buffer,
     mimeType: string,
-    maxRetries: number = 3
+    maxRetries: number = 5
   ): Promise<ExtractedProfileData> {
     console.log("[OCRService] Starting extraction, mimeType:", mimeType, "size:", fileBuffer.length);
     
@@ -408,10 +408,19 @@ Return valid JSON only.`;
           errorMsg.includes('429') ||
           errorMsg.includes('rate limit');
         
+        // Parse retry delay from error message (e.g., "Please retry in 51s")
+        let retryDelay = 0;
+        const retryMatch = errorMsg.match(/Please retry in ([\d.]+)s/);
+        if (retryMatch && retryMatch[1]) {
+          retryDelay = parseFloat(retryMatch[1]) * 1000;
+        }
+        
         if (isRetryable && attempt < maxRetries) {
-          // Exponential backoff: wait 2, 4, 8 seconds
-          const waitTime = Math.pow(2, attempt) * 1000;
-          console.log(`[OCRService] Retrying in ${waitTime/1000} seconds...`);
+          // Use API-suggested delay if available, otherwise exponential backoff
+          const waitTime = retryDelay > 0 
+            ? retryDelay 
+            : Math.pow(2, attempt) * 1000;
+          console.log(`[OCRService] Retrying in ${Math.round(waitTime/1000)} seconds...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
           continue;
         }

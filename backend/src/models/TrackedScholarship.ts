@@ -3,15 +3,13 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
-    HasMany,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { Student } from "./Student.js";
-import { Scholarship } from "./Scholarship.js";
-import { ScholarshipMilestone } from "./ScholarshipMilestone.js";
+import type { Student } from "./Student.js";
+import type { Scholarship } from "./Scholarship.js";
+import type { ScholarshipMilestone } from "./ScholarshipMilestone.js";
+
 
 @Table({
     tableName: "tracked_scholarships",
@@ -25,21 +23,19 @@ export class TrackedScholarship extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => Student)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'student_id'
-    })
-    declare studentId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'student_id'
+})
+declare studentId: number;
 
-    @ForeignKey(() => Scholarship)
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'scholarship_id'
-    })
-    declare scholarshipId: number;
+@Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'scholarship_id'
+})
+declare scholarshipId: number;
 
     @Column({
         type: DataType.DATE,
@@ -77,12 +73,8 @@ export class TrackedScholarship extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => Student)
-    student!: Student;
-
-    @BelongsTo(() => Scholarship)
-    scholarship!: Scholarship;
-
-    @HasMany(() => ScholarshipMilestone)
-    milestones!: ScholarshipMilestone[];
+    // Associations defined in associations.ts
+    declare student?: Student;
+    declare scholarship?: Scholarship;
+    declare milestones?: ScholarshipMilestone[];
 }

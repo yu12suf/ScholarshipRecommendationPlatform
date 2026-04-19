@@ -68,7 +68,7 @@ async function seedScholarships() {
             
             await Scholarship.create({
                 ...data,
-                embedding: `[${vector.join(',')}]`
+                embedding: JSON.stringify(vector)
             });
             console.log(`Created: ${data.title}`);
         } catch (error) {

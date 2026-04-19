@@ -35,7 +35,7 @@ export const ChatList = ({ conversations, activeConversationId, onSelect, curren
         ) : (
           conversations.map((conv) => {
             const otherUser = conv.users?.find(u => u.id !== currentUserId);
-            const lastMessage = conv.chatMessages?.[0] || conv.messages?.[0] || conv.ChatMessages?.[0];
+            const lastMessage = conv.messages?.[0] || conv.ChatMessages?.[0];
             const isActive = activeConversationId === conv.id;
 
             return (

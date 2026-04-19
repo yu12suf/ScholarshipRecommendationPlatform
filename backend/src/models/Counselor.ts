@@ -3,17 +3,15 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
     Default,
     CreatedAt,
     UpdatedAt,
-    HasMany,
 } from "sequelize-typescript";
-import { User } from "./User.js";
-import { AvailabilitySlot } from './AvailabilitySlot.js';
-import { Booking } from './Booking.js';
-import { CounselorReview } from './CounselorReview.js';
+import type { User } from "./User.js";
+import type { AvailabilitySlot } from './AvailabilitySlot.js';
+import type { Booking } from './Booking.js';
+import type { CounselorReview } from './CounselorReview.js';
+
 
 @Table({
     tableName: "counselors",
@@ -33,13 +31,12 @@ export class Counselor extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => User)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'user_id'
-    })
-    declare userId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'user_id'
+})
+declare userId: number;
 
     @Column({
         type: DataType.TEXT,
@@ -282,15 +279,9 @@ export class Counselor extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => User, { as: 'user' })
-    user!: User;
-
-    @HasMany(() => AvailabilitySlot, { foreignKey: 'counselorId' })
-    availabilitySlots!: AvailabilitySlot[];
-
-    @HasMany(() => Booking, { foreignKey: 'counselorId' })
-    bookings!: Booking[];
-
-    @HasMany(() => CounselorReview, { foreignKey: 'counselorId' })
-    reviews!: CounselorReview[];
+    // Associations defined in associations.ts
+    declare user?: User;
+    declare availabilitySlots?: AvailabilitySlot[];
+    declare bookings?: Booking[];
+    declare reviews?: CounselorReview[];
 }

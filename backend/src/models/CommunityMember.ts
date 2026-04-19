@@ -7,11 +7,10 @@ import {
     AutoIncrement,
     CreatedAt,
     UpdatedAt,
-    BelongsTo,
-    ForeignKey,
 } from "sequelize-typescript";
-import { User } from "./User.js";
-import { CommunityGroup } from "./CommunityGroup.js";
+import type { User } from "./User.js";
+import type { CommunityGroup } from "./CommunityGroup.js";
+
 
 export enum CommunityMemberRole {
     ADMIN = "admin",
@@ -35,39 +34,39 @@ export class CommunityMember extends Model {
     @Column(DataType.INTEGER)
     declare id: number;
 
-    @ForeignKey(() => CommunityGroup)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'group_id'
-    })
-    declare groupId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'group_id'
+})
+declare groupId: number;
 
-    @BelongsTo(() => CommunityGroup, 'groupId')
-    declare group: CommunityGroup;
+@Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'user_id'
+})
+declare userId: number;
 
-    @ForeignKey(() => User)
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'user_id'
-    })
-    declare userId: number;
-
-    @BelongsTo(() => User, 'userId')
-    declare user: User;
+    // Associations defined in associations.ts
 
     @Column({
-        type: DataType.ENUM(...Object.values(CommunityMemberRole)),
+        type: DataType.STRING(20),
         allowNull: false,
         defaultValue: CommunityMemberRole.MEMBER,
+        validate: {
+            isIn: [Object.values(CommunityMemberRole)]
+        }
     })
     declare role: CommunityMemberRole;
 
     @Column({
-        type: DataType.ENUM(...Object.values(CommunityMemberStatus)),
+        type: DataType.STRING(20),
         allowNull: false,
         defaultValue: CommunityMemberStatus.ACTIVE,
+        validate: {
+            isIn: [Object.values(CommunityMemberStatus)]
+        }
     })
     declare status: CommunityMemberStatus;
 
@@ -84,4 +83,8 @@ export class CommunityMember extends Model {
         field: 'updated_at'
     })
     declare updatedAt: Date;
+
+    // Associations defined in associations.ts
+    declare group?: CommunityGroup;
+    declare user?: User;
 }

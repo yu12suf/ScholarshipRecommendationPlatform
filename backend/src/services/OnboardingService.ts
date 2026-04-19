@@ -72,17 +72,22 @@ export class OnboardingService {
         if (!instance) throw new Error(`${user.role} record not found for user`);
 
         if (user.role === UserRole.STUDENT) {
-            // Handle file uploads if any
+            // Handle file uploads if any - files are optional
             let cvUrl = instance.cvUrl;
             let transcriptUrl = instance.transcriptUrl;
             let degreeCertificateUrl = instance.degreeCertificateUrl;
             let languageCertificateUrl = instance.languageCertificateUrl;
 
-            if (files) {
-                if (files.cv) cvUrl = await FileService.uploadFile(files.cv.data, "documents/cvs");
-                if (files.transcript) transcriptUrl = await FileService.uploadFile(files.transcript.data, "documents/transcripts");
-                if (files.degreeCertificate) degreeCertificateUrl = await FileService.uploadFile(files.degreeCertificate.data, "documents/certificates/degree");
-                if (files.languageCertificate) languageCertificateUrl = await FileService.uploadFile(files.languageCertificate.data, "documents/certificates/language");
+            if (files && typeof files === 'object') {
+                try {
+                    if (files.cv) cvUrl = await FileService.uploadFile(files.cv.data, "documents/cvs");
+                    if (files.transcript) transcriptUrl = await FileService.uploadFile(files.transcript.data, "documents/transcripts");
+                    if (files.degreeCertificate) degreeCertificateUrl = await FileService.uploadFile(files.degreeCertificate.data, "documents/certificates/degree");
+                    if (files.languageCertificate) languageCertificateUrl = await FileService.uploadFile(files.languageCertificate.data, "documents/certificates/language");
+                } catch (fileError: any) {
+                    console.error("[OnboardingService] File upload error (non-fatal):", fileError.message);
+                    // Continue without file URLs - profile update can proceed without files
+                }
             }
 
             if (updateData.fullName) {

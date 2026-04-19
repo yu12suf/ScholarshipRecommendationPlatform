@@ -3,13 +3,12 @@ import {
   Column,
   Model,
   DataType,
-  ForeignKey,
-  BelongsTo,
   CreatedAt,
   UpdatedAt,
 } from "sequelize-typescript";
-import { Student } from "./Student.js";
-import { Counselor } from "./Counselor.js";
+import type { Student } from "./Student.js";
+import type { Counselor } from "./Counselor.js";
+
 
 @Table({
   tableName: "documents",
@@ -23,21 +22,19 @@ export class Document extends Model {
   })
   declare id: number;
 
-  @ForeignKey(() => Student)
-  @Column({
+@Column({
     type: DataType.INTEGER,
     allowNull: false,
     field: "student_id",
-  })
-  declare studentId: number;
+})
+declare studentId: number;
 
-  @ForeignKey(() => Counselor)
-  @Column({
+@Column({
     type: DataType.INTEGER,
     allowNull: true,
     field: "counselor_id",
-  })
-  declare counselorId: number | null;
+})
+declare counselorId: number | null;
 
   @Column({
     type: DataType.STRING(50),
@@ -74,9 +71,7 @@ export class Document extends Model {
   })
   declare updatedAt: Date;
 
-  @BelongsTo(() => Student)
-  student!: Student;
-
-  @BelongsTo(() => Counselor)
-  counselor!: Counselor;
+// Associations defined in associations.ts
+  declare student?: Student;
+  declare counselor?: Counselor;
 }

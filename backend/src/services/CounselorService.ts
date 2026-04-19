@@ -384,47 +384,56 @@ export class CounselorService {
     await counselor.update({ isActive: false });
   }
 
-  static async createSlots(counselorId: number, slots: CreateSlotDto[]): Promise<SlotResponse[]> {
-    if (slots.length === 0) throw httpError(400, "Slots array is required");
-    const now = new Date();
+    static async createSlots(counselorId: number, slots: CreateSlotDto[]): Promise<SlotResponse[]> {
+      if (slots.length === 0) throw httpError(400, "Slots array is required");
+      const now = new Date();
 
-    // Expand slots to recur weekly for 12 weeks (3 months)
-    const expandedSlots: { counselorId: number; startTime: Date; endTime: Date; status: string }[] = [];
-    const weeksToCreate = 12;
+      // Expand slots to recur weekly for 4 weeks (1 month) to keep student booking UI concise
+      const expandedSlots: { counselorId: number; startTime: Date; endTime: Date; status: string }[] = [];
+      const weeksToCreate = 4;
 
-    for (const slot of slots) {
-      const start = new Date(slot.startTime);
-      const end = new Date(slot.endTime);
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
-        throw httpError(400, "Invalid slot time range");
-      }
-      if (start < now) throw httpError(400, "Cannot create slot in the past");
+     for (const slot of slots) {
+       const start = new Date(slot.startTime);
+       const end = new Date(slot.endTime);
 
-      // Create recurring slots for the next N weeks
-      for (let week = 0; week < weeksToCreate; week++) {
-        const weekStart = new Date(start);
-        weekStart.setDate(weekStart.getDate() + (week * 7));
-        const weekEnd = new Date(end);
-        weekEnd.setDate(weekEnd.getDate() + (week * 7));
-        
-        expandedSlots.push({
+       if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+         throw httpError(400, "Invalid slot time range");
+       }
+       if (start < now) throw httpError(400, "Cannot create slot in the past");
+
+       // Create recurring slots for the next N weeks
+       for (let week = 0; week < weeksToCreate; week++) {
+         const weekStart = new Date(start);
+         weekStart.setDate(weekStart.getDate() + (week * 7));
+         const weekEnd = new Date(end);
+         weekEnd.setDate(weekEnd.getDate() + (week * 7));
+
+         expandedSlots.push({
+           counselorId,
+           startTime: weekStart,
+           endTime: weekEnd,
+           status: 'available'
+         });
+       }
+     }
+
+      // Delete existing future AVAILABLE slots for this counselor to prevent duplicates.
+      // Booked slots (status='booked') are preserved to maintain existing bookings.
+      await AvailabilitySlot.destroy({
+        where: {
           counselorId,
-          startTime: weekStart,
-          endTime: weekEnd,
+          startTime: { [Op.gte]: now },
           status: 'available'
-        });
-      }
-    }
+        }
+      });
 
-    // Try to create all slots - database will handle duplicates gracefully
-    // Use ignoreDuplicates option to skip duplicate errors
-    const created = await AvailabilitySlotRepository.bulkCreate(expandedSlots, { 
-      ignoreDuplicates: true 
-    });
-    
-    return created.map((slot) => this.formatSlotResponse(slot));
-  }
+     // Create new slots - database unique index prevents any accidental duplicates per (counselor_id, start_time, end_time)
+     const created = await AvailabilitySlotRepository.bulkCreate(expandedSlots, {
+       ignoreDuplicates: true
+     });
+
+     return created.map((slot) => this.formatSlotResponse(slot));
+   }
 
   static async getSlots(counselorId: number, fromDate?: string, toDate?: string, status?: string): Promise<SlotResponse[]> {
     // Default to fetching slots starting from today if no fromDate provided
@@ -447,21 +456,26 @@ export class CounselorService {
     return slots.map((slot) => this.formatSlotResponse(slot));
   }
 
-  static async getCounselorSlotsPublic(counselorId: number): Promise<SlotResponse[]> {
-    const now = new Date();
-    const filters = { 
-      status: 'available',
-      fromDate: now
-    };
-    const slots = await AvailabilitySlotRepository.findAllByCounselor(counselorId, filters);
-    return slots
-      .filter(slot => {
-        const slotStart = new Date(slot.startTime);
-        const slotEnd = new Date(slot.endTime);
-        return slotStart > now || slotEnd > now;
-      })
-      .map((slot) => this.formatSlotResponse(slot));
-  }
+   static async getCounselorSlotsPublic(counselorId: number): Promise<SlotResponse[]> {
+     const now = new Date();
+     const maxDate = new Date();
+     maxDate.setDate(now.getDate() + 4 * 7); // Show up to 4 weeks ahead
+     
+     const filters = { 
+       status: 'available',
+       fromDate: now,
+       toDate: maxDate
+     };
+     const slots = await AvailabilitySlotRepository.findAllByCounselor(counselorId, filters);
+     
+     // Ensure we only return future slots
+     const futureSlots = slots.filter(slot => {
+       const slotStart = new Date(slot.startTime);
+       return slotStart > now;
+     });
+     
+     return futureSlots.map((slot) => this.formatSlotResponse(slot));
+   }
 
   static async updateSlot(counselorId: number, slotId: number, dto: UpdateSlotDto): Promise<SlotResponse> {
     const slot = await AvailabilitySlotRepository.findByIdAndCounselorId(slotId, counselorId);

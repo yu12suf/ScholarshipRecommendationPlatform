@@ -6,11 +6,10 @@ import {
     PrimaryKey,
     AutoIncrement,
     CreatedAt,
-    BelongsTo,
-    ForeignKey,
 } from "sequelize-typescript";
-import { User } from "./User.js";
-import { CommunityMessage } from "./CommunityMessage.js";
+import type { User } from "./User.js";
+import type { CommunityMessage } from "./CommunityMessage.js";
+
 
 @Table({
     tableName: "community_message_reactions",
@@ -28,33 +27,31 @@ export class CommunityMessageReaction extends Model {
     @Column(DataType.INTEGER)
     declare id: number;
 
-    @ForeignKey(() => CommunityMessage)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'message_id'
-    })
-    declare messageId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'message_id'
+})
+declare messageId: number;
 
-    @BelongsTo(() => CommunityMessage, 'messageId')
-    declare message: CommunityMessage;
+@Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'user_id'
+})
+declare userId: number;
 
-    @ForeignKey(() => User)
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'user_id'
-    })
-    declare userId: number;
-
-    @BelongsTo(() => User, 'userId')
-    declare user: User;
+    // Associations defined in associations.ts
 
     @Column({
         type: DataType.STRING(10),
         allowNull: false,
     })
     declare emoji: string;
+
+    // Associations defined in associations.ts
+    declare message?: CommunityMessage;
+    declare user?: User;
 
     @CreatedAt
     @Column({

@@ -5,13 +5,12 @@ import {
     DataType,
     PrimaryKey,
     AutoIncrement,
-    ForeignKey,
     CreatedAt,
     UpdatedAt,
-    BelongsTo,
 } from "sequelize-typescript";
-import { User } from "./User.js";
-import { Conversation } from "./Conversation.js";
+import type { User } from "./User.js";
+import type { Conversation } from "./Conversation.js";
+
 
 @Table({
     tableName: "conversation_participants",
@@ -23,21 +22,19 @@ export class ConversationParticipant extends Model {
     @Column(DataType.INTEGER)
     declare id: number;
 
-    @ForeignKey(() => Conversation)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'conversation_id'
-    })
-    declare conversationId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'conversation_id'
+})
+declare conversationId: number;
 
-    @ForeignKey(() => User)
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'user_id'
-    })
-    declare userId: number;
+@Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'user_id'
+})
+declare userId: number;
 
     @CreatedAt
     @Column({
@@ -53,10 +50,8 @@ export class ConversationParticipant extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => Conversation)
-    conversation!: Conversation;
-
-    @BelongsTo(() => User)
-    user!: User;
+    // Associations defined in associations.ts
+    declare conversation?: Conversation;
+    declare user?: User;
 }
 

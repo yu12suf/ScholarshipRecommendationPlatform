@@ -149,16 +149,25 @@ export class OnboardingController {
         const userId = (req as any).user?.id;
         
         const files: { [key: string]: UploadedFile } = {};
+        
+        // Handle optional file uploads - files are NOT required for profile update
         if (req.files) {
             const possibleFiles = ['cv', 'transcript', 'certificate', 'degreeCertificate', 'languageCertificate'];
             possibleFiles.forEach(key => {
-                if (req.files![key]) {
-                    files[key] = (Array.isArray(req.files![key]) ? req.files![key][0] : req.files![key]) as UploadedFile;
+                const file = req.files![key];
+                if (file) {
+                    const uploadedFile = Array.isArray(file) ? file[0] : file;
+                    // Only include file if it has actual data (not empty)
+                    if (uploadedFile && uploadedFile.data && uploadedFile.data.length > 0) {
+                        files[key] = uploadedFile as UploadedFile;
+                    }
                 }
             });
         }
 
-        const result = await OnboardingService.updateProfile(userId, req.body, files);
+        console.log("[OnboardingController] Updating profile for user:", userId, "with files:", Object.keys(files));
+
+        const result = await OnboardingService.updateProfile(userId, req.body, Object.keys(files).length > 0 ? files : undefined);
 
         res.status(200).json({
             status: "success",

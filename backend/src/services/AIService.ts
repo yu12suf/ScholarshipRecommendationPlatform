@@ -4,6 +4,61 @@ import configs from "../config/configs.js";
 const genAI = new GoogleGenerativeAI(configs.GEMINI_API_KEY!);
 const geminiModelName = configs.GEMINI_MODEL || "gemini-2.5-flash";
 
+const DEFAULT_MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+const MAX_DELAY_MS = 30000;
+
+function parseRetryAfterDelay(errorMessage: string): number {
+    const match = errorMessage.match(/Please retry in ([\d.]+)s/);
+    if (match && match[1]) {
+        const delay = parseFloat(match[1]) * 1000;
+        return Math.min(Math.max(delay, BASE_DELAY_MS), MAX_DELAY_MS);
+    }
+    return 0;
+}
+
+function isRateLimitError(error: any): boolean {
+    const message = error?.message || "";
+    return message.includes("429") || message.includes("Too Many Requests") || message.includes("quota");
+}
+
+async function withRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = DEFAULT_MAX_RETRIES,
+    baseDelay: number = BASE_DELAY_MS
+): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await operation();
+        } catch (error: any) {
+            lastError = error;
+            
+            if (attempt === maxRetries) {
+                break;
+            }
+            
+            if (isRateLimitError(error)) {
+                const retryDelay = parseRetryAfterDelay(error.message);
+                const delay = retryDelay > 0 ? retryDelay : baseDelay * Math.pow(2, attempt);
+                const actualDelay = Math.min(delay, MAX_DELAY_MS);
+                
+                console.warn(`[AIService] Rate limit hit. Retrying in ${Math.round(actualDelay/1000)}s (attempt ${attempt + 1}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, actualDelay));
+            } else {
+                const delay = baseDelay * Math.pow(2, attempt);
+                const actualDelay = Math.min(delay, MAX_DELAY_MS);
+                
+                console.warn(`[AIService] Error: ${error.message}. Retrying in ${Math.round(actualDelay/1000)}s (attempt ${attempt + 1}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, actualDelay));
+            }
+        }
+    }
+    
+    throw lastError;
+}
+
 export class AIService {
   static async extractOnboardingData(
     fileBuffer: Buffer,
@@ -150,7 +205,11 @@ export class AIService {
         },
       });
 
-      const response = await model.generateContent([prompt]);
+      const response = await withRetry(
+        () => model.generateContent([prompt]),
+        DEFAULT_MAX_RETRIES,
+        BASE_DELAY_MS
+      );
       const responseText = response.response.text() || '{"matches": []}';
       console.log(
         `[AIService] Gemini Response for ${scholarships.length} scholarships:`,

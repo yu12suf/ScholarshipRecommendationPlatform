@@ -3,14 +3,13 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { Student } from "./Student.js";
-import { Counselor } from "./Counselor.js";
-import { AvailabilitySlot } from "./AvailabilitySlot.js";
+import type { Student } from "./Student.js";
+import type { Counselor } from "./Counselor.js";
+import type { AvailabilitySlot } from "./AvailabilitySlot.js";
+
 
 @Table({
     tableName: "bookings",
@@ -24,29 +23,26 @@ export class Booking extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => Student)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'student_id'
-    })
-    declare studentId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'student_id'
+})
+declare studentId: number;
 
-    @ForeignKey(() => Counselor)
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'counselor_id'
-    })
-    declare counselorId: number;
+@Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'counselor_id'
+})
+declare counselorId: number;
 
-    @ForeignKey(() => AvailabilitySlot)
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'slot_id'
-    })
-    declare slotId: number;
+@Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'slot_id'
+})
+declare slotId: number;
 
     @Column({
         type: DataType.INTEGER,
@@ -104,13 +100,8 @@ export class Booking extends Model {
     })
     declare updatedAt: Date;
 
-    // Associations with explicit aliases to match service queries
-    @BelongsTo(() => Student, { as: 'student' })
-    student!: Student;
-
-    @BelongsTo(() => Counselor, { as: 'counselor' })
-    counselor!: Counselor;
-
-    @BelongsTo(() => AvailabilitySlot, { as: 'slot' })
-    slot!: AvailabilitySlot;
+    // Associations defined in associations.ts
+    declare student?: Student;
+    declare counselor?: Counselor;
+    declare slot?: AvailabilitySlot;
 }

@@ -3,12 +3,10 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { Student } from "./Student.js";
+import type { Student } from "./Student.js";
 
 @Table({
     tableName: "assessment_results",
@@ -22,13 +20,12 @@ export class AssessmentResult extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => Student)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'student_id'
-    })
-    declare studentId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'student_id'
+})
+declare studentId: number;
 
     @Column({
         type: DataType.UUID,
@@ -85,6 +82,6 @@ export class AssessmentResult extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => Student)
-    student!: Student;
+    // Association defined in associations.ts
+    declare student?: Student;
 }

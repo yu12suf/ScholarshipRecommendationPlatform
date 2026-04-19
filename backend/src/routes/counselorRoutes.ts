@@ -28,6 +28,7 @@ router.get('/slots/public/:counselorId', CounselorController.getCounselorSlotsPu
 
 router.use(authenticate);
 
+// ====== PUBLIC/STUDENT ACCESSIBLE ROUTES (no counselor role required) ======
 router.post('/apply', validate(applyAsCounselorValidation), CounselorController.apply);
 router.get('/recommendations/me', authorize(UserRole.STUDENT, UserRole.ADMIN), CounselorController.recommendForMe);
 
@@ -44,19 +45,19 @@ router.post('/bookings/:id/join', validate(idParamValidation), CounselorControll
 router.post('/messages', validate(sendMessageValidation), CounselorController.sendMessage);
 router.get('/messages/threads/:userId', CounselorController.getThread);
 
+// Admin routes (also accessible without counselor role)
 router.get('/admin/list', authorize(UserRole.ADMIN), CounselorController.adminList);
 router.patch('/admin/:id/verification', authorize(UserRole.ADMIN), validate(idParamValidation), validate(adminVerificationValidation), CounselorController.adminUpdateVerification);
 router.patch('/admin/:id/visibility', authorize(UserRole.ADMIN), validate(idParamValidation), validate(adminVisibilityValidation), CounselorController.adminUpdateVisibility);
 
-router.get('/me', authorize(UserRole.COUNSELOR), CounselorController.getMyProfile);
-router.get('/dashboard/overview', authorize(UserRole.COUNSELOR), CounselorController.getDashboardOverview);
-
+// ====== COUNSELOR-ONLY ROUTES (require verified & active counselor) ======
 router.use(checkCounselorRole);
 router.use(requireActiveCounselor);
 
-router.get('/me/reviews', CounselorController.getReviews);
-router.put('/profile', validate(updateCounselorProfileValidation), CounselorController.updateProfile);
-router.delete('/me', CounselorController.deleteProfile);
+router.get('/me', authorize(UserRole.COUNSELOR), CounselorController.getMyProfile);
+router.get('/dashboard/overview', authorize(UserRole.COUNSELOR), CounselorController.getDashboardOverview);
+router.get('/dashboard/documents', CounselorController.getDashboardDocuments);
+router.post('/dashboard/documents/share', validate(shareDocumentValidation), CounselorController.shareDocument);
 
 router.post('/slots', validate(createSlotsValidation), CounselorController.createSlots);
 router.get('/slots', CounselorController.getSlots);
@@ -68,10 +69,11 @@ router.get('/students', CounselorController.getStudents);
 router.get('/students/:id', validate(idParamValidation), CounselorController.getStudentDetails);
 router.get('/students/:id/progress', validate(idParamValidation), CounselorController.getStudentProgress);
 
-router.get('/dashboard/documents', CounselorController.getDashboardDocuments);
-router.post('/dashboard/documents/share', validate(shareDocumentValidation), CounselorController.shareDocument);
-
 router.get('/bookings/upcoming', CounselorController.getUpcomingBookings);
 router.patch('/bookings/:id/status', validate(idParamValidation), validate(updateBookingStatusValidation), CounselorController.updateBookingStatus);
+
+router.put('/profile', validate(updateCounselorProfileValidation), CounselorController.updateProfile);
+router.delete('/me', CounselorController.deleteProfile);
+router.get('/me/reviews', CounselorController.getReviews);
 
 export default router;

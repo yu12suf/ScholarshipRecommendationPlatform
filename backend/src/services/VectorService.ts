@@ -35,8 +35,9 @@ export class VectorService {
             
             );
             
+            // PostgreSQL vector column expects JSON string like "[0.1, 0.2, ...]"
             await student.update({
-                embedding: vector,
+                embedding: JSON.stringify(vector),
                 profileHash: currentHash
             });
         }
@@ -57,7 +58,7 @@ export class VectorService {
             Requirements: ${requirements || ""}
         `.replace(/\s+/g, ' ').trim();
 
-        // TASK_TYPE: RETRIEVAL_DOCUMENT
+        // TASK_TYPE: RETRIEVAL_DOCUMENT - returns array, caller stringifies if needed
         return GeminiIngestionService.generateEmbedding(
             context
         );

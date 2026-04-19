@@ -7,11 +7,10 @@ import {
     AutoIncrement,
     CreatedAt,
     UpdatedAt,
-    BelongsTo,
-    ForeignKey,
 } from "sequelize-typescript";
-import { User } from "./User.js";
-import { CommunityGroup } from "./CommunityGroup.js";
+import type { User } from "./User.js";
+import type { CommunityGroup } from "./CommunityGroup.js";
+
 
 export enum MessageType {
     TEXT = "text",
@@ -30,50 +29,51 @@ export class CommunityMessage extends Model {
     @Column(DataType.INTEGER)
     declare id: number;
 
-    @ForeignKey(() => CommunityGroup)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'group_id'
-    })
-    declare groupId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'group_id'
+})
+declare groupId: number;
 
-    @BelongsTo(() => CommunityGroup, 'groupId')
-    declare group: CommunityGroup;
+@Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'sender_id'
+})
+declare senderId: number;
 
-    @ForeignKey(() => User)
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'sender_id'
-    })
-    declare senderId: number;
-
-    @BelongsTo(() => User, 'senderId')
-    declare sender: User;
+// Associations defined in associations.ts
 
     @Column({
         type: DataType.TEXT,
         allowNull: false,
+        field: 'content'
     })
     declare content: string;
 
     @Column({
-        type: DataType.ENUM(...Object.values(MessageType)),
+        type: DataType.STRING(20),
         allowNull: false,
         defaultValue: MessageType.TEXT,
+        field: 'message_type',
+        validate: {
+            isIn: [Object.values(MessageType)]
+        }
     })
     declare messageType: MessageType;
 
     @Column({
         type: DataType.STRING(500),
         allowNull: true,
+        field: 'attachment_url'
     })
     declare attachmentUrl: string;
 
     @Column({
         type: DataType.STRING(255),
         allowNull: true,
+        field: 'attachment_name'
     })
     declare attachmentName: string;
 
@@ -81,6 +81,7 @@ export class CommunityMessage extends Model {
         type: DataType.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+        field: 'is_pinned'
     })
     declare isPinned: boolean;
 
@@ -88,12 +89,14 @@ export class CommunityMessage extends Model {
         type: DataType.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+        field: 'is_edited'
     })
     declare isEdited: boolean;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: true,
+        field: 'reply_to_id'
     })
     declare replyToId: number;
 
@@ -101,6 +104,7 @@ export class CommunityMessage extends Model {
         type: DataType.INTEGER,
         allowNull: false,
         defaultValue: 0,
+        field: 'reactions_count'
     })
     declare reactionsCount: number;
 
@@ -117,4 +121,8 @@ export class CommunityMessage extends Model {
         field: 'updated_at'
     })
     declare updatedAt: Date;
+
+    // Associations defined in associations.ts
+    declare group?: CommunityGroup;
+    declare sender?: User;
 }

@@ -7,16 +7,13 @@ import {
     AutoIncrement,
     Unique,
     Default,
-    HasMany,
-    HasOne,
-    BelongsToMany,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { RefreshToken } from "./RefreshToken.js";
-import { PasswordResetToken } from "./PasswordResetToken.js";
-import { Consultation } from "./Consultation.js";
-import { Counselor } from "./Counselor.js";
+import type { RefreshToken } from "./RefreshToken.js";
+import type { PasswordResetToken } from "./PasswordResetToken.js";
+import type { Consultation } from "./Consultation.js";
+import type { Counselor } from "./Counselor.js";
 import { UserRole } from "../types/userTypes.js";
 
 @Table({
@@ -97,22 +94,11 @@ export class User extends Model {
 
 
 
-    // Associations
-    @HasMany(() => RefreshToken)
-    refreshTokens!: RefreshToken[];
-
-    @HasMany(() => PasswordResetToken)
-    passwordResetTokens!: PasswordResetToken[];
-
-    @HasMany(() => Consultation, 'student_id')
-    consultationsAsStudent!: Consultation[];
-
-    @HasMany(() => Consultation, 'counselor_id')
-    consultationsAsCounselor!: Consultation[];
-
-    @HasOne(() => Counselor)
-    counselor!: Counselor;
-
-    @HasMany(() => Counselor, { as: 'counselors' })
-    counselors!: Counselor[];
+    // Associations - defined in associations.ts
+    declare refreshTokens?: RefreshToken[];
+    declare passwordResetTokens?: PasswordResetToken[];
+    declare consultationsAsStudent?: Consultation[];
+    declare consultationsAsCounselor?: Consultation[];
+    declare counselor?: Counselor;
+    declare counselors?: Counselor[];
 }

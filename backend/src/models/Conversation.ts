@@ -7,12 +7,11 @@ import {
     AutoIncrement,
     CreatedAt,
     UpdatedAt,
-    HasMany,
-    BelongsToMany,
 } from "sequelize-typescript";
-import { User } from "./User.js";
-import { ConversationParticipant } from "./ConversationParticipant.js";
-import { ChatMessage } from "./ChatMessage.js";
+import type { User } from "./User.js";
+import type { ConversationParticipant } from "./ConversationParticipant.js";
+import type { ChatMessage } from "./ChatMessage.js";
+
 
 @Table({
     tableName: "conversations",
@@ -38,13 +37,9 @@ export class Conversation extends Model {
     })
     declare updatedAt: Date;
 
-    @HasMany(() => ChatMessage)
-    declare messages: ChatMessage[];
-
-    @HasMany(() => ConversationParticipant)
-    declare participants: ConversationParticipant[];
-
-    @BelongsToMany(() => User, () => ConversationParticipant)
-    declare users: User[];
+    // Associations defined in associations.ts
+    declare messages?: ChatMessage[];
+    declare participants?: ConversationParticipant[];
+    declare users?: User[];
 }
 

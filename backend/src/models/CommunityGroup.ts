@@ -7,13 +7,11 @@ import {
     AutoIncrement,
     CreatedAt,
     UpdatedAt,
-    HasMany,
-    BelongsTo,
-    ForeignKey,
 } from "sequelize-typescript";
-import { User } from "./User.js";
-import { CommunityMember } from "./CommunityMember.js";
-import { CommunityMessage } from "./CommunityMessage.js";
+import type { User } from "./User.js";
+import type { CommunityMember } from "./CommunityMember.js";
+import type { CommunityMessage } from "./CommunityMessage.js";
+
 
 export enum CommunityGroupType {
     GROUP = "group",
@@ -54,41 +52,53 @@ export class CommunityGroup extends Model {
     declare avatar: string;
 
     @Column({
-        type: DataType.ENUM(...Object.values(CommunityGroupType)),
+        type: DataType.STRING(20),
         allowNull: false,
         defaultValue: CommunityGroupType.GROUP,
+        validate: {
+            isIn: [Object.values(CommunityGroupType)]
+        }
     })
     declare type: CommunityGroupType;
 
     @Column({
-        type: DataType.ENUM(...Object.values(CommunityGroupPrivacy)),
+        type: DataType.STRING(20),
         allowNull: false,
         defaultValue: CommunityGroupPrivacy.PUBLIC,
+        validate: {
+            isIn: [Object.values(CommunityGroupPrivacy)]
+        }
     })
     declare privacy: CommunityGroupPrivacy;
 
-    @ForeignKey(() => User)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'created_by'
-    })
-    declare createdBy: number;
-
-    @BelongsTo(() => User, 'createdBy')
-    declare creator: User;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'created_by'
+})
+declare createdBy: number;
 
     @Column({
         type: DataType.STRING(50),
         allowNull: true,
         unique: true,
+        field: 'invite_link'
     })
     declare inviteLink: string;
+
+    @Column({
+        type: DataType.STRING(20),
+        allowNull: false,
+        defaultValue: 'admin',
+        field: 'add_members_permission'
+    })
+    declare addMembersPermission: string;
 
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
         defaultValue: 0,
+        field: 'member_count'
     })
     declare memberCount: number;
 
@@ -96,6 +106,7 @@ export class CommunityGroup extends Model {
         type: DataType.BOOLEAN,
         allowNull: false,
         defaultValue: true,
+        field: 'is_active'
     })
     declare isActive: boolean;
 
@@ -113,9 +124,9 @@ export class CommunityGroup extends Model {
     })
     declare updatedAt: Date;
 
-    @HasMany(() => CommunityMember)
-    declare members: CommunityMember[];
-
-    @HasMany(() => CommunityMessage)
-    declare messages: CommunityMessage[];
+    // Association with creator - defined in associations.ts
+    // Associations defined in associations.ts
+    declare creator?: User;
+    declare members?: CommunityMember[];
+    declare messages?: CommunityMessage[];
 }

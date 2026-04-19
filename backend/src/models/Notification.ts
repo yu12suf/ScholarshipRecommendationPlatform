@@ -3,12 +3,11 @@ import {
     Column,
     Model,
     DataType,
-    ForeignKey,
-    BelongsTo,
     CreatedAt,
     UpdatedAt,
 } from "sequelize-typescript";
-import { User } from "./User.js";
+import type { User } from "./User.js";
+
 
 @Table({
     tableName: "notifications",
@@ -22,13 +21,12 @@ export class Notification extends Model {
     })
     declare id: number;
 
-    @ForeignKey(() => User)
     @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-        field: 'user_id'
-    })
-    declare userId: number;
+    type: DataType.INTEGER,
+    allowNull: false,
+    field: 'user_id'
+})
+declare userId: number;
 
     @Column({
         type: DataType.STRING(255),
@@ -94,6 +92,6 @@ export class Notification extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => User)
-    user!: User;
+    // Association defined in associations.ts
+    declare user?: User;
 }
