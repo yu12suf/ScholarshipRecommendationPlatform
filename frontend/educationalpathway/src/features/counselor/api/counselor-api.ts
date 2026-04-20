@@ -99,5 +99,15 @@ export const applyAsCounselor = async (payload: any) => {
 
 export const getRecommendedCounselors = async (): Promise<any[]> => {
   const response = await api.get('/counselors/recommendations/me');
-  return response.data.data || [];
+  return response.data || [];
+};
+
+export const createBooking = async (slotId: number) => {
+  const response = await api.post('/counselors/bookings', { slotId });
+  return response.data;
+};
+
+export const initiateBooking = async (studentUserId: number, slotId: number) => {
+  const response = await api.post('/counselors/initiate-booking', { studentUserId, slotId });
+  return response.data;
 };

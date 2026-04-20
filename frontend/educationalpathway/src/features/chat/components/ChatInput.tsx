@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Image, MoreHorizontal, Smile, Paperclip } from "lucide-react";
+import { Send, Image, MoreHorizontal, Smile, Paperclip, Calendar } from "lucide-react";
 import { Button } from "@/components/ui";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import axios from "axios";
@@ -12,10 +12,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/a
 interface ChatInputProps {
   onSend: (content: string) => void;
   onTyping: (isTyping: boolean) => void;
+  onSchedule?: () => void;
   disabled?: boolean;
 }
 
-export const ChatInput = ({ onSend, onTyping, disabled }: ChatInputProps) => {
+export const ChatInput = ({ onSend, onTyping, onSchedule, disabled }: ChatInputProps) => {
   const [content, setContent] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const typingTimer = useRef<NodeJS.Timeout | null>(null);
@@ -120,6 +121,17 @@ export const ChatInput = ({ onSend, onTyping, disabled }: ChatInputProps) => {
             className="p-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer disabled:opacity-50">
           <Paperclip className="h-5 w-5" />
         </button>
+
+        {onSchedule && (
+          <button 
+              type="button" 
+              onClick={onSchedule}
+              disabled={disabled}
+              title="Schedule a Session"
+              className="p-2 text-primary hover:text-primary/80 transition-colors cursor-pointer disabled:opacity-50">
+            <Calendar className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="flex-1 flex items-center gap-3">

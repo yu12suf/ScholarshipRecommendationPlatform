@@ -1,13 +1,18 @@
 'use client';
 
-import { Users, Search, Award } from 'lucide-react';
+import { Users, Search, Award, Calendar, Loader2 } from 'lucide-react';
 import { Input, Button } from '@/components/ui';
 import { useEffect, useState } from 'react';
 import { getRecommendedCounselors } from '../api/counselor-api';
+import { StudentBookingModal } from './StudentBookingModal';
+import { toast } from 'react-hot-toast';
 
 export const CounselorSearch = () => {
   const [counselors, setCounselors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Booking Modal State
+  const [selectedCounselor, setSelectedCounselor] = useState<any>(null);
 
   useEffect(() => {
     const fetchCounselors = async () => {
@@ -116,6 +121,7 @@ export const CounselorSearch = () => {
               <div className="flex items-center gap-4 shrink-0">
                 <Button
                   variant="outline"
+                  onClick={() => setSelectedCounselor(counselor)}
                   className="h-10 px-6 font-semibold border-2 hover:bg-primary hover:text-white transition-all cursor-pointer"
                 >
                   Book Session
@@ -135,6 +141,14 @@ export const CounselorSearch = () => {
         )}
 
       </div>
+
+      {/* Booking Modal */}
+      {selectedCounselor && (
+        <StudentBookingModal 
+          counselor={selectedCounselor}
+          onClose={() => setSelectedCounselor(null)}
+        />
+      )}
 
     </div>
   );

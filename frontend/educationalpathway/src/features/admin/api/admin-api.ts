@@ -58,3 +58,8 @@ export const getAllCounselors = async (): Promise<any[]> => {
 export const updateCounselorVerification = async (id: number, status: 'verified' | 'rejected'): Promise<void> => {
   await api.patch(`/counselors/admin/${id}/verification`, { verificationStatus: status });
 };
+
+export const adminPayoutCounselor = async (id: number, amount: number) => {
+  const response = await api.post(`/counselors/admin/${id}/payout`, { amount });
+  return response.data;
+};

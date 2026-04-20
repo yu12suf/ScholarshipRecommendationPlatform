@@ -17,7 +17,9 @@ import {
   CheckCircle2,
   Award,
   AlertCircle,
-  Loader2
+  Loader2,
+  Wallet,
+  Landmark
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -162,24 +164,46 @@ export const CounselorDashboard = () => {
           <div className="absolute top-0 right-0 -mt-24 -mr-24 w-80 h-80 bg-primary/5 rounded-full blur-[100px]" />
         </motion.div>
 
-        <Card className="border-border bg-card shadow-sm group hover:border-primary/30 transition-all">
-          <CardBody className="p-8 flex flex-col items-center justify-center text-center h-full space-y-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-              <TrendingUp className="h-8 w-8 text-primary" />
-            </div>
-            <div>
-              <p className="text-small font-black uppercase tracking-tighter opacity-60">Total Impact</p>
-              <h3 className="text-4xl font-black text-foreground mt-1">
-                {statsData?.assignedStudents || 0}
-              </h3>
-              <p className="text-[10px] text-muted-foreground mt-1 font-bold">Mentees Guided</p>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
+          <Card className="border-border bg-card shadow-sm group hover:border-primary/30 transition-all">
+            <CardBody className="p-8 flex flex-col items-center justify-center text-center h-full space-y-4">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                <TrendingUp className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <p className="text-small font-black uppercase tracking-tighter opacity-60">Total Impact</p>
+                <h3 className="text-4xl font-black text-foreground mt-1">
+                  {statsData?.assignedStudents || 0}
+                </h3>
+                <p className="text-[10px] text-muted-foreground mt-1 font-bold">Mentees Guided</p>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
 
-      {/* Main Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Earning & Payout Card Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          <Card className="border-border bg-slate-900 text-white shadow-xl">
+            <CardBody className="p-6 md:p-8 flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-emerald-400" />
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Total Earned</p>
+                </div>
+                <h3 className="text-3xl font-black">{Number(counselorProfile?.totalEarned || 0).toLocaleString()} <span className="text-sm text-slate-400">ETB</span></h3>
+              </div>
+              <div className="text-right space-y-1">
+                <div className="flex items-center gap-2 justify-end">
+                  <Landmark className="h-4 w-4 text-amber-400" />
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Pending Payout</p>
+                </div>
+                <h3 className="text-3xl font-black text-amber-400">{Number(counselorProfile?.pendingBalance || 0).toLocaleString()} <span className="text-sm">ETB</span></h3>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Main Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         
         {/* Activity Pulse (Middle Content) */}
         <div className="lg:col-span-2 space-y-8">

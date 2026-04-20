@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { getAllCounselors, updateCounselorVerification } from '../api/admin-api';
 import { Button, ConfirmModal } from '@/components/ui';
-import { Loader2, Check, X, FileText, User as UserIcon, ExternalLink, ShieldCheck, Mail, MapPin, Briefcase, GraduationCap } from 'lucide-react';
+import { Loader2, Check, X, FileText, User as UserIcon, ExternalLink, ShieldCheck, Mail, MapPin, Briefcase, GraduationCap, Banknote, DollarSign } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { adminPayoutCounselor } from '../api/admin-api';
 
 export const CounselorManagement = () => {
   const [counselors, setCounselors] = useState<any[]>([]);
@@ -13,6 +14,9 @@ export const CounselorManagement = () => {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [targetId, setTargetId] = useState<number | null>(null);
   const [selectedCounselor, setSelectedCounselor] = useState<any | null>(null);
+
+  const [payoutAmount, setPayoutAmount] = useState<string>('');
+  const [isPayoutProcessing, setIsPayoutProcessing] = useState(false);
 
   const fetchCounselors = async () => {
     setLoading(true);
@@ -62,6 +66,29 @@ export const CounselorManagement = () => {
     } finally {
       setTargetId(null);
       setIsRejectModalOpen(false);
+    }
+  };
+
+  const handleProcessPayout = async () => {
+    if (!selectedCounselor) return;
+    const amount = Number(payoutAmount);
+    if (!amount || amount <= 0 || amount > Number(selectedCounselor.pendingBalance)) {
+      toast.error('Invalid payout amount or insufficient balance');
+      return;
+    }
+    setIsPayoutProcessing(true);
+    try {
+      await adminPayoutCounselor(selectedCounselor.id, amount);
+      toast.success('Payout processed successfully!');
+      
+      const newBalance = Number(selectedCounselor.pendingBalance) - amount;
+      setSelectedCounselor({ ...selectedCounselor, pendingBalance: newBalance });
+      setPayoutAmount('');
+      fetchCounselors();
+    } catch (error) {
+      toast.error('Failed to process payout.');
+    } finally {
+      setIsPayoutProcessing(false);
     }
   };
 
@@ -160,10 +187,50 @@ export const CounselorManagement = () => {
                  </div>
                  <div className="space-y-1 text-right">
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Hourly Rate</p>
-                    <p className="text-3xl font-black text-foreground">${selectedCounselor.hourlyRate || 0}/hr</p>
+                    <p className="text-3xl font-black text-foreground">{selectedCounselor.hourlyRate || 0} <span className="text-sm">ETB</span></p>
                  </div>
               </div>
             </section>
+
+            {/* Financial & Payout Section */}
+            {selectedCounselor.verificationStatus === 'verified' && (
+              <section className="space-y-6 pt-8 border-t border-border/40">
+                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-3">
+                    <Banknote size={16} /> Financial Overview
+                 </h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                    <div className="p-6 bg-slate-900 text-white rounded-2xl flex flex-col justify-between">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Total Earned</p>
+                       <p className="text-4xl font-black mt-2">{Number(selectedCounselor.totalEarned || 0).toLocaleString()} <span className="text-xs text-slate-400">ETB</span></p>
+                    </div>
+                    <div className="p-6 bg-primary/10 border border-primary/20 rounded-2xl flex flex-col justify-between">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-primary">Pending Amount</p>
+                       <div className="mt-2">
+                         <p className="text-4xl font-black text-foreground">{Number(selectedCounselor.pendingBalance || 0).toLocaleString()} <span className="text-xs text-muted-foreground">ETB</span></p>
+                       </div>
+                       
+                       <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                         <input 
+                           type="number"
+                           className="h-10 bg-background border border-border rounded-lg px-3 text-sm flex-1 w-full"
+                           placeholder="Amount to payout"
+                           value={payoutAmount}
+                           max={selectedCounselor.pendingBalance || 0}
+                           onChange={(e) => setPayoutAmount(e.target.value)}
+                         />
+                         <Button 
+                           isLoading={isPayoutProcessing}
+                           disabled={isPayoutProcessing || !payoutAmount || Number(payoutAmount) <= 0 || Number(payoutAmount) > Number(selectedCounselor.pendingBalance)}
+                           onClick={handleProcessPayout}
+                           className="h-10 text-xs font-bold whitespace-nowrap bg-success hover:bg-success/90 text-white"
+                         >
+                           Process Payout
+                         </Button>
+                       </div>
+                    </div>
+                 </div>
+              </section>
+            )}
 
             {/* Employment & Academic Split */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 border-t border-border/40">
