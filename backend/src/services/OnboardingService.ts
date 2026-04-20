@@ -9,6 +9,8 @@ import { VectorService } from "./VectorService.js";
 import { MatchingService } from "./MatchingService.js";
 import { sendEmail } from "../utils/emailService.js";
 import { ScholarshipNotificationService } from "./ScholarshipNotificationService.js";
+import { AuthService } from "./AuthService.js";
+
 
 export class OnboardingService {
     /**
@@ -92,62 +94,58 @@ export class OnboardingService {
                 await UserRepository.update(userId, { name: updateData.fullName } as any);
             }
 
-            const updatedStudent = await repository.update(userId, {
-                calculatedGpa: updateData.gpa || updateData.calculatedGpa || null,
-                academicHistory: updateData.academicHistory ? (typeof updateData.academicHistory === 'string' ? updateData.academicHistory : JSON.stringify(updateData.academicHistory)) : "[]",
-                studyPreferences: updateData.studyPreferences || "",
-                intakeSeason: updateData.intakeSeason || null,
-                fundingRequirement: updateData.preferredFundingType || updateData.fundingType || updateData.fundingRequirement || null,
-                gender: updateData.gender || null,
-                age: updateData.age || null,
-                workExperience: updateData.workExperience ? (typeof updateData.workExperience === 'string' ? updateData.workExperience : JSON.stringify(updateData.workExperience)) : null,
-                countryInterest: updateData.countryInterest || null,
-                highSchool: updateData.highSchool || null,
-                academicStatus: updateData.currentEducationLevel || updateData.academicStatus || null,
-                
-                // Demographic Info
-                dateOfBirth: updateData.dateOfBirth || null,
-                nationality: updateData.nationality || null,
-                countryOfResidence: updateData.countryOfResidence || null,
-                city: updateData.city || null,
-                phoneNumber: updateData.phoneNumber || null,
-                
-                // Academic Info
-                fieldOfStudy: updateData.fieldOfStudyInput ? (typeof updateData.fieldOfStudyInput === 'string' ? updateData.fieldOfStudyInput : JSON.stringify(updateData.fieldOfStudyInput)) : (updateData.fieldOfStudy || null),
-                currentUniversity: updateData.currentUniversity || updateData.previousUniversity || null,
-                graduationYear: (updateData.graduationYear && !isNaN(parseInt(updateData.graduationYear as string))) 
-                    ? parseInt(updateData.graduationYear as string) 
-                    : null,
-                degreeSeeking: updateData.degreeSeeking || null,
-                
-                // Preferences
-                preferredDegreeLevel: updateData.preferredDegreeLevel ? (typeof updateData.preferredDegreeLevel === 'string' ? updateData.preferredDegreeLevel : JSON.stringify(updateData.preferredDegreeLevel)) : null,
-                studyMode: updateData.studyMode || null,
-                preferredCountries: updateData.preferredCountries ? (typeof updateData.preferredCountries === 'string' ? updateData.preferredCountries : JSON.stringify(updateData.preferredCountries)) : null,
-                preferredUniversities: updateData.preferredUniversities ? (typeof updateData.preferredUniversities === 'string' ? updateData.preferredUniversities : JSON.stringify(updateData.preferredUniversities)) : null,
-                
-                // Language Qualification Mapping
-                languageTestType: updateData.languageTestType || null,
-                languageScore: updateData.testScore || null,
-                ieltsScore: updateData.languageTestType === 'IELTS' ? (parseFloat(updateData.testScore) || null) : (updateData.ieltsScore || null),
-                toeflScore: updateData.languageTestType === 'TOEFL' ? (parseInt(updateData.testScore) || null) : (updateData.toeflScore || null),
-                duolingoScore: updateData.languageTestType === 'Duolingo' ? (parseInt(updateData.testScore) || null) : (updateData.duolingoScore || null),
-                
-                // Financial & Research
-                needsFinancialSupport: (updateData.needsFinancialSupport === 'true' || updateData.needsFinancialSupport === true),
-                familyIncomeRange: updateData.familyIncomeRange || null,
-                researchArea: updateData.researchArea || null,
-                proposedResearchTopic: updateData.proposedResearchTopic || null,
-                notificationPreferences: updateData.notifications ? (typeof updateData.notifications === 'string' ? updateData.notifications : JSON.stringify(updateData.notifications)) : null,
-                
-                // Document URLs
-                cvUrl,
-                transcriptUrl,
-                degreeCertificateUrl,
-                languageCertificateUrl,
-
+            const updateFields: any = {
                 isOnboarded: true
-            });
+            };
+
+            if (updateData.gpa !== undefined || updateData.calculatedGpa !== undefined) updateFields.calculatedGpa = updateData.gpa || updateData.calculatedGpa;
+            if (updateData.academicHistory !== undefined) updateFields.academicHistory = typeof updateData.academicHistory === 'string' ? updateData.academicHistory : JSON.stringify(updateData.academicHistory);
+            if (updateData.studyPreferences !== undefined) updateFields.studyPreferences = updateData.studyPreferences;
+            if (updateData.intakeSeason !== undefined) updateFields.intakeSeason = updateData.intakeSeason;
+            if (updateData.fundingRequirement !== undefined || updateData.preferredFundingType !== undefined) {
+                const fundingVal = updateData.preferredFundingType || updateData.fundingRequirement;
+                updateFields.fundingRequirement = Array.isArray(fundingVal) 
+                    ? JSON.stringify(fundingVal) 
+                    : fundingVal;
+            }
+            if (updateData.gender !== undefined) updateFields.gender = updateData.gender;
+            if (updateData.age !== undefined) updateFields.age = updateData.age;
+            if (updateData.workExperience !== undefined) updateFields.workExperience = typeof updateData.workExperience === 'string' ? updateData.workExperience : JSON.stringify(updateData.workExperience);
+            if (updateData.countryInterest !== undefined) updateFields.countryInterest = updateData.countryInterest;
+            if (updateData.highSchool !== undefined) updateFields.highSchool = updateData.highSchool;
+            if (updateData.currentEducationLevel !== undefined || updateData.academicStatus !== undefined) updateFields.academicStatus = updateData.currentEducationLevel || updateData.academicStatus;
+            if (updateData.dateOfBirth !== undefined) updateFields.dateOfBirth = updateData.dateOfBirth;
+            if (updateData.nationality !== undefined) updateFields.nationality = updateData.nationality;
+            if (updateData.countryOfResidence !== undefined) updateFields.countryOfResidence = updateData.countryOfResidence;
+            if (updateData.city !== undefined) updateFields.city = updateData.city;
+            if (updateData.phoneNumber !== undefined) updateFields.phoneNumber = updateData.phoneNumber;
+            if (updateData.fieldOfStudyInput !== undefined || updateData.fieldOfStudy !== undefined) updateFields.fieldOfStudy = updateData.fieldOfStudyInput ? (typeof updateData.fieldOfStudyInput === 'string' ? updateData.fieldOfStudyInput : JSON.stringify(updateData.fieldOfStudyInput)) : updateData.fieldOfStudy;
+            if (updateData.currentUniversity !== undefined || updateData.previousUniversity !== undefined) updateFields.currentUniversity = updateData.currentUniversity || updateData.previousUniversity;
+            if (updateData.graduationYear !== undefined) updateFields.graduationYear = !isNaN(parseInt(updateData.graduationYear as string)) ? parseInt(updateData.graduationYear as string) : null;
+            if (updateData.degreeSeeking !== undefined) updateFields.degreeSeeking = updateData.degreeSeeking;
+            if (updateData.preferredDegreeLevel !== undefined) updateFields.preferredDegreeLevel = typeof updateData.preferredDegreeLevel === 'string' ? updateData.preferredDegreeLevel : JSON.stringify(updateData.preferredDegreeLevel);
+            if (updateData.studyMode !== undefined) updateFields.studyMode = updateData.studyMode;
+            if (updateData.preferredCountries !== undefined) updateFields.preferredCountries = typeof updateData.preferredCountries === 'string' ? updateData.preferredCountries : JSON.stringify(updateData.preferredCountries);
+            if (updateData.preferredUniversities !== undefined) updateFields.preferredUniversities = typeof updateData.preferredUniversities === 'string' ? updateData.preferredUniversities : JSON.stringify(updateData.preferredUniversities);
+            if (updateData.languageTestType !== undefined) updateFields.languageTestType = updateData.languageTestType;
+            if (updateData.languageScore !== undefined) updateFields.languageScore = updateData.languageScore;
+            if (updateData.needsFinancialSupport !== undefined) updateFields.needsFinancialSupport = (updateData.needsFinancialSupport === 'true' || updateData.needsFinancialSupport === true);
+            if (updateData.familyIncomeRange !== undefined) updateFields.familyIncomeRange = updateData.familyIncomeRange;
+            if (updateData.researchArea !== undefined) updateFields.researchArea = updateData.researchArea;
+            if (updateData.proposedResearchTopic !== undefined) updateFields.proposedResearchTopic = updateData.proposedResearchTopic;
+
+            if (cvUrl) updateFields.cvUrl = cvUrl;
+            if (transcriptUrl) updateFields.transcriptUrl = transcriptUrl;
+            if (degreeCertificateUrl) updateFields.degreeCertificateUrl = degreeCertificateUrl;
+            if (languageCertificateUrl) updateFields.languageCertificateUrl = languageCertificateUrl;
+
+            const updatedStudent = await repository.update(userId, updateFields);
+
+            // Handle Avatar Upload outside of student repository update if it's on the User model
+            if (files && files.avatar) {
+                const avatarUrl = await FileService.uploadFile(files.avatar.data, "profiles/avatars");
+                await UserRepository.update(userId, { avatarUrl } as any);
+            }
 
             // Refresh embedding immediately after onboarding/update
             if (updatedStudent) {
@@ -179,6 +177,6 @@ export class OnboardingService {
             });
         }
 
-        return { role: user.role };
+        return AuthService.getUserWithProfile(user);
     }
 }

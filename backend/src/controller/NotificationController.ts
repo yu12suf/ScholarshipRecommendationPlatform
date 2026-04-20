@@ -11,7 +11,7 @@ export class NotificationController {
         userId,
         unreadOnly,
       );
-      res.status(200).json(notifications);
+      res.status(200).json({ status: "success", data: notifications });
     } catch (error) {
       console.error("[NotificationController] getNotifications error:", error);
       res.status(500).json({ error: "Failed to fetch notifications" });
@@ -28,7 +28,7 @@ export class NotificationController {
         userId,
       );
       if (success) {
-        res.status(200).json({ message: "Notification marked as read" });
+        res.status(200).json({ status: "success", message: "Notification marked as read" });
       } else {
         res.status(404).json({ error: "Notification not found" });
       }
@@ -48,7 +48,7 @@ export class NotificationController {
         userId,
       );
       if (success) {
-        res.status(200).json({ message: "Notification marked as clicked" });
+        res.status(200).json({ status: "success", message: "Notification marked as clicked" });
       } else {
         res.status(404).json({ error: "Notification not found" });
       }
@@ -82,8 +82,9 @@ export class NotificationController {
       const updatedCount = await NotificationService.markAllAsRead(userId);
 
       res.status(200).json({
+        status: "success",
         message: "All notifications marked as read",
-        updatedCount,
+        data: { updatedCount },
       });
     } catch (error) {
       console.error("[NotificationController] markAllAsRead error:", error);

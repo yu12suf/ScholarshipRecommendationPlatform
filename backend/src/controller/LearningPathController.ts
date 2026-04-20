@@ -208,4 +208,54 @@ export class LearningPathController {
             });
         }
     }
+
+    /**
+     * Generates a unit test for a specific mission/skill.
+     */
+    static async generateUnitTest(req: Request, res: Response) {
+        try {
+            const { skill, level, examType } = req.body;
+            const test = await LearningPathService.generateUnitTest(skill, level, examType);
+            return res.status(200).json({
+                success: true,
+                data: test
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Submits a unit test for evaluation.
+     */
+    static async submitUnitTest(req: Request, res: Response) {
+        try {
+            const userId = req.user?.id;
+            const { skill, responses } = req.body;
+
+            if (!userId) {
+                return res.status(401).json({ success: false, error: "Unauthorized" });
+            }
+
+            const student = await StudentRepository.findByUserId(userId);
+            if (!student) {
+                return res.status(404).json({ success: false, error: "Student profile not found" });
+            }
+
+            const result = await LearningPathService.evaluateUnitTest(student.id, skill, responses);
+            
+            return res.status(200).json({
+                success: true,
+                data: result
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
 }

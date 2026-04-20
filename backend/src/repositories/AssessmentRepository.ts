@@ -37,4 +37,13 @@ export class AssessmentRepository {
             where: { testId }
         });
     }
+
+    /**
+     * Delete all assessment results for a specific student.
+     */
+    static async deleteByStudentId(studentId: number): Promise<void> {
+        await AssessmentResult.destroy({
+            where: { studentId }
+        });
+    }
 }

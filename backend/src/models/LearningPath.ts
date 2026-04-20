@@ -70,6 +70,24 @@ export class LearningPath extends Model {
     @Column({
         type: DataType.JSONB,
         allowNull: false,
+        field: 'pdf_sections',
+        defaultValue: {
+            reading: [],
+            listening: [],
+            writing: [],
+            speaking: []
+        }
+    })
+    declare pdfSections: {
+        reading: number[];
+        listening: number[];
+        writing: number[];
+        speaking: number[];
+    };
+
+    @Column({
+        type: DataType.JSONB,
+        allowNull: false,
         field: 'learning_mode_sections',
         defaultValue: {
             reading: [],

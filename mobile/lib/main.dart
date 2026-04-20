@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'providers/providers.dart';
-import 'utils/app_colors.dart';
+import 'package:mobile/core/providers/router_provider.dart';
+import 'package:mobile/features/core/theme/design_system.dart';
+import 'package:mobile/features/core/providers/theme_provider.dart';
 
 void main() {
   runApp(
@@ -19,72 +20,56 @@ class AppRoot extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-
-    final colorScheme = ColorScheme.light(
-      primary: AppColors.primary,
-      onPrimary: AppColors.onPrimary,
-      surface: AppColors.background,
-      onSurface: AppColors.textDark,
-      secondary: AppColors.secondary,
-      onSecondary: AppColors.textDark,
-      error: const Color(0xFFEF4444),
-      onError: Colors.white,
-      outline: AppColors.border,
-    );
-
-    final baseTextTheme = ThemeData.light().textTheme;
-    final textTheme = GoogleFonts.openSansTextTheme(baseTextTheme).copyWith(
-      displayLarge: GoogleFonts.playfairDisplay(textStyle: baseTextTheme.displayLarge),
-      displayMedium: GoogleFonts.playfairDisplay(textStyle: baseTextTheme.displayMedium),
-      displaySmall: GoogleFonts.playfairDisplay(textStyle: baseTextTheme.displaySmall),
-      headlineLarge: GoogleFonts.playfairDisplay(textStyle: baseTextTheme.headlineLarge),
-      headlineMedium: GoogleFonts.playfairDisplay(textStyle: baseTextTheme.headlineMedium),
-      headlineSmall: GoogleFonts.playfairDisplay(textStyle: baseTextTheme.headlineSmall),
-      titleLarge: GoogleFonts.playfairDisplay(textStyle: baseTextTheme.titleLarge),
-      titleMedium: GoogleFonts.playfairDisplay(textStyle: baseTextTheme.titleMedium),
-    );
+    final themeState = ref.watch(themeProvider);
 
     return MaterialApp.router(
-      title: 'Scholarship Pathway',
+      title: 'EduPathway',
       debugShowCheckedModeBanner: false,
+      themeMode: themeState.themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: colorScheme,
-        scaffoldBackgroundColor: AppColors.background,
-        textTheme: textTheme,
-        fontFamily: GoogleFonts.openSans().fontFamily,
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeState.accentColor,
+          brightness: Brightness.light,
+          primary: themeState.accentColor,
+        ),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
+          displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: const Color(0xFF0F172A)),
+          bodyLarge: GoogleFonts.inter(color: const Color(0xFF334155)),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: DesignSystem.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeState.accentColor,
+          brightness: Brightness.dark,
+          primary: themeState.accentColor,
+          surface: DesignSystem.background,
+        ),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
+          displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          displayMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          displaySmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          headlineSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+          titleMedium: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          bodyLarge: GoogleFonts.inter(),
+          bodyMedium: GoogleFonts.inter(),
+        ),
         appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.background,
-          foregroundColor: AppColors.textDark,
+          backgroundColor: Colors.transparent,
           elevation: 0,
-          titleTextStyle: GoogleFonts.playfairDisplay(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textDark,
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: AppColors.inputBackground,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.onPrimary,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          centerTitle: true,
+          titleTextStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
         ),
       ),
@@ -92,3 +77,11 @@ class AppRoot extends ConsumerWidget {
     );
   }
 }
+
+
+
+
+
+
+
+

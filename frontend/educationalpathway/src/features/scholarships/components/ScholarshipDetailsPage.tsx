@@ -27,9 +27,14 @@ import {
   Check,
   TrendingUp,
   TrendingDown,
-  Sparkles
+  Sparkles,
+  Bookmark,
+  BookmarkCheck,
+  Globe2
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { trackScholarship, untrackScholarship, updateScholarshipStatus } from "../api/tracking";
+import { toast } from "react-hot-toast";
 
 interface CriteriaMatch {
   label: string;
@@ -51,6 +56,8 @@ export default function ScholarshipDetailsPage() {
   const [scholarship, setScholarship] = useState<Scholarship | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [trackingInfo, setTrackingInfo] = useState<{ id: number; status: string } | null>(null);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -59,6 +66,7 @@ export default function ScholarshipDetailsPage() {
         setLoading(true);
         const data = await getScholarship(id as string);
         setScholarship(data);
+        setTrackingInfo(data.tracking || null);
         setError(null);
       } catch (err: any) {
         console.error("Failed to fetch scholarship details:", err);
@@ -165,6 +173,60 @@ export default function ScholarshipDetailsPage() {
   };
 
   const matchInfo = getMatchInfo(matchScore);
+
+  const handleToggleSave = async () => {
+    if (!scholarship || isActionLoading) return;
+    setIsActionLoading(true);
+    try {
+      if (trackingInfo) {
+        await untrackScholarship(scholarship.id);
+        setTrackingInfo(null);
+        toast.success("Scholarship removed from watchlist");
+      } else {
+        const res = await trackScholarship(scholarship.id);
+        const newTracking = res.status === 'success' ? res.data : res;
+        setTrackingInfo({ id: newTracking.id, status: newTracking.status });
+        toast.success("Scholarship saved to watchlist");
+      }
+    } catch (err) {
+      toast.error("Failed to update watchlist");
+      console.error(err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleBeginApplication = async () => {
+    if (!scholarship || isActionLoading) return;
+    
+    // Open URL first to be responsive
+    if (scholarship.originalUrl) {
+      window.open(scholarship.originalUrl, '_blank');
+    }
+
+    setIsActionLoading(true);
+    try {
+      let currentTracking = trackingInfo;
+      
+      // If not tracked yet, track it first
+      if (!currentTracking) {
+        const res = await trackScholarship(scholarship.id);
+        currentTracking = res.status === 'success' ? res.data : res;
+        setTrackingInfo(currentTracking);
+      }
+
+      // If tracked but not applied, update status to APPLIED
+      if (currentTracking && currentTracking.status !== 'APPLIED') {
+        const res = await updateScholarshipStatus(currentTracking.id, 'APPLIED');
+        const updated = res.status === 'success' ? res.data : res;
+        setTrackingInfo({ id: updated.id, status: updated.status });
+      }
+    } catch (err) {
+      console.error("Failed to update application status", err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-24 px-4 sm:px-6">
@@ -360,18 +422,31 @@ export default function ScholarshipDetailsPage() {
                  </div>
 
                  <div className="space-y-4 pt-4">
-                    <a 
-                      href={scholarship.originalUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-4 w-full h-16 primary-gradient text-white font-black text-sm rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    <Button 
+                      onClick={handleBeginApplication}
+                      disabled={isActionLoading}
+                      className="flex items-center justify-center gap-4 w-full h-16 primary-gradient text-white font-black text-sm rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all border-none"
                     >
-                      BEGIN APPLICATION
+                      {trackingInfo?.status === 'APPLIED' ? 'VIEW APPLICATION' : 'BEGIN APPLICATION'}
                       <ExternalLink size={18} />
-                    </a>
+                    </Button>
                     
-                    <button className="w-full h-16 rounded-2xl border border-border/80 text-xs font-black uppercase tracking-widest hover:bg-muted transition-all active:scale-[0.98]">
-                      SAVE OPPORTUNITY
+                    <button 
+                      onClick={handleToggleSave}
+                      disabled={isActionLoading}
+                      className={`w-full h-16 rounded-2xl border border-border/80 text-xs font-black uppercase tracking-widest hover:bg-muted transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${trackingInfo ? 'bg-primary/5 border-primary/20 text-primary' : ''}`}
+                    >
+                      {trackingInfo ? (
+                        <>
+                          <BookmarkCheck size={18} className="fill-primary" />
+                          OPPORTUNITY SAVED
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark size={18} />
+                          SAVE OPPORTUNITY
+                        </>
+                      )}
                     </button>
                  </div>
 

@@ -1,4 +1,4 @@
-import 'json_utils.dart';
+import 'package:mobile/models/json_utils.dart';
 
 /// Mirrors `/api/auth/me` — user row merged with student/counselor profile fields.
 /// Synchronized with @frontend User interface.
@@ -9,6 +9,7 @@ class User {
     required this.name,
     required this.role,
     this.isOnboarded = false,
+    this.avatarUrl,
     this.fullName,
     this.gender,
     this.dateOfBirth,
@@ -30,6 +31,7 @@ class User {
   final String name;
   final String role;
   final bool isOnboarded;
+  final String? avatarUrl;
 
   // Profile fields
   final String? fullName;
@@ -64,6 +66,7 @@ class User {
       name: readValue<String>(json, const ['name']) ?? '',
       role: readValue<String>(json, const ['role']) ?? 'student',
       isOnboarded: readBool(json, const ['isOnboarded', 'is_onboarded']),
+      avatarUrl: readValue<String>(json, const ['avatarUrl', 'avatar_url']),
       fullName: readValue<String>(json, const ['fullName', 'full_name']),
       gender: readValue<String>(json, const ['gender']),
       dateOfBirth: readValue<String>(json, const ['dateOfBirth', 'date_of_birth']),
@@ -81,3 +84,10 @@ class User {
     );
   }
 }
+
+
+
+
+
+
+

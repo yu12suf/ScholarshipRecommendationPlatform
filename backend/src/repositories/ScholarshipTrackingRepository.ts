@@ -53,4 +53,10 @@ export class ScholarshipTrackingRepository {
             where: { studentId, scholarshipId }
         });
     }
+
+    static async untrackScholarship(studentId: number, scholarshipId: number): Promise<number> {
+        return TrackedScholarship.destroy({
+            where: { studentId, scholarshipId }
+        });
+    }
 }

@@ -14,6 +14,10 @@ export interface Scholarship {
   updatedAt: string;
   matchScore?: number;
   matchReason?: string;
+  tracking?: {
+    id: number;
+    status: string;
+  } | null;
 }
 
 export interface ScholarshipFilters {

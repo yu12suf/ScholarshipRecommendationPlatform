@@ -1,17 +1,29 @@
-
 import { Request, Response, NextFunction } from "express";
 import { VisaService } from "../services/VisaService.js";
 import { Student } from "../models/Student.js";
 import { VisaMockInterview } from "../models/VisaMockInterview.js";
+import path from "path";
+import os from "os";
 
 export class VisaController {
   static async getGuidelines(req: Request, res: Response, next: NextFunction) {
     try {
       const country = req.params.country as string;
-      const guidelines = await VisaService.getGuidelines(country);
+      let guidelines = await VisaService.getGuidelines(country);
+      
       if (!guidelines) {
-        res.status(404).json({ error: "Guidelines not found for this country" });
-        return;
+        // Fallback to prevent UI crash if country is not in DB
+        guidelines = {
+          country,
+          visaType: "Student Visa",
+          requiredDocuments: ["Valid Passport", "University Acceptance Letter", "Financial Proof"],
+          tips: ["Be confident and clear.", "Speak directly to the officer.", "Always tell the truth."],
+          commonQuestions: [
+            "Why are you going to this country?",
+            "Who is sponsoring your education?",
+            "What are your plans after graduation?"
+          ]
+        } as any;
       }
       res.json({ status: "success", data: guidelines });
     } catch (error) {
@@ -48,69 +60,44 @@ export class VisaController {
     }
   }
 
-  static async handleWebhook(req: Request, res: Response, next: NextFunction) {
+  static async transcribeAudio(req: Request, res: Response, next: NextFunction) {
     try {
-      const message = req.body?.message ?? req.body;
-      const messageType = String(message?.type || "").toLowerCase();
-
-      // Handle Call Start
-      if (messageType === "call-start") {
-        const callId = message?.call?.id;
-        const interviewId = message?.metadata?.interviewId || message?.call?.metadata?.interviewId;
-          
-        if (interviewId && callId) {
-          const interview = await VisaMockInterview.findByPk(interviewId);
-          if (interview && !interview.vapiCallId) {
-            await interview.update({ vapiCallId: callId });
-          }
-        }
-      }
-
-      // Handle Call End / Report
-      if (messageType === "end-of-call-report" || messageType === "end-of-call") {
-        const callId = message?.call?.id;
-        const interviewId = message?.metadata?.interviewId || message?.call?.metadata?.interviewId;
-        const providerReport = message?.analysis || message?.call?.analysis;
-
-        const evaluation = await VisaService.evaluateCall({
-          vapiCallId: callId,
-          transcript: message?.transcript || message?.call?.transcript,
-          recordingUrl: message?.recordingUrl || message?.call?.recordingUrl,
-          interviewId,
-          providerReport,
-        });
-
-        res.status(200).json({
-          status: "received",
-          event: messageType,
-          data: { interviewId, callId, evaluation },
-        });
+      if (!req.files || !req.files.file) {
+        res.status(400).json({ error: "No audio file provided." });
         return;
       }
 
-      res.status(200).json({ status: "received" });
+      const audioFile = req.files.file;
+      const file = Array.isArray(audioFile) ? audioFile[0] : audioFile;
+
+      if (!file) {
+        res.status(400).json({ error: "Invalid audio file." });
+        return;
+      }
+
+      const tempDir = os.tmpdir();
+      const ext = path.extname(file.name) || '.m4a';
+      const tempFilePath = path.join(tempDir, `upload_${Date.now()}${ext}`);
+
+      await file.mv(tempFilePath);
+
+      const transcribedText = await VisaService.transcribeAudio(tempFilePath);
+      res.json({ status: "success", data: { text: transcribedText } });
     } catch (error) {
-      res.status(500).json({ error: "Internal Server Error", details: (error as Error).message });
+      next(error);
     }
   }
 
-  static async getInterviewStatus(req: Request, res: Response, next: NextFunction) {
+  static async chatResponse(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id as string;
-      let interview = await VisaMockInterview.findByPk(id);
-      
-      if (!interview) {
-        res.status(404).json({ error: "Interview not found" });
+      const { messages, isJson } = req.body;
+      if (!messages || !Array.isArray(messages)) {
+        res.status(400).json({ error: "Messages array is required." });
         return;
       }
 
-      if (interview.status !== "Evaluated" && interview.status !== "Failed" && interview.vapiCallId) {
-        await VisaService.syncCallFromAPI(interview.id);
-        const reloaded = await VisaMockInterview.findByPk(id);
-        if (reloaded) interview = reloaded;
-      }
-
-      res.json({ status: "success", data: interview });
+      const responseText = await VisaService.getChatCompletion(messages, !!isJson);
+      res.json({ status: "success", data: { content: responseText } });
     } catch (error) {
       next(error);
     }
@@ -119,35 +106,21 @@ export class VisaController {
   static async getInterviewAnalysis(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const forceSync = String(req.query.forceSync ?? "true").toLowerCase() !== "false";
-
-      let interview = await VisaMockInterview.findByPk(id);
+      const interview = await VisaMockInterview.findByPk(id);
+      
       if (!interview) {
         res.status(404).json({ error: "Interview not found" });
         return;
       }
-
-      // Polling fallback mechanism
-      if (forceSync && interview.status !== "Evaluated" && interview.status !== "Failed" && interview.vapiCallId) {
-        await VisaService.syncCallFromAPI(interview.id);
-        const reloaded = await VisaMockInterview.findByPk(id);
-        if (reloaded) interview = reloaded;
-      }
-
-      const liveAnalysis = interview.vapiCallId ? await VisaService.fetchVapiAnalysisByCallId(interview.vapiCallId) : null;
-
-      const analysis = interview.aiEvaluation || liveAnalysis?.analysis || null;
-      const evaluation = analysis?.structuredData || null;
 
       res.json({
         status: "success",
         data: {
           interviewId: interview.id,
           interviewStatus: interview.status,
-          ready: Boolean(analysis),
-          analysis,
-          evaluation,
-          rawAnalysis: liveAnalysis?.analysis || null,
+          ready: interview.status === "Evaluated",
+          analysis: interview.aiEvaluation || null,
+          evaluation: interview.aiEvaluation || null,
         },
       });
     } catch (error) {
@@ -158,17 +131,17 @@ export class VisaController {
   static async finalizeInterview(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      let interview = await VisaMockInterview.findByPk(id);
-      
-      if (!interview) {
-        res.status(404).json({ error: "Interview not found" });
+      const { transcript } = req.body;
+
+      if (!transcript || !Array.isArray(transcript)) {
+        res.status(400).json({ error: "Transcript data is required for evaluation." });
         return;
       }
 
-      if (interview.status !== "Evaluated" && interview.status !== "Failed" && interview.vapiCallId) {
-        await VisaService.syncCallFromAPI(interview.id);
-        const reloaded = await VisaMockInterview.findByPk(id);
-        if (reloaded) interview = reloaded;
+      const interview = await VisaMockInterview.findByPk(id);
+      if (!interview) {
+        res.status(404).json({ error: "Interview not found" });
+        return;
       }
 
       if (interview.status === "Evaluated") {
@@ -176,18 +149,38 @@ export class VisaController {
         return;
       }
 
-      if (interview.status === "Failed") {
-        res.json({ status: "success", data: { interview, queued: false, message: "Evaluation failed. Please retry." } });
-        return;
-      }
+      const evaluation = await VisaService.evaluateCall({
+        interviewId: id,
+        transcript
+      });
 
-      await interview.update({ status: "Completed" });
       const updated = await VisaMockInterview.findByPk(id);
       
       res.json({
         status: "success",
-        data: { interview: updated, queued: true, message: "Waiting for Vapi evaluation." },
+        data: { interview: updated, evaluation },
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const student = await Student.findOne({ where: { userId } });
+      if (!student) {
+        res.status(404).json({ error: "Student not found" });
+        return;
+      }
+
+      const history = await VisaService.getStudentHistory(student.id);
+      res.json({ status: "success", data: history });
     } catch (error) {
       next(error);
     }

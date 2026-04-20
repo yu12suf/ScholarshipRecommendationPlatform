@@ -22,27 +22,19 @@ export default function InterviewPage() {
   const [vapiStartPayload, setVapiStartPayload] = useState<Record<string, any> | string | null>(null);
   const [interviewId, setInterviewId] = useState<string>("");
 
-  const handleStartInterview = async (country: string) => {
+  const handleStartInterview = async (country: string, university: string) => {
     const loadingToast = toast.loading("Preparing your embassy connection...");
     try {
       setSelectedCountry(country);
       
-      const res = await initiateVisaCall({ country } as any);
+      const res = await initiateVisaCall({ country, university } as any);
       const data = res?.status === "success" ? res.data : res;
 
-      // Backend can return a web-call token/url, inline assistant config, or assistant id.
-      const resolvedStartPayload =
-        data?.webCallToken ??
-        data?.webCallUrl ??
-        data?.assistantConfig ??
-        data?.assistant ??
-        data?.assistantId;
-
-      if (!resolvedStartPayload || !data?.interviewId) {
+      if (!data?.interviewId) {
         throw new Error("Interview session payload is incomplete. Please try again.");
       }
 
-      setVapiStartPayload(resolvedStartPayload);
+      setVapiStartPayload({ systemPrompt: data.systemPrompt, firstMessage: data.firstMessage });
       setInterviewId(data.interviewId);
       
       setStep("calling");
@@ -55,9 +47,9 @@ export default function InterviewPage() {
     }
   };
 
-  const handleCallEnd = useCallback((event: CallEndEvent) => {
+  const handleCallEnd = useCallback((event: CallEndEvent & { transcript?: any[] }) => {
     if (event.callStarted) {
-      finalizeVisaInterview(event.interviewId).catch((err) => {
+      finalizeVisaInterview(event.interviewId, event.transcript || []).catch((err) => {
         console.error("Finalize interview failed", err);
       });
       if (event.reason === "user_interrupted") {

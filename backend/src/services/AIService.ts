@@ -1,8 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import configs from "../config/configs.js";
 
 const genAI = new GoogleGenerativeAI(configs.GEMINI_API_KEY!);
-const geminiModelName = configs.GEMINI_MODEL || "gemini-2.5-flash";
+const geminiModelName = configs.GEMINI_MODEL || "gemini-1.5-flash";
+const groq = new Groq({ apiKey: configs.GROQ_API_KEY });
 
 export class AIService {
   static async extractOnboardingData(
@@ -231,5 +233,40 @@ export class AIService {
     ]);
 
     return JSON.parse(result.response.text());
+  }
+
+  /**
+   * Generic JSON generator using Groq (Llama 3) for reliability.
+   */
+  static async generateJSON(prompt: string) {
+    try {
+      const completion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        model: "llama-3.3-70b-versatile",
+        response_format: { type: "json_object" },
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) throw new Error("AI returned empty response");
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("[AIService] Groq JSON Error, falling back to Gemini:", error);
+      
+      // Fallback to Gemini if Groq fails
+      const model = genAI.getGenerativeModel({
+        model: geminiModelName,
+        generationConfig: {
+          responseMimeType: "application/json",
+        },
+      });
+
+      const result = await model.generateContent(prompt);
+      return JSON.parse(result.response.text());
+    }
   }
 }

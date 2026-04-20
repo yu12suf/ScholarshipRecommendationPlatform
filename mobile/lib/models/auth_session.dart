@@ -1,4 +1,4 @@
-import 'user.dart';
+import 'package:mobile/models/user.dart';
 
 /// Tokens + user returned from login/register/refresh; refresh may live only in secure storage.
 class AuthSession {
@@ -14,3 +14,10 @@ class AuthSession {
   /// Present when parsed from Set-Cookie or a future API that returns it in JSON.
   final String? refreshToken;
 }
+
+
+
+
+
+
+

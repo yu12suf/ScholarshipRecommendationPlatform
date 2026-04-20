@@ -22,3 +22,10 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+// Suppress Java compiler warnings (deprecation, unchecked, etc.) in all projects (plugins)
+allprojects {
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.addAll(listOf("-Xlint:-options", "-Xlint:-deprecation", "-Xlint:-unchecked"))
+    }
+}
