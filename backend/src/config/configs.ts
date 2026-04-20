@@ -18,7 +18,7 @@ function setConfigs() {
     HOST_URL: process.env.HOST_URL,
     FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000",
     PRODUCTION_URL: process.env.PRODUCTION_URL,
-    BACKEND_URL: process.env.BACKEND_URL || "http://localhost:8080",
+    BACKEND_URL: process.env.BACKEND_URL,
     
     // Database Config
     DB_HOST: process.env.DB_HOST || "localhost",
@@ -26,6 +26,7 @@ function setConfigs() {
     DB_USER: process.env.DB_USER || "postgres",
     DB_PASSWORD: String(process.env.DB_PASSWORD || ""),
     DB_NAME: process.env.DB_NAME || "auth_system",
+    DB_LOGGING: process.env.DB_LOGGING === "true",
 
     // Auth Config
     JWT_SECRET: process.env.JWT_SECRET || "tempSecret",
@@ -42,6 +43,12 @@ function setConfigs() {
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_ANDROID_CLIENT_ID,
     ].filter((id): id is string => !!id),
+    
+    // Google Calendar / Meet Configs
+    GOOGLE_MEET_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_MEET_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_MEET_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || "https://developers.google.com/oauthplayground",
+    GOOGLE_MEET_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN,
 
 
     // Email SMTP Config

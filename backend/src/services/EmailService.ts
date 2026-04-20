@@ -150,4 +150,34 @@ export class EmailService {
 
     await this.transporter.sendMail(mailOptions);
   }
+
+  static async sendSessionInviteEmail(params: {
+    to: string;
+    recipientName: string;
+    counterpartName: string;
+    meetingLink: string;
+    startTime: Date;
+    endTime: Date;
+  }): Promise<void> {
+    const { to, recipientName, counterpartName, meetingLink, startTime, endTime } = params;
+
+    const startText = startTime.toLocaleString();
+    const endText = endTime.toLocaleString();
+
+    const mailOptions = {
+      from: configs.SMTP_FROM,
+      to,
+      subject: "Counseling Session Invitation",
+      html: `
+        <h2>Your counseling session is confirmed</h2>
+        <p>Hello ${recipientName || "there"},</p>
+        <p>Your session with <strong>${counterpartName || "your session partner"}</strong> has been confirmed.</p>
+        <p><strong>Start:</strong> ${startText}</p>
+        <p><strong>End:</strong> ${endText}</p>
+        <p><strong>Meeting link:</strong> <a href="${meetingLink}">${meetingLink}</a></p>
+      `,
+    };
+
+    await this.transporter.sendMail(mailOptions);
+  }
 }

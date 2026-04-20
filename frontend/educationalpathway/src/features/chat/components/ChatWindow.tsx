@@ -2,7 +2,9 @@
 
 import { Message, ChatUser } from "../types";
 import { format } from "date-fns";
-import { User, CheckCheck } from "lucide-react";
+import { User, CheckCheck, Video } from "lucide-react";
+import { Button } from "@/components/ui";
+
 
 interface ChatWindowProps {
   messages: Message[];
@@ -10,9 +12,21 @@ interface ChatWindowProps {
   otherUser: ChatUser | null;
   loading: boolean;
   typingUser: { userId: number; isTyping: boolean } | null;
+  currentUserRole?: string;
+  onBookSession?: () => void;
+  bookingLoading?: boolean;
 }
 
-export const ChatWindow = ({ messages, currentUserId, otherUser, loading, typingUser }: ChatWindowProps) => {
+export const ChatWindow = ({ 
+  messages, 
+  currentUserId, 
+  otherUser, 
+  loading, 
+  typingUser,
+  currentUserRole,
+  onBookSession,
+  bookingLoading 
+}: ChatWindowProps) => {
   return (
     <div className="flex-1 flex flex-col h-full bg-card/10 overflow-hidden relative">
       {/* Header */}
@@ -30,9 +44,21 @@ export const ChatWindow = ({ messages, currentUserId, otherUser, loading, typing
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-           <div className={`h-2.5 w-2.5 rounded-full ${otherUser ? 'bg-emerald-500' : 'bg-muted'}`} />
-           <span className="text-xs text-muted-foreground">{otherUser ? 'Online' : 'Offline'}</span>
+        <div className="flex items-center gap-4">
+           {currentUserRole === 'student' && otherUser?.role === 'counselor' && (
+              <Button 
+                size="sm" 
+                onClick={onBookSession}
+                isLoading={bookingLoading}
+                className="h-8 px-4 font-bold primary-gradient text-[10px] uppercase tracking-wider"
+              >
+                {bookingLoading ? '...' : 'Book Session'}
+              </Button>
+           )}
+           <div className="flex items-center gap-2">
+              <div className={`h-2.5 w-2.5 rounded-full ${otherUser ? 'bg-emerald-500' : 'bg-muted'}`} />
+              <span className="text-xs text-muted-foreground">{otherUser ? 'Online' : 'Offline'}</span>
+           </div>
         </div>
       </div>
 

@@ -9,10 +9,12 @@ interface ChatListProps {
   activeConversationId: number | null;
   onSelect: (conversation: Conversation) => void;
   currentUserId: number;
+  currentUserRole?: string;
   onNewChat?: () => void;
+  onBookSession?: (userId: number) => void;
 }
 
-export const ChatList = ({ conversations, activeConversationId, onSelect, currentUserId, onNewChat }: ChatListProps) => {
+export const ChatList = ({ conversations, activeConversationId, onSelect, currentUserId, currentUserRole, onNewChat, onBookSession }: ChatListProps) => {
   return (
     <div className="flex flex-col h-full bg-card border-r border-border">
       <div className="p-4 border-b border-border flex items-center justify-between">
@@ -39,10 +41,10 @@ export const ChatList = ({ conversations, activeConversationId, onSelect, curren
             const isActive = activeConversationId === conv.id;
 
             return (
-              <button
+              <div
                 key={conv.id}
                 onClick={() => onSelect(conv)}
-                className={`w-full p-4 flex items-center gap-3 transition-colors hover:bg-muted ${isActive ? 'bg-primary/5 border-l-4 border-primary' : 'border-l-4 border-transparent'}`}
+                className={`w-full p-4 flex items-center gap-3 transition-colors hover:bg-muted cursor-pointer ${isActive ? 'bg-primary/5 border-l-4 border-primary' : 'border-l-4 border-transparent'}`}
               >
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                   <User className="h-5 w-5" />
@@ -75,6 +77,17 @@ export const ChatList = ({ conversations, activeConversationId, onSelect, curren
                     <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider">
                       {otherUser?.role}
                     </span>
+                    {currentUserRole === 'student' && otherUser?.role === 'counselor' && onBookSession && (
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onBookSession(otherUser.id);
+                            }}
+                            className="ml-auto text-[9px] font-black uppercase text-primary hover:underline bg-primary/5 px-2 py-0.5 rounded"
+                        >
+                            Book
+                        </button>
+                    )}
                     {lastMessage && (
                       <p className="text-xs text-muted-foreground truncate flex-1">
                         {lastMessage.content}
@@ -82,7 +95,7 @@ export const ChatList = ({ conversations, activeConversationId, onSelect, curren
                     )}
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })
         )}

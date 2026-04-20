@@ -10,6 +10,7 @@ import learningPathRouter from "./learningPathRoutes.js";
 import chatRouter from "./chatRoutes.js";
 import visaRoutes from "./visaRoutes.js";
 import writingLabRouter from "./writingLabRoutes.js";
+import paymentRouter from "./paymentRoutes.js";
 
 export default {
   userRouter,
@@ -24,4 +25,5 @@ export default {
   chatRouter,
   visaRoutes,
   writingLabRouter,
+  paymentRouter,
 };

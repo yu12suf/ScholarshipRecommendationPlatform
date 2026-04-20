@@ -16,7 +16,8 @@ import {
   Menu,
   X,
   ShieldCheck,
-  ClipboardList
+  ClipboardList,
+  Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -34,6 +35,7 @@ export function CounselorSidebar() {
     { name: 'Schedule Explorer', href: '/dashboard/calendar', icon: Calendar },
     { name: 'Active Sessions', href: '/dashboard/counselor/bookings', icon: CalendarCheck },
     { name: 'Messages', href: '/dashboard/counselor/chat', icon: MessageSquare },
+    { name: 'Earnings & Payouts', href: '/dashboard/counselor/payouts', icon: Wallet },
     { name: 'Goal Tracking', href: '/dashboard/counselor/tasks', icon: ClipboardList },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];

@@ -11,7 +11,7 @@ import {
   CalendarCheck
 } from 'lucide-react';
 import { Button, Card, CardBody, Input } from '@/components/ui';
-import { getCounselorSlots, createCounselorSlots } from '../api/counselor-api';
+import { getCounselorProfile, createCounselorSlots } from '../api/counselor-api';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -25,10 +25,24 @@ export const AvailabilityManager = () => {
   useEffect(() => {
     const fetchSlots = async () => {
       try {
-        const data = await getCounselorSlots();
-        setSlots(data.data || []);
+        const data = await getCounselorProfile();
+        const profile = data.data || data;
+        
+        if (profile.weeklySchedule) {
+          try {
+            const parsedSlots = typeof profile.weeklySchedule === 'string' 
+              ? JSON.parse(profile.weeklySchedule) 
+              : profile.weeklySchedule;
+            setSlots(Array.isArray(parsedSlots) ? parsedSlots : []);
+          } catch (e) {
+            console.error('Failed to parse weekly schedule', e);
+            setSlots([]);
+          }
+        } else {
+          setSlots([]);
+        }
       } catch (error) {
-        toast.error('Failed to load availability');
+        toast.error('Failed to load availability settings');
       } finally {
         setLoading(false);
       }

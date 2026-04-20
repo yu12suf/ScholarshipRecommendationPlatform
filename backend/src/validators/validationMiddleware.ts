@@ -154,18 +154,30 @@ export const googleLoginValidation = [
 export const createSlotsValidation = [
   body('slots')
     .isArray({ min: 1 }).withMessage('Slots array is required'),
+  body('slots.*.dayOfWeek')
+    .notEmpty().withMessage('Day of week is required for each slot')
+    .isIn(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    .withMessage('Invalid day of week'),
   body('slots.*.startTime')
     .notEmpty().withMessage('Start time is required for each slot')
-    .isISO8601().withMessage('Invalid start time format'),
+    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Invalid start time format (HH:mm)'),
   body('slots.*.endTime')
     .notEmpty().withMessage('End time is required for each slot')
-    .isISO8601().withMessage('Invalid end time format')
-    .custom((value, { req }) => {
-      console.log('[createSlotsValidation] validating endTime after startTime');
+    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Invalid end time format (HH:mm)')
+    .custom((value, { req, path }) => {
+      const index = parseInt(path.match(/\d+/)![0]);
       const slots = req.body.slots;
-      const index = slots.findIndex((s: any) => s.endTime === value);
-      if (index !== -1 && new Date(value) <= new Date(slots[index].startTime)) {
-        throw new Error('End time must be after start time');
+      const startTime = slots[index].startTime;
+      
+      if (value && startTime) {
+        const [startHours, startMinutes] = startTime.split(':').map(Number);
+        const [endHours, endMinutes] = value.split(':').map(Number);
+        const startTotal = startHours * 60 + startMinutes;
+        const endTotal = endHours * 60 + endMinutes;
+        
+        if (endTotal <= startTotal) {
+          throw new Error('End time must be after start time');
+        }
       }
       return true;
     })

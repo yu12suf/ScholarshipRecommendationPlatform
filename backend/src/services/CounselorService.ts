@@ -4,6 +4,7 @@ import { User } from "../models/User.js";
 import { Student } from "../models/Student.js";
 import { Booking } from "../models/Booking.js";
 import { AvailabilitySlot } from "../models/AvailabilitySlot.js";
+import { Payment } from "../models/Payment.js";
 import { LearningPath } from "../models/LearningPath.js";
 import { LearningPathProgress } from "../models/LearningPathProgress.js";
 import { AssessmentResult } from "../models/AssessmentResult.js";
@@ -11,6 +12,7 @@ import { TrackedScholarship } from "../models/TrackedScholarship.js";
 import { Scholarship } from "../models/Scholarship.js";
 import { ScholarshipMilestone } from "../models/ScholarshipMilestone.js";
 import { UserRole } from "../types/userTypes.js";
+import { CounselorPayout } from "../models/CounselorPayout.js";
 import { AvailabilitySlotRepository } from "../repositories/AvailabilitySlotRepository.js";
 import { BookingRepository } from "../repositories/BookingRepository.js";
 import { CounselorRepository } from "../repositories/CounselorRepository.js";
@@ -18,6 +20,11 @@ import { CounselorReviewRepository } from "../repositories/CounselorReviewReposi
 import { DocumentRepository } from "../repositories/DocumentRepository.js";
 import { CounselorMessageRepository } from "../repositories/CounselorMessageRepository.js";
 import { NotificationService } from "./NotificationService.js";
+import { PaymentService } from "./PaymentService.js";
+import { GoogleMeetService } from "./GoogleMeetService.js";
+import { EmailService } from "./EmailService.js";
+import crypto from "crypto";
+import configs from "../config/configs.js";
 import { FileService } from "./FileService.js";
 import {
   AdminVerificationDto,
@@ -413,26 +420,66 @@ export class CounselorService {
 
   static async createSlots(counselorId: number, slots: CreateSlotDto[]): Promise<SlotResponse[]> {
     if (slots.length === 0) throw httpError(400, "Slots array is required");
+
+    // 1. Update Counselor profile with the new weekly schedule
+    const counselor = await CounselorRepository.findById(counselorId);
+    if (!counselor) throw httpError(404, "Counselor not found");
+    
+    await counselor.update({ weeklySchedule: JSON.stringify(slots) });
+
+    // 2. Generate individual slot records for the next 4 weeks
+    const dayMap: Record<string, number> = {
+      'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6
+    };
+
+    const slotsToCreate: any[] = [];
     const now = new Date();
 
-    for (const slot of slots) {
-      const start = new Date(slot.startTime);
-      const end = new Date(slot.endTime);
-      if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
-        throw httpError(400, "Invalid slot time range");
+    for (let week = 0; week < 4; week++) {
+      for (const slot of slots) {
+        const targetDay = dayMap[slot.dayOfWeek];
+        if (targetDay === undefined) continue;
+
+        const [startH, startM] = slot.startTime.split(':').map(Number);
+        const [endH, endM] = slot.endTime.split(':').map(Number);
+
+        const date = new Date(now);
+        // Find the next occurrence of this day of the week
+        const currentDay = now.getDay();
+        let diff = targetDay - currentDay;
+        if (diff < 0) diff += 7; // Ensure we move forward
+        
+        date.setDate(now.getDate() + diff + (week * 7));
+        
+        const startTime = new Date(date);
+        startTime.setHours(startH as number, startM, 0, 0);
+        
+        const endTime = new Date(date);
+        endTime.setHours(endH as number , endM, 0, 0);
+
+        // Skip if this time has already passed
+        if (startTime < now) continue;
+
+        // Check for overlaps with booked slots (which we didn't delete)
+        const overlap = await AvailabilitySlotRepository.findOverlappingSlots(counselorId, startTime, endTime);
+        if (overlap) continue;
+
+        slotsToCreate.push({
+          counselorId,
+          startTime,
+          endTime,
+          status: 'available'
+        });
       }
-      if (start < now) throw httpError(400, "Cannot create slot in the past");
-      const overlap = await AvailabilitySlotRepository.findOverlappingSlots(counselorId, start, end);
-      if (overlap) throw httpError(409, "Slot overlaps with existing slot");
     }
 
-    const created = await AvailabilitySlotRepository.bulkCreate(
-      slots.map((slot) => ({
-        counselorId,
-        startTime: new Date(slot.startTime),
-        endTime: new Date(slot.endTime),
-      })),
-    );
+    if (slotsToCreate.length === 0) {
+      // Refresh and return existing slots if no new ones were created
+      const existing = await AvailabilitySlotRepository.findAllByCounselor(counselorId, { fromDate: now });
+      return existing.map(s => this.formatSlotResponse(s));
+    }
+
+    const created = await AvailabilitySlotRepository.bulkCreate(slotsToCreate);
     return created.map((slot) => this.formatSlotResponse(slot));
   }
 
@@ -441,6 +488,15 @@ export class CounselorService {
       ...(fromDate ? { fromDate: new Date(fromDate) } : {}),
       ...(toDate ? { toDate: new Date(toDate) } : {}),
       ...(status ? { status } : {}),
+    };
+    const slots = await AvailabilitySlotRepository.findAllByCounselor(counselorId, filters);
+    return slots.map((slot) => this.formatSlotResponse(slot));
+  }
+
+  static async getAvailableSessions(counselorId: number): Promise<SlotResponse[]> {
+    const filters = {
+      fromDate: new Date(), // Only future slots
+      status: 'available',   // Only available slots
     };
     const slots = await AvailabilitySlotRepository.findAllByCounselor(counselorId, filters);
     return slots.map((slot) => this.formatSlotResponse(slot));
@@ -469,9 +525,10 @@ export class CounselorService {
     await AvailabilitySlotRepository.softDelete(slotId);
   }
 
-  static async createBooking(userId: number, dto: CreateBookingDto): Promise<BookingResponse> {
+  static async createBooking(userId: number, dto: CreateBookingDto): Promise<any> {
     const student = await Student.findOne({ where: { userId } });
     if (!student) throw httpError(404, "Student profile not found");
+    const user = await User.findByPk(userId);
     const slot = await AvailabilitySlotRepository.findById(dto.slotId);
     if (!slot || slot.status !== "available") throw httpError(409, "Slot is not available");
     const counselor = await CounselorRepository.findById(slot.counselorId);
@@ -479,21 +536,270 @@ export class CounselorService {
       throw httpError(403, "Counselor is not available for booking");
     }
 
-    const meetingLink = slot.meetingLink || `https://meet.edu-pathway.com/session-${slot.id}`;
+    const amount = Number(counselor.hourlyRate) || 500; // default 500 ETB if not set
+    const currency = 'ETB';
+    const tx_ref = `booking-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+
     const booking = await BookingRepository.create({
       studentId: student.id,
       counselorId: slot.counselorId,
       slotId: slot.id,
-      status: "confirmed",
-      meetingLink,
+      status: 'pending',
     });
-    this.queueSessionReminder(booking.id, slot.startTime);
+
+    const payment = await Payment.create({
+      studentId: student.id,
+      bookingId: booking.id,
+      amount,
+      currency,
+      tx_ref,
+      status: 'pending'
+    });
+
+    await booking.update({ paymentId: payment.id });
+
+    // Assuming we want to redirect user back to a specific route
+    const returnUrl = `${configs.FRONTEND_URL}/dashboard/student/bookings/success?bookingId=${booking.id}&tx_ref=${tx_ref}`;
+
+    const chapaResponse = await PaymentService.initializePayment(
+      tx_ref,
+      amount,
+      currency,
+      user?.email || 'student@edu-pathway.com',
+      user?.name?.split(' ')[0] || 'Student',
+      user?.name?.split(' ')[1] || 'User',
+      returnUrl
+    );
+
     await AvailabilitySlotRepository.update(slot.id, {
-      status: "booked",
+      status: "booked", // postgres strictly checks for 'available', 'booked', 'cancelled'
       reservedStudentId: student.id,
-      meetingLink,
     });
-    return this.formatBookingResponse(booking);
+
+    // Notify counselor about new request
+    try {
+      await NotificationService.createNotification(
+        counselor.userId,
+        "New Booking Request",
+        `A student (${user?.name || 'Student'}) has requested a session for ${slot.startTime.toLocaleString()}`,
+        "booking",
+        booking.id
+      );
+    } catch (notifyError) {
+      console.error("[CounselorService] Failed to send initial booking notification:", notifyError);
+    }
+
+    return {
+      booking: this.formatBookingResponse(booking),
+      checkoutUrl: chapaResponse.data.checkout_url
+    };
+  }
+
+  static async initiateBookingByCounselor(counselorUserId: number, studentUserId: number, slotId: number): Promise<any> {
+    const counselor = await CounselorRepository.findByUserId(counselorUserId);
+    if (!counselor || counselor.verificationStatus !== "verified" || !counselor.isActive) {
+      throw httpError(403, "Counselor profile not active or verified");
+    }
+
+    const student = await Student.findOne({ where: { userId: studentUserId } });
+    if (!student) throw httpError(404, "Student profile not found");
+
+    const slot = await AvailabilitySlotRepository.findByIdAndCounselorId(slotId, counselor.id);
+    if (!slot || slot.status !== "available") throw httpError(409, "Slot is not available");
+
+    // Create a pending booking
+    const booking = await BookingRepository.create({
+      studentId: student.id,
+      counselorId: counselor.id,
+      slotId: slot.id,
+      status: 'pending',
+    });
+
+    return { booking, message: "Session invitation sent to student. They need to pay to confirm." };
+  }
+
+  static async confirmBooking(tx_ref: string): Promise<{ success: boolean; status: string; message: string; booking?: any }> {
+    const payment = await Payment.findOne({ where: { tx_ref } });
+    
+    if (!payment) {
+      console.error(`[ConfirmBooking] Payment record not found for tx_ref: ${tx_ref}`);
+      return { success: false, status: 'not_found', message: "Payment record not found." };
+    }
+
+    if (payment.status === 'success') {
+      const booking = await Booking.findByPk(payment.bookingId || 0);
+      return { success: true, status: 'success', message: "Payment already verified.", booking };
+    }
+
+    try {
+      console.log(`[ConfirmBooking] Verifying with Chapa for tx_ref: ${tx_ref}`);
+      const chapaVerify = await PaymentService.verifyPayment(tx_ref);
+      
+      // Chapa's response structure: { status: "success", message: "...", data: { status: "success", ... } }
+      const apiSuccess = chapaVerify.status === 'success';
+      const transactionStatus = chapaVerify.data?.status;
+
+      console.log(`[ConfirmBooking] Chapa response for ${tx_ref}: API Status: ${chapaVerify.status}, Transaction Status: ${transactionStatus}`);
+      
+      if (apiSuccess && transactionStatus === 'success') {
+        await payment.update({ status: 'success' });
+        
+        const booking = await Booking.findByPk(payment.bookingId || 0);
+        if (booking) {
+          if (booking.status === 'pending') {
+            const slot = await AvailabilitySlot.findByPk(booking.slotId);
+            
+            // Fetch user emails for student and counselor so calendar invites/emails are sent to both.
+            const attendees: Array<{ email: string; name?: string }> = [];
+            let studentEmail: string | null = null;
+            let studentName: string | null = null;
+            let counselorEmail: string | null = null;
+            let counselorName: string | null = null;
+            try {
+              const [student, counselor] = await Promise.all([
+                Student.findByPk(booking.studentId, { include: [{ model: User, as: 'user' }] }),
+                Counselor.findByPk(booking.counselorId, { include: [{ model: User, as: 'user' }] })
+              ]);
+
+              const studentUser =
+                (typeof (student as any)?.get === "function" ? (student as any).get("user") : null) ||
+                (student as any)?.user ||
+                (student as any)?.dataValues?.user ||
+                (student as any)?.User;
+              const counselorUser =
+                (typeof (counselor as any)?.get === "function" ? (counselor as any).get("user") : null) ||
+                (counselor as any)?.user ||
+                (counselor as any)?.dataValues?.user ||
+                (counselor as any)?.User;
+
+              if (studentUser?.email) {
+                studentEmail = studentUser.email;
+                studentName = studentUser.name || null;
+                attendees.push({ email: studentUser.email, name: studentUser.name });
+              }
+
+              if (counselorUser?.email) {
+                counselorEmail = counselorUser.email;
+                counselorName = counselorUser.name || null;
+                attendees.push({ email: counselorUser.email, name: counselorUser.name });
+              }
+
+              console.log(`[ConfirmBooking] Attendees for meeting: ${attendees.map((a) => a.email).join(', ')}`);
+            } catch (e) {
+              console.error("[ConfirmBooking] Error fetching attendee emails:", e);
+            }
+
+            // Generate Google Meet Link
+            let meetingLink = `https://meet.edu-pathway.com/session-${booking.id}`;
+            try {
+              if (slot) {
+                console.log(`[ConfirmBooking] Creating Google Meet for booking ${booking.id}`);
+                meetingLink = await GoogleMeetService.createMeeting(
+                  "Counseling Session: Educational Pathway",
+                  `Counseling session between student and counselor.`,
+                  slot.startTime,
+                  60,
+                  attendees
+                );
+              }
+            } catch (e) {
+              console.error("[ConfirmBooking] Google Meet creation failed, using fallback:", e);
+            }
+
+            await booking.update({ status: 'confirmed', meetingLink });
+            if (slot) {
+              await slot.update({ status: 'booked' }); // slot has no meetingLink column
+
+              // Send direct email invites to both participants as a reliable fallback.
+              try {
+                const endTime = new Date(slot.startTime.getTime() + 60 * 60 * 1000);
+                const sendEmailTasks: Promise<void>[] = [];
+
+                if (studentEmail) {
+                  sendEmailTasks.push(
+                    EmailService.sendSessionInviteEmail({
+                      to: studentEmail,
+                      recipientName: studentName || "Student",
+                      counterpartName: counselorName || "Counselor",
+                      meetingLink,
+                      startTime: slot.startTime,
+                      endTime,
+                    })
+                  );
+                }
+
+                if (counselorEmail) {
+                  sendEmailTasks.push(
+                    EmailService.sendSessionInviteEmail({
+                      to: counselorEmail,
+                      recipientName: counselorName || "Counselor",
+                      counterpartName: studentName || "Student",
+                      meetingLink,
+                      startTime: slot.startTime,
+                      endTime,
+                    })
+                  );
+                }
+
+                await Promise.all(sendEmailTasks);
+                console.log(`[ConfirmBooking] Direct invite emails sent to: ${[studentEmail, counselorEmail].filter(Boolean).join(', ')}`);
+              } catch (emailError) {
+                console.error("[ConfirmBooking] Failed to send direct invite emails:", emailError);
+              }
+              
+              // Update counselor balance
+              const counselor = await CounselorRepository.findById(booking.counselorId);
+              if (counselor) {
+                const amount = Number(payment.amount);
+                await counselor.increment({
+                  totalEarned: amount,
+                  pendingBalance: amount
+                });
+
+                // Notify counselor about confirmed booking
+                try {
+                  await NotificationService.createNotification(
+                    counselor.userId,
+                    "Booking Confirmed",
+                    `Payment received! Your session for ${slot.startTime.toLocaleString()} is confirmed.`,
+                    "booking",
+                    booking.id
+                  );
+                } catch (notifyError) {
+                  console.error("[CounselorService] Failed to send confirmation notification:", notifyError);
+                }
+                console.log(`[ConfirmBooking] Updated counselor ${counselor.id} balance by ${amount}`);
+              }
+
+              this.queueSessionReminder(booking.id, slot.startTime);
+            }
+            return { success: true, status: 'success', message: "Payment verified and session confirmed.", booking };
+          }
+          return { success: true, status: 'success', message: "Payment verified, but booking was already processed.", booking };
+        }
+        
+        return { success: true, status: 'success', message: "Payment verified, but booking record not found." };
+      } else if (apiSuccess && transactionStatus === 'pending') {
+        return { success: false, status: 'pending', message: "Payment is still pending. Please wait or refresh." };
+      } else {
+        // Only mark as failed if explicitly failed by Chapa
+        if (transactionStatus === 'failed') {
+          await payment.update({ status: 'failed' });
+          const booking = await Booking.findByPk(payment.bookingId || 0);
+          if (booking) {
+            await booking.update({ status: 'cancelled' });
+            await AvailabilitySlot.update({ status: 'available', reservedStudentId: null }, { where: { id: booking.slotId } });
+          }
+          return { success: false, status: 'failed', message: "Payment was declined by Chapa." };
+        }
+        
+        return { success: false, status: 'unknown', message: `Payment verification incomplete. Status: ${transactionStatus || 'unknown'}` };
+      }
+    } catch (error: any) {
+      console.error("[ConfirmBooking] Error:", error.message);
+      // Don't mark as failed on network/API errors, just return failure to the user so they can retry
+      return { success: false, status: 'error', message: "Could not reach Chapa for verification. Please try again in a moment." };
+    }
   }
 
   static async rescheduleBooking(userId: number, bookingId: number, dto: RescheduleBookingDto): Promise<BookingResponse> {
@@ -546,12 +852,26 @@ export class CounselorService {
     const bookings = await BookingRepository.findUniqueStudentsByCounselor(counselorId);
     const uniqueStudents = new Map<number, any>();
     bookings.forEach((booking) => {
-      if (!uniqueStudents.has(booking.studentId)) {
-        uniqueStudents.set(booking.studentId, {
-          studentId: booking.student.id,
-          userId: booking.student.userId,
-          name: (booking as any).student?.user?.name || "Unknown",
-          email: (booking as any).student?.user?.email || "Unknown",
+      const student =
+        (typeof (booking as any)?.get === "function" ? (booking as any).get("student") : null) ||
+        (booking as any)?.student ||
+        (booking as any)?.dataValues?.student ||
+        null;
+
+      if (!student) return;
+
+      const studentUser =
+        (typeof student?.get === "function" ? student.get("user") : null) ||
+        student?.user ||
+        student?.dataValues?.user ||
+        null;
+
+      if (!uniqueStudents.has(student.id)) {
+        uniqueStudents.set(student.id, {
+          studentId: student.id,
+          userId: student.userId,
+          name: studentUser?.name || "Unknown",
+          email: studentUser?.email || "Unknown",
           lastBookingDate: booking.createdAt,
           lastBookingStatus: booking.status,
         });
@@ -653,13 +973,10 @@ export class CounselorService {
 
   static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]> {
     const now = new Date();
+    console.log(`[GetUpcomingBookings] Fetching upcoming bookings for counselor ${counselorId} at ${now.toISOString()}`);
+    console.log("Upcoming bookings for counselor", now.toISOString());
     const bookings = await BookingRepository.findUpcomingByCounselor(counselorId, true);
-    return bookings
-      .filter((booking) => {
-        const start = (booking as any).slot?.startTime;
-        return start && new Date(start) > now;
-      })
-      .map((booking) => this.formatBookingResponse(booking));
+    return bookings.map((booking) => this.formatBookingResponse(booking));
   }
 
   static async updateBookingStatus(counselorId: number, bookingId: number, dto: BookingStatusDto): Promise<BookingResponse> {
@@ -673,7 +990,15 @@ export class CounselorService {
     if (dto.status === "completed") {
       await booking.update({ status: "completed", completedAt: new Date() });
       const counselor = await Counselor.findByPk(counselorId);
-      if (counselor) await counselor.update({ totalSessions: (counselor.totalSessions || 0) + 1 });
+      if (counselor) {
+        const sessionPrice = Number(counselor.hourlyRate || 500);
+        // Deduct 10% platform fee
+        const counselorCut = sessionPrice * 0.9;
+        await counselor.update({ 
+          totalSessions: (counselor.totalSessions || 0) + 1,
+          pendingBalance: (Number(counselor.pendingBalance) || 0) + counselorCut
+        });
+      }
       await AvailabilitySlotRepository.update(booking.slotId, { status: "available", reservedStudentId: null, meetingLink: null });
     }
     if (dto.status === "cancelled") {
@@ -697,15 +1022,22 @@ export class CounselorService {
     if (!["confirmed", "started"].includes(booking.status)) throw httpError(409, "Cannot join a session that is not confirmed or started");
 
     const now = new Date();
-    const slot = (booking as any).slot;
+    const slot =
+      (typeof (booking as any)?.get === "function" ? (booking as any).get("slot") : null) ||
+      (booking as any)?.slot ||
+      (booking as any)?.dataValues?.slot ||
+      null;
     if (!slot) throw httpError(404, "Slot not found");
     const start = new Date(slot.startTime);
     const end = new Date(slot.endTime);
-    if ((start.getTime() - now.getTime()) / 60000 > 10) throw httpError(403, "Meeting link is only available 10 minutes before the start time");
     if (now > end) throw httpError(409, "This session has already ended");
 
     const meetingLink = booking.meetingLink || slot.meetingLink || `https://meet.edu-pathway.com/session-${booking.id}`;
-    if (booking.status === "confirmed") await booking.update({ status: "started", startedAt: now, meetingLink });
+    // Allow immediate access once the meeting exists; only mark started near/after scheduled start.
+    const shouldAutoStart = now.getTime() >= start.getTime() - 10 * 60 * 1000;
+    if (booking.status === "confirmed" && shouldAutoStart) {
+      await booking.update({ status: "started", startedAt: now, meetingLink });
+    }
     return { meetingLink };
   }
 
@@ -930,7 +1262,31 @@ export class CounselorService {
     };
   }
 
-  private static formatBookingResponse(booking: Booking): BookingResponse {
+  private static formatBookingResponse(booking: any): any {
+    const student =
+      (typeof booking?.get === "function" ? booking.get("student") : null) ||
+      booking?.student ||
+      booking?.dataValues?.student ||
+      null;
+
+    const counselor =
+      (typeof booking?.get === "function" ? booking.get("counselor") : null) ||
+      booking?.counselor ||
+      booking?.dataValues?.counselor ||
+      null;
+
+    const slot =
+      (typeof booking?.get === "function" ? booking.get("slot") : null) ||
+      booking?.slot ||
+      booking?.dataValues?.slot ||
+      null;
+
+    const studentUser =
+      (typeof student?.get === "function" ? student.get("user") : null) ||
+      student?.user ||
+      student?.dataValues?.user ||
+      null;
+
     return {
       id: booking.id,
       studentId: booking.studentId,
@@ -941,6 +1297,31 @@ export class CounselorService {
       startedAt: booking.startedAt,
       completedAt: booking.completedAt,
       createdAt: booking.createdAt,
+      student: student ? {
+        id: student.id,
+        userId: student.userId,
+        name: studentUser?.name || "Unknown",
+        email: studentUser?.email || "N/A",
+      } : null,
+      counselor: counselor ? {
+        id: counselor.id,
+        areasOfExpertise: counselor.areasOfExpertise,
+        user: counselor.user ? {
+          id: counselor.user.id,
+          name: counselor.user.name,
+          email: counselor.user.email,
+          profileImageUrl: counselor.profileImageUrl
+        } : null
+      } : null,
+      slot: slot ? {
+        id: slot.id,
+        counselorId: slot.counselorId,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        status: slot.status,
+        reservedStudentId: slot.reservedStudentId,
+        meetingLink: slot.meetingLink,
+      } : null
     };
   }
 
@@ -996,5 +1377,66 @@ export class CounselorService {
         console.error(`[reminder] failed for booking=${bookingId}`, error);
       }
     }, delayMs);
+  }
+
+  static async processPayout(counselorId: number, amount: number): Promise<any> {
+    const counselor = await CounselorRepository.findById(counselorId);
+    if (!counselor) throw httpError(404, "Counselor not found");
+    if (amount <= 0 || Number(counselor.pendingBalance) < amount) {
+        throw httpError(400, "Invalid payout amount or insufficient pending balance");
+    }
+
+    const transactionReference = `payout-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+
+    // Here you would optimally integrate with Chapa Transfer API or similar to actually move the funds.
+    // For now, we logically approve it in our system.
+
+    const payout = await CounselorPayout.create({
+        counselorId: counselor.id,
+        amount,
+        transactionReference,
+        status: 'paid'
+    });
+
+    await counselor.update({
+        pendingBalance: Number(counselor.pendingBalance) - amount
+    });
+
+    return payout;
+  }
+
+  static async getPublicProfileByUserId(userId: number): Promise<any> {
+    const counselor = await CounselorRepository.findByUserId(userId);
+    if (!counselor || !counselor.isActive) {
+      throw httpError(404, "Counselor profile not found or inactive");
+    }
+    const user = await User.findByPk(userId);
+    return this.formatCounselorResponse(counselor, user);
+  }
+
+  static async getStudentBookings(userId: number): Promise<any[]> {
+    const student = await Student.findOne({ where: { userId } });
+    if (!student) throw httpError(404, "Student profile not found");
+
+    const bookings = await Booking.findAll({
+      where: { studentId: student.id },
+      include: [
+        { 
+          association: 'counselor', 
+          include: [{ association: 'user', attributes: ['id', 'name', 'email'] }] 
+        },
+        { association: 'slot' }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    return bookings.map(b => this.formatBookingResponse(b));
+  }
+
+  static async getMyPayouts(counselorId: number): Promise<any[]> {
+    return CounselorPayout.findAll({
+      where: { counselorId },
+      order: [['createdAt', 'DESC']]
+    });
   }
 }

@@ -11,10 +11,10 @@ import {
 import { Counselor } from "./Counselor.js";
 
 @Table({
-    tableName: "availability_slots",
+    tableName: "counselor_payouts",
     timestamps: true,
 })
-export class AvailabilitySlot extends Model {
+export class CounselorPayout extends Model {
     @Column({
         type: DataType.INTEGER,
         primaryKey: true,
@@ -26,45 +26,33 @@ export class AvailabilitySlot extends Model {
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
-        field: 'counselor_id'
+        field: 'counselor_id',
+        onDelete: 'CASCADE'
     })
     declare counselorId: number;
 
     @Column({
-        type: DataType.DATE,
+        type: DataType.DECIMAL(10, 2),
         allowNull: false,
-        field: 'start_time'
+        field: 'amount'
     })
-    declare startTime: Date;
+    declare amount: number;
 
     @Column({
-        type: DataType.DATE,
+        type: DataType.STRING(100),
         allowNull: false,
-        field: 'end_time'
+        unique: true,
+        field: 'transaction_reference'
     })
-    declare endTime: Date;
+    declare transactionReference: string;
 
     @Column({
         type: DataType.STRING(20),
         allowNull: false,
-        defaultValue: 'available',
+        defaultValue: 'pending',
         field: 'status'
     })
-    declare status: 'available' | 'booked' | 'cancelled';
-
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: true,
-        field: 'reserved_student_id'
-    })
-    declare reservedStudentId: number | null;
-
-    @Column({
-        type: DataType.STRING(500),
-        allowNull: true,
-        field: 'meeting_link'
-    })
-    declare meetingLink: string | null;
+    declare status: 'pending' | 'paid';
 
     @CreatedAt
     @Column({
@@ -80,6 +68,6 @@ export class AvailabilitySlot extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => Counselor, { as: 'counselor' })
+    @BelongsTo(() => Counselor)
     counselor!: Counselor;
 }

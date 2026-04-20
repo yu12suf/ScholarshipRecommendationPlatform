@@ -8,6 +8,8 @@ import { ChatInput } from "./components/ChatInput";
 import { Conversation, Message, ChatUser } from "./types";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { BookingModal } from "../counselor/components/BookingModal";
+import { StudentBookingModal } from "../counselor/components/StudentBookingModal";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -17,6 +19,11 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [typingStatus, setTypingStatus] = useState<{ userId: number; isTyping: boolean } | null>(null);
+  
+  // Booking States
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [activeCounselorData, setActiveCounselorData] = useState<any>(null);
+  const [fetchingCounselor, setFetchingCounselor] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
   const { socket, isConnected } = useSocket(token);
@@ -42,8 +49,8 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
       if (!activeConversation) return;
 
       // Update conversations list locally to reset unread count
-      setConversations(prev => prev.map(c => 
-          c.id === activeConversation.id ? { ...c, unreadCount: 0 } : c
+      setConversations(prev => prev.map(c =>
+        c.id === activeConversation.id ? { ...c, unreadCount: 0 } : c
       ));
 
       setLoading(true);
@@ -52,10 +59,10 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(res.data.data);
-        
+
         // Mark as read on server
         axios.patch(`${API_BASE_URL}/chat/read/${activeConversation.id}`, {}, {
-            headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         // Join socket room
@@ -80,14 +87,14 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
         setMessages((prev) => [message, ...prev]);
         // Auto-mark as read? Or just refresh if in window
         axios.patch(`${API_BASE_URL}/chat/read/${activeConversation.id}`, {}, {
-            headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` }
         });
       }
 
       // Update conversations list for snippet
       setConversations((prev) => {
         const index = prev.findIndex((conv) => conv.id === message.conversationId);
-        
+
         if (index === -1) {
           // If conversation isn't in sidebar yet (e.g. brand new), we can't update it easily
           // unless we trigger a refresh of conversations from API.
@@ -98,7 +105,7 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
         const newConversations = [...prev];
         const conv = newConversations[index];
         const isCurrentlyViewed = activeConversation?.id === conv.id;
-        
+
         const currentCount = typeof conv.unreadCount === 'string' ? parseInt(conv.unreadCount, 10) : (conv.unreadCount || 0);
 
         newConversations[index] = {
@@ -113,16 +120,16 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
     });
 
     socket.on("user_typing", (data: { userId: number; isTyping: boolean }) => {
-        setTypingStatus(data);
+      setTypingStatus(data);
     });
 
     socket.on("new_message_alert", (data: { conversationId: number; senderName: string; content: string }) => {
-        if (!activeConversation || activeConversation.id !== data.conversationId) {
-            toast(`${data.senderName}: ${data.content}`, {
-                icon: '💬',
-                position: 'bottom-right'
-            });
-        }
+      if (!activeConversation || activeConversation.id !== data.conversationId) {
+        toast(`${data.senderName}: ${data.content}`, {
+          icon: '💬',
+          position: 'bottom-right'
+        });
+      }
     });
 
     return () => {
@@ -160,31 +167,59 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
   const handleOpenNewChat = async () => {
     setIsModalOpen(true);
     try {
-        const res = await axios.get(`${API_BASE_URL}/chat/available-users`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        setAvailableUsers(res.data.data);
+      const res = await axios.get(`${API_BASE_URL}/chat/available-users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAvailableUsers(res.data.data);
     } catch (err) {
-        console.error("Failed to fetch available users", err);
+      console.error("Failed to fetch available users", err);
     }
   };
 
   const handleStartChat = async (userId: number) => {
     try {
-        const res = await axios.post(`${API_BASE_URL}/chat/start`, { receiverId: userId }, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const newConv = res.data.data;
-        setConversations(prev => {
-            const exists = prev.find(c => c.id === newConv.id);
-            if (exists) return prev;
-            return [newConv, ...prev];
-        });
-        setActiveConversation(newConv);
-        setIsModalOpen(false);
+      const res = await axios.post(`${API_BASE_URL}/chat/start`, { receiverId: userId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const newConv = res.data.data;
+      setConversations(prev => {
+        const exists = prev.find(c => c.id === newConv.id);
+        if (exists) return prev;
+        return [newConv, ...prev];
+      });
+      setActiveConversation(newConv);
+      setIsModalOpen(false);
     } catch (err) {
-        console.error("Failed to start chat", err);
-        toast.error("Failed to start chat");
+      console.error("Failed to start chat", err);
+      toast.error("Failed to start chat");
+    }
+  };
+
+  const handleOpenBooking = async () => {
+    if (!otherUser) return;
+    
+    if (currentUser.role === 'counselor') {
+      // Counselor mode: otherUser is the student
+      setActiveCounselorData({ 
+        id: -1, // Placeholder as we use /counselors/slots anyway
+        name: currentUser.name 
+      });
+      setIsBookingModalOpen(true);
+    } else if (otherUser.role === 'counselor') {
+      // Student mode: otherUser is the counselor
+      setFetchingCounselor(true);
+      try {
+        const res = await axios.get(`${API_BASE_URL}/counselors/by-user/${otherUser.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setActiveCounselorData(res.data.data);
+        setIsBookingModalOpen(true);
+      } catch (err) {
+        console.error("Failed to fetch counselor data", err);
+        toast.error("Could not fetch counselor details");
+      } finally {
+        setFetchingCounselor(false);
+      }
     }
   };
 
@@ -197,7 +232,27 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
           activeConversationId={activeConversation?.id || null}
           onSelect={setActiveConversation}
           currentUserId={currentUser.id}
+          currentUserRole={currentUser.role}
           onNewChat={handleOpenNewChat}
+          onBookSession={async (userId) => {
+            if (currentUser.role === 'counselor') {
+              setActiveCounselorData({ id: -1, name: currentUser.name });
+              setIsBookingModalOpen(true);
+            } else {
+              setFetchingCounselor(true);
+              try {
+                const res = await axios.get(`${API_BASE_URL}/counselors/by-user/${userId}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                setActiveCounselorData(res.data.data);
+                setIsBookingModalOpen(true);
+              } catch (err) {
+                toast.error("Could not fetch counselor details");
+              } finally {
+                setFetchingCounselor(false);
+              }
+            }
+          }}
         />
       </div>
 
@@ -211,11 +266,15 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
               otherUser={otherUser}
               loading={loading}
               typingUser={typingStatus}
+              currentUserRole={currentUser.role}
+              onBookSession={handleOpenBooking}
+              bookingLoading={fetchingCounselor}
             />
-            
-            <ChatInput 
+
+            <ChatInput
               onSend={handleSendMessage}
               onTyping={handleTyping}
+              onSchedule={handleOpenBooking}
               disabled={!activeConversation}
             />
           </>
@@ -228,30 +287,44 @@ export const ChatPage = ({ currentUser }: { currentUser: ChatUser }) => {
 
       {isModalOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-card w-full max-w-md rounded-lg p-6 flex flex-col max-h-[80vh]">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">New Chat</h2>
-                    <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
-                        ✕
-                    </button>
-                </div>
-                <div className="flex-1 overflow-y-auto pr-2 space-y-2">
-                    {availableUsers.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">No users available.</p>
-                    ) : (
-                        availableUsers.map(user => (
-                            <div key={user.id} className="flex items-center justify-between p-3 rounded-md border border-border hover:bg-muted transition-colors cursor-pointer" onClick={() => handleStartChat(user.id)}>
-                                <div>
-                                    <div className="font-semibold">{user.name}</div>
-                                    <div className="text-xs text-muted-foreground uppercase">{user.role}</div>
-                                </div>
-                                <button className="text-primary text-sm font-medium">Chat</button>
-                            </div>
-                        ))
-                    )}
-                </div>
+          <div className="bg-card w-full max-w-md rounded-lg p-6 flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">New Chat</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                ✕
+              </button>
             </div>
+            <div className="flex-1 overflow-y-auto pr-2 space-y-2">
+              {availableUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No users available.</p>
+              ) : (
+                availableUsers.map(user => (
+                  <div key={user.id} className="flex items-center justify-between p-3 rounded-md border border-border hover:bg-muted transition-colors cursor-pointer" onClick={() => handleStartChat(user.id)}>
+                    <div>
+                      <div className="font-semibold">{user.name}</div>
+                      <div className="text-xs text-muted-foreground uppercase">{user.role}</div>
+                    </div>
+                    <button className="text-primary text-sm font-medium">Chat</button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
+      )}
+      {isBookingModalOpen && activeCounselorData && (
+        currentUser.role === 'counselor' ? (
+          <BookingModal
+            counselor={activeCounselorData}
+            studentUserId={otherUser?.id}
+            onClose={() => setIsBookingModalOpen(false)}
+          />
+        ) : (
+          <StudentBookingModal
+            counselor={activeCounselorData}
+            onClose={() => setIsBookingModalOpen(false)}
+          />
+        )
       )}
     </div>
   );
