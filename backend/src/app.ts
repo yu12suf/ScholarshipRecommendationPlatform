@@ -9,13 +9,19 @@ import routes from "./routes/index.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { apiLimiter } from "./middlewares/rateLimiter.js";
 import configs from "./config/configs.js";
+import debugRoutes from "./routes/debugRoutes.js";
 
 const app: Application = express();
 
 app.use(helmet());
 app.use(compression());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ 
+  limit: "1mb",
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(cookieParser());
 app.use(expressupload());
 
@@ -76,6 +82,8 @@ app.use("/api/notifications", routes.notificationRouter);
 app.use("/api/videos", routes.videoRouter);
 app.use("/api/learning-path", routes.learningPathRouter);
 app.use("/api/chat", routes.chatRouter);
+app.use("/api/payments", routes.paymentRouter);
+app.use("/api/debug", debugRoutes);
 // Health Check
 app.get("/health", (req, res) => {
   res.status(200).send("OK");

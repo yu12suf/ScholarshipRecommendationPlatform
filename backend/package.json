@@ -35,6 +35,7 @@
     "firebase-admin": "^13.7.0",
     "google-auth-library": "^10.5.0",
     "google-tts-api": "^2.0.2",
+    "googleapis": "^171.4.0",
     "groq-sdk": "^1.1.1",
     "helmet": "^8.1.0",
     "iconv-lite": "^0.7.2",

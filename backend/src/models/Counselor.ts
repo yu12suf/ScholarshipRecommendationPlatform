@@ -14,6 +14,7 @@ import { User } from "./User.js";
 import { AvailabilitySlot } from './AvailabilitySlot.js';
 import { Booking } from './Booking.js';
 import { CounselorReview } from './CounselorReview.js';
+import { CounselorPayout } from './CounselorPayout.js';
 
 @Table({
     tableName: "counselors",
@@ -269,6 +270,22 @@ export class Counselor extends Model {
     })
     declare certificateUrls: string;
 
+    @Column({
+        type: DataType.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.00,
+        field: 'total_earned'
+    })
+    declare totalEarned: number;
+
+    @Column({
+        type: DataType.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.00,
+        field: 'pending_balance'
+    })
+    declare pendingBalance: number;
+
     @CreatedAt
     @Column({
         type: DataType.DATE,
@@ -283,7 +300,7 @@ export class Counselor extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => User)
+    @BelongsTo(() => User, { as: 'user' })
     user!: User;
 
     @HasMany(() => AvailabilitySlot, { foreignKey: 'counselorId' })
@@ -294,4 +311,7 @@ export class Counselor extends Model {
 
     @HasMany(() => CounselorReview, { foreignKey: 'counselorId' })
     reviews!: CounselorReview[];
+
+    @HasMany(() => CounselorPayout, { foreignKey: 'counselorId' })
+    payouts!: CounselorPayout[];
 }

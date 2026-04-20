@@ -11,6 +11,7 @@ import {
 import { Student } from "./Student.js";
 import { Counselor } from "./Counselor.js";
 import { AvailabilitySlot } from "./AvailabilitySlot.js";
+import { Payment } from "./Payment.js";
 
 @Table({
     tableName: "bookings",
@@ -50,6 +51,7 @@ export class Booking extends Model {
     })
     declare slotId: number;
 
+    @ForeignKey(() => Payment)
     @Column({
         type: DataType.INTEGER,
         allowNull: true,
@@ -115,4 +117,7 @@ export class Booking extends Model {
 
     @BelongsTo(() => AvailabilitySlot, { as: 'slot' })
     slot!: AvailabilitySlot;
+
+    @BelongsTo(() => Payment, { as: 'payment' })
+    payment!: Payment;
 }

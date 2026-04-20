@@ -95,7 +95,29 @@ export class CounselorController {
 
   static async getSlots(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await CounselorService.getSlots((req as any).counselor.id, req.query.fromDate as string, req.query.toDate as string, req.query.status as string);
+      // Allow fetching by ID from params (for students) or from current counselor profile
+      const counselorId = req.params.id ? Number(req.params.id) : (req as any).counselor?.id;
+
+      if (!counselorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Counselor ID is required'
+        });
+      }
+
+      const data = await CounselorService.getSlots(counselorId, req.query.fromDate as string, req.query.toDate as string, req.query.status as string);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getAvailableSessions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const counselorId = Number(req.params.id);
+      if (!counselorId) throw new Error("Counselor ID is required");
+      
+      const data = await CounselorService.getAvailableSessions(counselorId);
       res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);
@@ -123,6 +145,16 @@ export class CounselorController {
   static async createBooking(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await CounselorService.createBooking(req.user!.id, req.body as CreateBookingDto);
+      res.status(201).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async initiateBooking(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { studentUserId, slotId } = req.body;
+      const data = await CounselorService.initiateBookingByCounselor(req.user!.id, Number(studentUserId), Number(slotId));
       res.status(201).json({ success: true, data });
     } catch (error) {
       next(error);
@@ -270,6 +302,43 @@ export class CounselorController {
   static async getThread(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await CounselorService.getThread(req.user!.id, req.user!.role, Number(req.params.userId));
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async adminPayout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const amount = Number(req.body.amount);
+      const data = await CounselorService.processPayout(Number(req.params.id), amount);
+      res.status(200).json({ success: true, message: "Payout processed successfully", data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getByUserId(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getPublicProfileByUserId(Number(req.params.userId));
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getStudentBookings(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getStudentBookings(req.user!.id);
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMyPayouts(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getMyPayouts((req as any).counselor.id);
       res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);

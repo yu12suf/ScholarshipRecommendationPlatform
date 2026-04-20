@@ -54,13 +54,16 @@ export interface CredentialDto {
 }
 
 export interface CreateSlotDto {
-    startTime: Date;
-    endTime: Date;
+    dayOfWeek: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
+    startTime: string; // HH:mm format
+    endTime: string;   // HH:mm format
+    isRecurring?: boolean;
 }
 
 export interface UpdateSlotDto {
-    startTime?: Date;
-    endTime?: Date;
+    startTime?: string | Date;
+    endTime?: string | Date;
+    status?: 'available' | 'booked' | 'cancelled';
 }
 
 export interface BookingStatusDto {

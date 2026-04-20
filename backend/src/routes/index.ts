@@ -9,6 +9,7 @@ import videoRouter from "./videoRoutes.js";
 import learningPathRouter from "./learningPathRoutes.js";
 import chatRouter from "./chatRoutes.js";
 import visaRoutes from "./visaRoutes.js";
+import paymentRouter from "./paymentRoutes.js";
 
 export default {
   userRouter,
@@ -22,4 +23,5 @@ export default {
   notificationRouter,
   chatRouter,
   visaRoutes,
+  paymentRouter,
 };
