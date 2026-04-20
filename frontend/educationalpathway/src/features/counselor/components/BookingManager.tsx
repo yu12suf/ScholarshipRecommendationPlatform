@@ -28,7 +28,7 @@ export const BookingManager = () => {
   const fetchBookings = async () => {
     try {
       const data = await getUpcomingBookings();
-      setBookings(data.data || []);
+      setBookings(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       toast.error('Failed to load bookings');
     } finally {
@@ -49,6 +49,27 @@ export const BookingManager = () => {
       toast.error(`Failed to update booking status`);
     }
   };
+
+  // Helper to safely get start/end times from the nested slot object
+  const getStartTime = (booking: any) => booking.slot?.startTime || booking.startTime;
+  const getEndTime = (booking: any) => booking.slot?.endTime || booking.endTime;
+  const getStudentName = (booking: any) =>
+    booking.student?.name ||
+    booking.student?.user?.name ||
+    booking.Student?.name ||
+    booking.Student?.user?.name ||
+    booking.Student?.User?.name ||
+    booking.studentName ||
+    'Student';
+
+  const getStudentEmail = (booking: any) =>
+    booking.student?.email ||
+    booking.student?.user?.email ||
+    booking.Student?.email ||
+    booking.Student?.user?.email ||
+    booking.Student?.User?.email ||
+    booking.studentEmail ||
+    '';
 
   if (loading) {
     return (
@@ -75,100 +96,125 @@ export const BookingManager = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
-          {bookings.map((booking, idx) => (
-            <motion.div
-              key={booking.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-            >
-              <Card className="border border-border bg-card hover:border-primary/30 transition-all group shadow-sm hover:shadow-md">
-                <CardBody className="p-6 space-y-6">
-                  {/* Status header */}
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
-                      booking.status === 'confirmed' ? 'bg-success/10 text-success' : 
-                      booking.status === 'cancelled' ? 'bg-destructive/10 text-destructive' : 
-                      'bg-warning/10 text-warning'
-                    }`}>
-                      {booking.status}
-                    </span>
-                    <span className="text-xs text-muted-foreground">ID: #{booking.id.toString().slice(-4)}</span>
-                  </div>
+          {bookings.map((booking, idx) => {
+            const startTime = getStartTime(booking);
+            const endTime = getEndTime(booking);
+            const studentName = getStudentName(booking);
+            const studentEmail = getStudentEmail(booking);
 
-                  {/* Student info */}
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center font-black text-primary text-xl">
-                      {booking.Student?.User?.name?.charAt(0) || 'S'}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-foreground">{booking.Student?.User?.name || 'Student'}</h3>
-                      <p className="text-xs text-muted-foreground">International Applicant</p>
-                    </div>
-                  </div>
-
-                  {/* Detail list */}
-                  <div className="space-y-3 pt-4 border-t border-border">
-                    <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
-                      <Calendar size={16} className="text-primary/60" />
-                      <span className="text-sm font-medium">
-                        {new Date(booking.startTime).toLocaleDateString(undefined, { 
-                          weekday: 'short', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
+            return (
+              <motion.div
+                key={booking.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <Card className="border border-border bg-card hover:border-primary/30 transition-all group shadow-sm hover:shadow-md">
+                  <CardBody className="p-6 space-y-6">
+                    {/* Status header */}
+                    <div className="flex justify-between items-center mb-2">
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                        booking.status === 'confirmed' ? 'bg-success/10 text-success' : 
+                        booking.status === 'cancelled' ? 'bg-destructive/10 text-destructive' : 
+                        'bg-warning/10 text-warning'
+                      }`}>
+                        {booking.status}
                       </span>
+                      <span className="text-xs text-muted-foreground">ID: #{booking.id.toString().slice(-4)}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
-                      <Clock size={16} className="text-primary/60" />
-                      <span className="text-sm font-medium">
-                        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                        {new Date(booking.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <Video size={16} className="text-primary/60" />
-                      <span className="text-sm font-medium">Virtual Consultation</span>
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  {booking.status === 'pending' && (
-                    <div className="flex gap-2 pt-4">
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
-                        className="flex-1 bg-success hover:bg-success/90 text-white font-bold h-10"
-                      >
-                        <Check size={16} className="mr-2" />
-                        Accept
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="destructive"
-                        onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
-                        className="flex-1 font-bold h-10"
-                      >
-                        <X size={16} className="mr-2" />
-                        Reject
-                      </Button>
+                    {/* Student info */}
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center font-black text-primary text-xl">
+                        {studentName.charAt(0) || 'S'}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-foreground">{studentName}</h3>
+                        <p className="text-xs text-muted-foreground">{studentEmail || 'International Applicant'}</p>
+                      </div>
                     </div>
-                  )}
 
-                  {booking.status === 'confirmed' && (
-                    <Button
-                      size="sm"
-                      className="w-full primary-gradient text-white font-bold h-10"
-                      onClick={() => toast.success('Joining session...')}
-                    >
-                      <Video size={16} className="mr-2" />
-                      Join Session
-                    </Button>
-                  )}
-                </CardBody>
-              </Card>
-            </motion.div>
-          ))}
+                    {/* Detail list */}
+                    <div className="space-y-3 pt-4 border-t border-border">
+                      <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
+                        <Calendar size={16} className="text-primary/60" />
+                        <span className="text-sm font-medium">
+                          {startTime ? new Date(startTime).toLocaleDateString(undefined, { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          }) : 'Date TBD'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-muted-foreground group-hover:text-foreground transition-colors">
+                        <Clock size={16} className="text-primary/60" />
+                        <span className="text-sm font-medium">
+                          {startTime && endTime 
+                            ? `${new Date(startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                            : 'Time TBD'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-muted-foreground">
+                        <Video size={16} className="text-primary/60" />
+                        <span className="text-sm font-medium">Virtual Consultation</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    {booking.status === 'pending' && (
+                      <div className="flex gap-2 pt-4">
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
+                          className="flex-1 bg-success hover:bg-success/90 text-white font-bold h-10"
+                        >
+                          <Check size={16} className="mr-2" />
+                          Accept
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
+                          className="flex-1 font-bold h-10"
+                        >
+                          <X size={16} className="mr-2" />
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+
+                    {booking.status === 'confirmed' && booking.meetingLink && (
+                      <a
+                        href={booking.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <Button
+                          size="sm"
+                          className="w-full primary-gradient text-white font-bold h-10"
+                        >
+                          <Video size={16} className="mr-2" />
+                          Join Session
+                        </Button>
+                      </a>
+                    )}
+
+                    {booking.status === 'confirmed' && !booking.meetingLink && (
+                      <Button
+                        size="sm"
+                        className="w-full primary-gradient text-white font-bold h-10"
+                        onClick={() => toast.success('Meeting link will be available soon.')}
+                      >
+                        <Video size={16} className="mr-2" />
+                        Join Session
+                      </Button>
+                    )}
+                  </CardBody>
+                </Card>
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
 
         {bookings.length === 0 && (

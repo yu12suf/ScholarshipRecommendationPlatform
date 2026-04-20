@@ -134,6 +134,31 @@ export interface BookingResponse {
     startedAt: Date | null;
     completedAt: Date | null;
     createdAt: Date;
+    student?: {
+        id: number;
+        userId: number;
+        name: string;
+        email: string;
+    } | null;
+    counselor?: {
+        id: number;
+        areasOfExpertise: string;
+        user: {
+            id: number;
+            name: string;
+            email: string;
+            profileImageUrl: string | null;
+        } | null;
+    } | null;
+    slot?: {
+        id: number;
+        counselorId: number;
+        startTime: Date;
+        endTime: Date;
+        status: 'available' | 'booked' | 'cancelled';
+        reservedStudentId: number | null;
+        meetingLink: string | null;
+    } | null;
 }
 
 export interface CounselorDirectoryQuery {

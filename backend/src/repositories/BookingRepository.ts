@@ -76,17 +76,27 @@ export class BookingRepository {
         includeAssociations: boolean = true
     ): Promise<Booking[]> {
         const now = new Date();
+        const orderBy: Order = includeAssociations
+            ? [[{ model: AvailabilitySlot, as: 'slot' }, 'startTime', 'ASC']]
+            : [['createdAt', 'ASC']];
 
         return Booking.findAll({
             where: {
                 counselorId,
-                status: { [Op.in]: ['confirmed', 'started'] }
+                status: { [Op.in]: ['pending', 'confirmed', 'started'] }
             },
             include: includeAssociations ? [
                 {
                     model: AvailabilitySlot,
                     as: 'slot',
-                    required: false
+                    // INNER JOIN ensures bookings without a real slot are excluded.
+                    required: true,
+                    where: {
+                        [Op.or]: [
+                            { endTime: { [Op.gt]: now } },
+                            { startTime: { [Op.gt]: now } },
+                        ],
+                    },
                 },
                 {
                     model: Student,
@@ -101,7 +111,7 @@ export class BookingRepository {
                     ]
                 }
             ] : [],
-            order: [['createdAt', 'ASC']] as Order
+            order: orderBy
         });
     }
 

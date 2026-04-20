@@ -575,6 +575,19 @@ export class CounselorService {
       reservedStudentId: student.id,
     });
 
+    // Notify counselor about new request
+    try {
+      await NotificationService.createNotification(
+        counselor.userId,
+        "New Booking Request",
+        `A student (${user?.name || 'Student'}) has requested a session for ${slot.startTime.toLocaleString()}`,
+        "booking",
+        booking.id
+      );
+    } catch (notifyError) {
+      console.error("[CounselorService] Failed to send initial booking notification:", notifyError);
+    }
+
     return {
       booking: this.formatBookingResponse(booking),
       checkoutUrl: chapaResponse.data.checkout_url
@@ -680,6 +693,19 @@ export class CounselorService {
                   totalEarned: amount,
                   pendingBalance: amount
                 });
+
+                // Notify counselor about confirmed booking
+                try {
+                  await NotificationService.createNotification(
+                    counselor.userId,
+                    "Booking Confirmed",
+                    `Payment received! Your session for ${slot.startTime.toLocaleString()} is confirmed.`,
+                    "booking",
+                    booking.id
+                  );
+                } catch (notifyError) {
+                  console.error("[CounselorService] Failed to send confirmation notification:", notifyError);
+                }
                 console.log(`[ConfirmBooking] Updated counselor ${counselor.id} balance by ${amount}`);
               }
 
@@ -871,13 +897,10 @@ export class CounselorService {
 
   static async getUpcomingBookings(counselorId: number): Promise<BookingResponse[]> {
     const now = new Date();
+    console.log(`[GetUpcomingBookings] Fetching upcoming bookings for counselor ${counselorId} at ${now.toISOString()}`);
+    console.log("Upcoming bookings for counselor", now.toISOString());
     const bookings = await BookingRepository.findUpcomingByCounselor(counselorId, true);
-    return bookings
-      .filter((booking) => {
-        const start = (booking as any).slot?.startTime;
-        return start && new Date(start) > now;
-      })
-      .map((booking) => this.formatBookingResponse(booking));
+    return bookings.map((booking) => this.formatBookingResponse(booking));
   }
 
   static async updateBookingStatus(counselorId: number, bookingId: number, dto: BookingStatusDto): Promise<BookingResponse> {
@@ -1157,6 +1180,30 @@ export class CounselorService {
   }
 
   private static formatBookingResponse(booking: any): any {
+    const student =
+      (typeof booking?.get === "function" ? booking.get("student") : null) ||
+      booking?.student ||
+      booking?.dataValues?.student ||
+      null;
+
+    const counselor =
+      (typeof booking?.get === "function" ? booking.get("counselor") : null) ||
+      booking?.counselor ||
+      booking?.dataValues?.counselor ||
+      null;
+
+    const slot =
+      (typeof booking?.get === "function" ? booking.get("slot") : null) ||
+      booking?.slot ||
+      booking?.dataValues?.slot ||
+      null;
+
+    const studentUser =
+      (typeof student?.get === "function" ? student.get("user") : null) ||
+      student?.user ||
+      student?.dataValues?.user ||
+      null;
+
     return {
       id: booking.id,
       studentId: booking.studentId,
@@ -1167,20 +1214,30 @@ export class CounselorService {
       startedAt: booking.startedAt,
       completedAt: booking.completedAt,
       createdAt: booking.createdAt,
-      counselor: booking.counselor ? {
-        id: booking.counselor.id,
-        areasOfExpertise: booking.counselor.areasOfExpertise,
-        user: booking.counselor.user ? {
-          id: booking.counselor.user.id,
-          name: booking.counselor.user.name,
-          email: booking.counselor.user.email,
-          profileImageUrl: booking.counselor.profileImageUrl
+      student: student ? {
+        id: student.id,
+        userId: student.userId,
+        name: studentUser?.name || "Unknown",
+        email: studentUser?.email || "N/A",
+      } : null,
+      counselor: counselor ? {
+        id: counselor.id,
+        areasOfExpertise: counselor.areasOfExpertise,
+        user: counselor.user ? {
+          id: counselor.user.id,
+          name: counselor.user.name,
+          email: counselor.user.email,
+          profileImageUrl: counselor.profileImageUrl
         } : null
       } : null,
-      slot: booking.slot ? {
-        id: booking.slot.id,
-        startTime: booking.slot.startTime,
-        endTime: booking.slot.endTime
+      slot: slot ? {
+        id: slot.id,
+        counselorId: slot.counselorId,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        status: slot.status,
+        reservedStudentId: slot.reservedStudentId,
+        meetingLink: slot.meetingLink,
       } : null
     };
   }
