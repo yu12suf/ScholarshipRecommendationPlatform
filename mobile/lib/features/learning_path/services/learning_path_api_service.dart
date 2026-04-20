@@ -35,14 +35,18 @@ class LearningPathApiService {
     int? videoId,
     required String section,
     bool isCompleted = true,
+    bool isNote = false,
+    int? questionIndex,
   }) async {
     final response = await _api.post(
       '/api/learning-path/track',
       auth: true,
       body: {
-        'videoId': videoId,
+        if (videoId != null) 'videoId': videoId,
         'section': section,
         'isCompleted': isCompleted,
+        'isNote': isNote,
+        if (questionIndex != null) 'questionIndex': questionIndex,
       },
     );
     if (response.statusCode != 200) {
@@ -63,6 +67,48 @@ class LearningPathApiService {
       );
     }
     return LearningPathProgressEntry.fromJson(data);
+  }
+
+  /// `POST /api/learning-path/unit-test/generate`
+  Future<Map<String, dynamic>> generateUnitTest({
+    required String skill,
+    required String level,
+    String examType = 'IELTS',
+  }) async {
+    final response = await _api.post(
+      '/api/learning-path/unit-test/generate',
+      auth: true,
+      body: {
+        'skill': skill,
+        'level': level,
+        'examType': examType,
+      },
+    );
+    if (response.statusCode != 200) {
+      throwForResponse(response, fallback: 'Failed to generate unit test');
+    }
+    final decoded = decodeJsonObject(response);
+    return asJsonMap(decoded['data']) ?? {};
+  }
+
+  /// `POST /api/learning-path/unit-test/submit`
+  Future<Map<String, dynamic>> submitUnitTest({
+    required String skill,
+    required List<Map<String, dynamic>> responses,
+  }) async {
+    final response = await _api.post(
+      '/api/learning-path/unit-test/submit',
+      auth: true,
+      body: {
+        'skill': skill,
+        'responses': responses,
+      },
+    );
+    if (response.statusCode != 200) {
+      throwForResponse(response, fallback: 'Failed to submit unit test');
+    }
+    final decoded = decodeJsonObject(response);
+    return asJsonMap(decoded['data']) ?? {};
   }
 }
 
