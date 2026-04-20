@@ -4,22 +4,31 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile/features/core/widgets/glass_container.dart';
 import 'package:mobile/features/core/widgets/primary_button.dart';
 import 'package:mobile/features/core/theme/design_system.dart';
-import 'package:mobile/features/learning_path/screens/resource_viewer_screen.dart';
 import 'package:mobile/features/learning_path/screens/practice_engine_screen.dart';
 import 'package:mobile/features/learning_path/models/learning_path.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/features/learning_path/providers/learning_path_provider.dart';
+import 'package:mobile/features/learning_path/screens/video_library_screen.dart';
+import 'package:mobile/features/learning_path/screens/pdf_library_screen.dart';
+import 'package:mobile/features/learning_path/screens/unit_test_screen.dart';
+import 'package:mobile/features/learning_path/screens/writing_lab_screen.dart';
 
 class MissionDetailScreen extends ConsumerWidget {
   final PathVideo video;
   final int index;
   final String phase;
+  final String section;
+  final SkillPathSection sectionData;
+  final Object? learningMode;
 
   const MissionDetailScreen({
     super.key,
     required this.video,
     required this.index,
     required this.phase,
+    required this.section,
+    required this.sectionData,
+    this.learningMode,
   });
 
   @override
@@ -72,11 +81,14 @@ class MissionDetailScreen extends ConsumerWidget {
                   child: Material(
                     type: MaterialType.transparency,
                     child: Text(
-                      "Instructional Module 0${index + 1}",
+                      video.videoLink.contains("sample") ? "Instructional Module 0${index + 1}" : "Dynamic Mastery: ${section}",
                       style: DesignSystem.headingStyle(buildContext: context),
                     ),
                   ),
                 ),
+                const SizedBox(height: 30),
+                
+                _buildMissionBriefing(context),
                 const SizedBox(height: 30),
                 
                 // THE 4 PILLARS GRID
@@ -87,52 +99,106 @@ class MissionDetailScreen extends ConsumerWidget {
                     crossAxisSpacing: 16,
                     childAspectRatio: 0.85,
                     children: [
-                      _buildActionCard(context, LucideIcons.playCircle, "Watch Video", "Strategy", () async {
-                        // Mark progress
-                        await ref.read(learningPathProvider.notifier).completeResource(video.id, video.type.toLowerCase());
-                        
+                      _buildActionCard(context, LucideIcons.playCircle, "Watch Videos", "Library", () async {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoLibraryScreen(
+                              videos: sectionData.videos,
+                              skillName: section,
+                            ),
+                          ),
+                        );
+                      }),
+                      _buildActionCard(context, LucideIcons.fileText, "Read Briefings", "Library", () async {
+                        // Mark progress for the note in this section (keeping legacy logic)
+                        await ref.read(learningPathProvider.notifier).markProgress(
+                          section: section,
+                          isNote: true,
+                        );
+ 
                         if (context.mounted) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ResourceViewerScreen(
-                                type: ResourceType.video,
-                                title: "Instructional Module 0${index + 1}",
-                                url: video.videoLink, // Assuming ResourceViewerScreen takes url
+                              builder: (context) => PDFLibraryScreen(
+                                pdfs: sectionData.pdfs,
+                                skillName: section,
                               ),
                             ),
                           );
                         }
                       }),
-                      _buildActionCard(context, LucideIcons.fileText, "Read Briefing", "PDF Guide", () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ResourceViewerScreen(
-                              type: ResourceType.pdf,
-                              title: "Mission Briefing",
-                              url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", // Dummy or from notes
-                            ),
-                          ),
-                        );
-                      }),
+                      _buildActionCard(
+                        context,
+                        LucideIcons.trophy,
+                        "Unit Test",
+                        _isUnitTestUnlocked() ? "Unlocked" : "Locked",
+                        _isUnitTestUnlocked()
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => UnitTestScreen(
+                                      skill: section,
+                                      level: video.level,
+                                    ),
+                                  ),
+                                );
+                              }
+                            : null,
+                        isLocked: !_isUnitTestUnlocked(),
+                      ),
                       _buildActionCard(context, LucideIcons.edit3, "Practice Drill", "Active Training", () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PracticeEngineScreen(),
-                          ),
-                        );
+                        // Extract questions for this skill
+                        List<dynamic> questions = [];
+                        if (learningMode is Map) {
+                          final skillKey = section.toLowerCase();
+                          // Try both lowercase and capitalized keys
+                          final skillLm = (learningMode as Map)[skillKey] ?? 
+                                         (learningMode as Map)[section];
+                          if (skillLm is List) {
+                            questions = skillLm;
+                          } else if (skillLm is Map && skillLm['questions'] is List) {
+                            questions = skillLm['questions'];
+                          }
+                        }
+
+                        if (section.toLowerCase() == "writing") {
+                          // Writing Lab flow
+                          String writingPrompt = "Discuss the impact of technology on modern education. Provide examples to support your answer.";
+                          if (questions.isNotEmpty && questions[0] is Map) {
+                             writingPrompt = questions[0]['question'] ?? writingPrompt;
+                          }
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => WritingLabScreen(
+                                skill: section,
+                                initialPrompt: writingPrompt,
+                              ),
+                            ),
+                          );
+                        } else {
+                          // Standard Practice Engine
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PracticeEngineScreen(
+                                section: section,
+                                questions: questions,
+                              ),
+                            ),
+                          );
+                        }
                       }),
-                      _buildActionCard(context, LucideIcons.trophy, "Unit Test", "Evaluation", () {
-                        // Start Final Exam
-                      }, isLocked: true),
                     ],
                   ),
                 ),
                 
                 PrimaryButton(
-                  text: "RESUME MISSION",
+                  text: video.isCompleted ? "REWATCH LESSON" : "START MISSION",
                   onPressed: () {},
                 ),
                 const SizedBox(height: 40),
@@ -144,12 +210,62 @@ class MissionDetailScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildMissionBriefing(BuildContext context) {
+    return GlassContainer(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "OBJECTIVE",
+                style: GoogleFonts.plusJakartaSans(
+                  color: DesignSystem.labelText(context).withOpacity(0.5),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (sectionData.isNoteCompleted)
+                Icon(LucideIcons.checkCircle2, color: DesignSystem.emerald, size: 14),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            sectionData.notes.isNotEmpty 
+                ? sectionData.notes 
+                : "Complete the instructional modules to master this skill and unlock advanced practice tasks.",
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: DesignSystem.bodyStyle(
+              buildContext: context,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isUnitTestUnlocked() {
+    // 1. Check if the current video is completed
+    if (!video.isCompleted) return false;
+    
+    // 2. Check if the briefing (note) is completed
+    if (!sectionData.isNoteCompleted) return false;
+    
+    // 3. Optional: Check if at least one practice question is completed 
+    // (For now, let's keep it simple with just Video + Briefing to allow testing)
+    return true;
+  }
+
   Widget _buildActionCard(
     BuildContext context,
     IconData icon,
     String title,
     String sub,
-    VoidCallback onTap, {
+    VoidCallback? onTap, {
     bool isLocked = false,
   }) {
     return GestureDetector(

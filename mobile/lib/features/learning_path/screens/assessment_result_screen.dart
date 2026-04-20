@@ -17,7 +17,7 @@ class AssessmentResultScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(assessmentProvider);
-    final evaluation = state.result?['evaluation'] ?? state.result?['data']?['evaluation'];
+    final evaluation = state.result?['data'] ?? state.result?['evaluation'];
 
     if (evaluation == null) {
       return const PathfinderLoadingScreen();

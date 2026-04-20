@@ -5,7 +5,7 @@ import 'package:mobile/features/core/theme/design_system.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isOutlined;
   final Widget? icon;
   final bool isLoading;

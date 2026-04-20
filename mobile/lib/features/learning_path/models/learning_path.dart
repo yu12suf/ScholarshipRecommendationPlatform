@@ -35,14 +35,52 @@ class PathVideo {
   }
 }
 
+class PathPdf {
+  const PathPdf({
+    required this.id,
+    required this.title,
+    required this.pdfLink,
+    required this.level,
+    required this.type,
+    required this.examType,
+    required this.isCompleted,
+  });
+
+  final int id;
+  final String title;
+  final String pdfLink;
+  final String level;
+  final String type;
+  final String examType;
+  final bool isCompleted;
+
+  factory PathPdf.fromJson(Map<String, dynamic> json) {
+    final id = readInt(json, const ['id']);
+    if (id == null) throw FormatException('PDF missing id: $json');
+    return PathPdf(
+      id: id,
+      title: readValue<String>(json, const ['title']) ?? '',
+      pdfLink: readValue<String>(json, const ['pdfLink', 'pdf_link']) ?? '',
+      level: readValue<String>(json, const ['level']) ?? 'easy',
+      type: readValue<String>(json, const ['type']) ?? 'Reading',
+      examType: readValue<String>(json, const ['examType', 'exam_type']) ?? 'IELTS',
+      isCompleted: readBool(json, const ['isCompleted', 'is_completed']),
+    );
+  }
+}
+
 class SkillPathSection {
   const SkillPathSection({
     required this.videos,
+    required this.pdfs,
     required this.notes,
+    required this.isNoteCompleted,
   });
 
   final List<PathVideo> videos;
+  final List<PathPdf> pdfs;
   final String notes;
+  final bool isNoteCompleted;
 
   factory SkillPathSection.fromJson(Map<String, dynamic> json) {
     final videosRaw = readValue<List<dynamic>>(json, const ['videos']) ?? [];
@@ -51,8 +89,22 @@ class SkillPathSection {
         .whereType<Map<String, dynamic>>()
         .map(PathVideo.fromJson)
         .toList();
+
+    final pdfsRaw = readValue<List<dynamic>>(json, const ['pdfs']) ?? [];
+    final pdfs = pdfsRaw
+        .map((e) => asJsonMap(e))
+        .whereType<Map<String, dynamic>>()
+        .map(PathPdf.fromJson)
+        .toList();
+
     final notes = readValue<String>(json, const ['notes']) ?? '';
-    return SkillPathSection(videos: videos, notes: notes);
+    final isNoteCompleted = readBool(json, const ['isNoteCompleted']);
+    return SkillPathSection(
+      videos: videos, 
+      pdfs: pdfs,
+      notes: notes, 
+      isNoteCompleted: isNoteCompleted
+    );
   }
 }
 

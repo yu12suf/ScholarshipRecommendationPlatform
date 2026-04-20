@@ -4,29 +4,70 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile/features/core/theme/design_system.dart';
 import 'package:mobile/features/core/widgets/primary_button.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/features/learning_path/providers/learning_path_provider.dart';
 
-class PracticeEngineScreen extends StatefulWidget {
-  const PracticeEngineScreen({super.key});
+class PracticeEngineScreen extends ConsumerStatefulWidget {
+  final String section;
+  final List<dynamic> questions;
+
+  const PracticeEngineScreen({
+    super.key,
+    required this.section,
+    required this.questions,
+  });
 
   @override
-  State<PracticeEngineScreen> createState() => _PracticeEngineScreenState();
+  ConsumerState<PracticeEngineScreen> createState() => _PracticeEngineScreenState();
 }
 
-class _PracticeEngineScreenState extends State<PracticeEngineScreen> {
+class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
+  int _currentIndex = 0;
   int? _selectedOption;
   bool _showFeedback = false;
-  final int _correctOption = 1; // 0-indexed
 
-  void _submitAnswer() {
-    if (_selectedOption != null) {
+  void _submitAnswer() async {
+    if (_selectedOption != null && !_showFeedback) {
+      final question = widget.questions[_currentIndex];
+      final options = question['options'] as List<dynamic>;
+      options[_selectedOption!].toString();
+
+      // Mark progress on backend
+      await ref.read(learningPathProvider.notifier).markProgress(
+        section: widget.section,
+        questionIndex: _currentIndex,
+        isCompleted: true,
+      );
+
       setState(() {
         _showFeedback = true;
       });
+    } else if (_showFeedback) {
+      if (_currentIndex < widget.questions.length - 1) {
+        setState(() {
+          _currentIndex++;
+          _selectedOption = null;
+          _showFeedback = false;
+        });
+      } else {
+        Navigator.pop(context);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.questions.isEmpty) {
+      return Scaffold(
+        backgroundColor: DesignSystem.themeBackground(context),
+        body: Center(child: Text("No questions available for this module.")),
+      );
+    }
+
+    final question = widget.questions[_currentIndex];
+    final options = (question['options'] as List<dynamic>?) ?? [];
+    final correctIdx = _findCorrectIndex(question, options);
+
     return Scaffold(
       backgroundColor: DesignSystem.themeBackground(context),
       appBar: AppBar(
@@ -37,7 +78,7 @@ class _PracticeEngineScreenState extends State<PracticeEngineScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "PRACTICE DRILL",
+          "PRACTICE DRILL: ${widget.section.toUpperCase()}",
           style: DesignSystem.labelStyle(buildContext: context, fontSize: 12).copyWith(
             fontWeight: FontWeight.bold,
             letterSpacing: 2,
@@ -48,7 +89,6 @@ class _PracticeEngineScreenState extends State<PracticeEngineScreen> {
       ),
       body: Stack(
         children: [
-          // Background Glow
           Positioned(
             top: -50,
             right: -50,
@@ -62,27 +102,28 @@ class _PracticeEngineScreenState extends State<PracticeEngineScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Question 1 of 5",
+                    "Question ${_currentIndex + 1} of ${widget.questions.length}",
                     style: DesignSystem.labelStyle(buildContext: context, fontSize: 12),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Which of the following skimming techniques is most effective when searching for specific dates?",
-                    style: DesignSystem.headingStyle(buildContext: context, fontSize: 20),
+                    question['question'] ?? question['prompt'] ?? "No question text",
+                    style: DesignSystem.headingStyle(buildContext: context, fontSize: 18),
                   ),
                   const SizedBox(height: 32),
                   
-                  _buildOption(context, 0, "A. Reading the first and last sentence of every paragraph."),
-                  const SizedBox(height: 12),
-                  _buildOption(context, 1, "B. Scanning vertically for numbers and capitalized words."),
-                  const SizedBox(height: 12),
-                  _buildOption(context, 2, "C. Reading the text backwards word by word."),
+                  ...options.asMap().entries.map((entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildOption(context, entry.key, entry.value.toString(), correctIdx),
+                  )),
                   
                   const Spacer(),
                   
                   PrimaryButton(
-                    text: _showFeedback ? "CONTINUE" : "SUBMIT ANSWER",
-                    onPressed: _showFeedback ? () => Navigator.pop(context) : _submitAnswer,
+                    text: _showFeedback 
+                        ? (_currentIndex < widget.questions.length - 1 ? "NEXT QUESTION" : "FINISH DRILL") 
+                        : "SUBMIT ANSWER",
+                    onPressed: _selectedOption == null && !_showFeedback ? null : _submitAnswer,
                   ),
                 ],
               ),
@@ -91,14 +132,25 @@ class _PracticeEngineScreenState extends State<PracticeEngineScreen> {
           
           if (_showFeedback)
             Positioned.fill(
-              child: _buildFeedbackOverlay(context),
+              child: _buildFeedbackOverlay(context, question, correctIdx),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildOption(BuildContext context, int index, String text) {
+  int _findCorrectIndex(dynamic question, List<dynamic> options) {
+    final correct = question['correct_answer'] ?? question['answer'];
+    if (correct == null) return -1;
+    
+    // If it's an index already
+    if (correct is int) return correct;
+    
+    // If it's text, find it in options
+    return options.indexWhere((opt) => opt.toString().toLowerCase() == correct.toString().toLowerCase());
+  }
+
+  Widget _buildOption(BuildContext context, int index, String text, int correctIdx) {
     final isSelected = _selectedOption == index;
     final primaryColor = DesignSystem.primary(context);
     
@@ -111,10 +163,10 @@ class _PracticeEngineScreenState extends State<PracticeEngineScreen> {
     }
     
     if (_showFeedback) {
-      if (index == _correctOption) {
+      if (index == correctIdx) {
         borderColor = DesignSystem.emerald;
         bgColor = DesignSystem.emerald.withOpacity(0.1);
-      } else if (isSelected && index != _correctOption) {
+      } else if (isSelected && index != correctIdx) {
         borderColor = const Color(0xFFF43F5E); // Red
         bgColor = const Color(0xFFF43F5E).withOpacity(0.1);
       }
@@ -147,20 +199,20 @@ class _PracticeEngineScreenState extends State<PracticeEngineScreen> {
                 ),
               ),
             ),
+            if (_showFeedback && index == correctIdx)
+              Icon(LucideIcons.checkCircle, color: DesignSystem.emerald, size: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFeedbackOverlay(BuildContext context) {
-    final isCorrect = _selectedOption == _correctOption;
+  Widget _buildFeedbackOverlay(BuildContext context, dynamic question, int correctIdx) {
+    final isCorrect = _selectedOption == correctIdx;
     final color = isCorrect ? DesignSystem.emerald : const Color(0xFFF43F5E);
     final icon = isCorrect ? LucideIcons.checkCircle : LucideIcons.xCircle;
     final title = isCorrect ? "Correct!" : "Incorrect";
-    final message = isCorrect 
-        ? "Excellent job! Scanning vertically is the most efficient way to find specific factual data like dates."
-        : "Actually, scanning vertically is more effective for finding specific data points like numbers.";
+    final explanation = question['explanation'] ?? "The correct answer is highlighted in green.";
 
     return Container(
       color: Colors.black.withOpacity(0.5),
@@ -189,7 +241,7 @@ class _PracticeEngineScreenState extends State<PracticeEngineScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      message,
+                      explanation,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         color: DesignSystem.mainText(context).withOpacity(0.8),

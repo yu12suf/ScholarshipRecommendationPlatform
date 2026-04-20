@@ -9,6 +9,12 @@ import 'package:mobile/features/interview/models/evaluation_model.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile/features/core/widgets/glass_container.dart';
 import 'package:mobile/features/core/theme/design_system.dart';
+import 'package:mobile/features/onboarding/widgets/onboarding_widgets.dart';
+import 'package:country_picker/country_picker.dart';
+import 'package:mobile/features/core/widgets/custom_text_field.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'dart:async';
 
 class InterviewScreen extends ConsumerStatefulWidget {
   const InterviewScreen({super.key});
@@ -133,10 +139,15 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                 _buildQuestionCard(state.currentPrompt),
                 const SizedBox(height: 20),
                 
-                // THE GLOWING AI ORB
+                // THE GLOWING AI ORB - ONE CLICK TO START, CLICK TO FINISH
                 GestureDetector(
-                  onLongPressStart: (_) => _startRecording(),
-                  onLongPressEnd: (_) => _stopRecording(),
+                  onTap: () {
+                    if (state.isRecording) {
+                      _stopRecording();
+                    } else {
+                      _startRecording();
+                    }
+                  },
                   child: _buildAIOrb(state.isRecording, state.isMuted),
                 ),
                 
@@ -144,10 +155,10 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                 Text(
                   state.isMuted 
                       ? "Microphone Muted" 
-                      : (state.isRecording ? "Listening..." : (state.isSending ? "Processing..." : "Hold to Talk")),
+                      : (state.isRecording ? "Recording... (Tap to finish)" : (state.isSending ? "Processing..." : "Tap to Talk")),
                   style: DesignSystem.headingStyle(
                     buildContext: context,
-                    color: state.isMuted ? Colors.redAccent : DesignSystem.primary(context).withOpacity(0.7), 
+                    color: state.isMuted || state.isRecording ? Colors.redAccent : DesignSystem.primary(context).withOpacity(0.7), 
                     fontSize: 14,
                   ),
                 ),
@@ -179,9 +190,27 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
               children: [
                 Text("INTERVIEW SETUP", style: DesignSystem.headingStyle(buildContext: context, fontSize: 20, color: DesignSystem.primary(context))),
                 const SizedBox(height: 25),
-                _buildInputField(context, "Target Country", _countryController),
+                CustomDropdownField(
+                  label: "Target Country",
+                  hint: _countryController.text.isEmpty ? "Select country" : _countryController.text,
+                  onTap: () {
+                    showCountryPicker(
+                      context: context,
+                      showPhoneCode: false,
+                      onSelect: (Country country) {
+                        setState(() {
+                          _countryController.text = country.name;
+                        });
+                      },
+                    );
+                  },
+                ),
                 const SizedBox(height: 15),
-                _buildInputField(context, "University Name", _universityController),
+                CustomDropdownField(
+                  label: "University Name",
+                  hint: _universityController.text.isEmpty ? "Search university..." : _universityController.text,
+                  onTap: _showUniversitySearch,
+                ),
                 const SizedBox(height: 30),
                 ElevatedButton.icon(
                   onPressed: () => ref.read(interviewProvider.notifier).startInterview(
@@ -268,23 +297,114 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
     );
   }
 
-  Widget _buildInputField(BuildContext context, String label, TextEditingController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: DesignSystem.labelStyle(buildContext: context, fontSize: 12)),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          style: DesignSystem.bodyStyle(buildContext: context),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: DesignSystem.surface(context),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-        ),
-      ],
+  Future<void> _showUniversitySearch() async {
+    final searchController = TextEditingController();
+    List<String> results = [];
+    bool searching = false;
+    Timer? debounce;
+
+    Future<void> fetchUnis(String? val, StateSetter setModalState) async {
+      if (!mounted) return;
+      setModalState(() => searching = true);
+
+      try {
+        List<String> allUnis = [];
+        final query = val?.trim() ?? "";
+        final country = _countryController.text.trim();
+
+        String url = 'http://universities.hipolabs.com/search?name=${Uri.encodeComponent(query)}';
+        if (country.isNotEmpty) {
+          url += '&country=${Uri.encodeComponent(country)}';
+        }
+
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final List data = jsonDecode(response.body);
+          allUnis = data.map((u) => u['name'] as String).toList();
+        }
+
+        if (mounted) {
+          setModalState(() {
+            results = allUnis.toSet().toList();
+            results.sort();
+            if (results.length > 60) results = results.sublist(0, 60);
+            searching = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) setModalState(() => searching = false);
+      }
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          if (results.isEmpty && !searching && searchController.text.isEmpty) {
+            Future.delayed(Duration.zero, () => fetchUnis(null, setModalState));
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: GlassContainer(
+              borderRadius: 30,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(color: DesignSystem.labelText(context).withOpacity(0.2), borderRadius: BorderRadius.circular(2)),
+                  ),
+                  const SizedBox(height: 16),
+                  Text("Select University", style: DesignSystem.headingStyle(buildContext: context, fontSize: 22)),
+                  const SizedBox(height: 20),
+                  CustomTextField(
+                    hintText: "Search name...",
+                    prefixIcon: LucideIcons.search,
+                    controller: searchController,
+                    onChanged: (val) {
+                      if (debounce?.isActive ?? false) debounce?.cancel();
+                      debounce = Timer(const Duration(milliseconds: 600), () {
+                        fetchUnis(val, setModalState);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  if (searching)
+                    const Padding(padding: EdgeInsets.all(20.0), child: CircularProgressIndicator())
+                  else if (results.isEmpty && searchController.text.isNotEmpty)
+                    Padding(padding: const EdgeInsets.all(20.0), child: Text("No universities found", style: DesignSystem.bodyStyle(buildContext: context)))
+                  else
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: results.length,
+                          itemBuilder: (context, index) {
+                            final uni = results[index];
+                            return ListTile(
+                              title: Text(uni, style: DesignSystem.bodyStyle(buildContext: context)),
+                              onTap: () {
+                                setState(() {
+                                  _universityController.text = uni;
+                                });
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -324,19 +444,22 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
     );
   }
 
-  Widget _buildAIOrb(bool isPulse, bool isMuted) {
+  Widget _buildAIOrb(bool isRecording, bool isMuted) {
     return AnimatedBuilder(
       animation: _pulseController,
       builder: (context, child) {
-        double pulseVal = isPulse ? _pulseController.value : 0.0;
+        double pulseVal = isRecording ? _pulseController.value : 0.0;
         final primaryColor = DesignSystem.primary(context);
-        Color orbColor = isMuted ? Colors.redAccent : primaryColor;
+        
+        // Use RED for both Muted and RECORDING states for clarity
+        Color orbColor = (isMuted || isRecording) ? Colors.redAccent : primaryColor;
+        
         return Stack(
           alignment: Alignment.center,
           children: [
             // Outer pulsing rings
-            _buildPulseRing(180 + (40 * pulseVal), 0.1 * (1 - pulseVal), color: orbColor),
-            _buildPulseRing(140 + (30 * pulseVal), 0.2 * (1 - pulseVal), color: orbColor),
+            _buildPulseRing(180 + (50 * pulseVal), 0.15 * (1 - pulseVal), color: orbColor),
+            _buildPulseRing(140 + (30 * pulseVal), 0.25 * (1 - pulseVal), color: orbColor),
             // The main Orb
             Container(
               width: 140,
@@ -344,17 +467,24 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [orbColor, isMuted ? Colors.red.shade900 : primaryColor.withOpacity(0.8)],
+                  colors: [
+                    orbColor, 
+                    (isMuted || isRecording) ? Colors.red.shade900 : primaryColor.withOpacity(0.8)
+                  ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: orbColor.withOpacity(0.5 + (0.2 * pulseVal)),
-                    blurRadius: 40 + (20 * pulseVal),
-                    spreadRadius: 5 + (5 * pulseVal)
+                    color: orbColor.withOpacity(0.4 + (0.3 * pulseVal)),
+                    blurRadius: 40 + (30 * pulseVal),
+                    spreadRadius: 5 + (10 * pulseVal)
                   ),
                 ],
               ),
-              child: Icon(isMuted ? LucideIcons.micOff : LucideIcons.mic, color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white, size: 40),
+              child: Icon(
+                isMuted ? LucideIcons.micOff : (isRecording ? LucideIcons.mic : LucideIcons.mic), 
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white, 
+                size: 40
+              ),
             ),
           ],
         );

@@ -62,7 +62,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
               bottom: 90,
               left: 20,
               right: 20,
-              child: _buildPathfinderBubble(context),
+              child: _buildPathfinderBubble(context, pathState.value!),
             ),
         ],
       ),
@@ -143,7 +143,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
           const SizedBox(height: 20),
           _buildHeader(context),
           const SizedBox(height: 30),
-          _buildSkillOverview(context),
+          _buildSkillOverview(context, pathState.value!),
           const SizedBox(height: 35),
           _buildModuleSelector(context),
           const SizedBox(height: 30),
@@ -185,6 +185,9 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                             video: video,
                             index: index,
                             phase: "MASTERY PHASE ${index + 1}",
+                            section: _selectedTab,
+                            sectionData: pathState.value!.skills[_selectedTab.toLowerCase()]!,
+                            learningMode: pathState.value!.learningMode,
                           ),
                         ),
                       );
@@ -250,7 +253,32 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
     );
   }
 
-  Widget _buildSkillOverview(BuildContext context) {
+  double _calculateSkillProgress(FormattedLearningPath path, String skill) {
+    final section = path.skills[skill.toLowerCase()];
+    if (section == null) return 0.0;
+    
+    int total = section.videos.length + 1; // Videos + Note
+    int completed = section.videos.where((v) => v.isCompleted).length + 
+                    (section.isNoteCompleted ? 1 : 0);
+    
+    // Include Learning Mode questions if available
+    final lm = path.learningMode;
+    if (lm is Map) {
+      final skillLm = lm[skill.toLowerCase()];
+      if (skillLm is List) {
+        total += skillLm.length;
+        completed += skillLm.where((q) => q is Map && q['isCompleted'] == true).length;
+      } else if (skillLm is Map && skillLm['questions'] is List) {
+        final qs = skillLm['questions'] as List;
+        total += qs.length;
+        completed += qs.where((q) => q is Map && q['isCompleted'] == true).length;
+      }
+    }
+    
+    return total == 0 ? 0.0 : completed / total;
+  }
+
+  Widget _buildSkillOverview(BuildContext context, FormattedLearningPath path) {
     return GlassContainer(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -259,12 +287,27 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
           _buildMiniGauge(
             context,
             "READING",
-            0.40,
+            _calculateSkillProgress(path, "reading"),
             DesignSystem.primary(context),
           ),
-          _buildMiniGauge(context, "LISTENING", 0.20, Colors.blue),
-          _buildMiniGauge(context, "WRITING", 0.15, const Color(0xFFF43F5E)),
-          _buildMiniGauge(context, "SPEAKING", 0.10, Colors.orange),
+          _buildMiniGauge(
+            context,
+            "LISTENING", 
+            _calculateSkillProgress(path, "listening"), 
+            Colors.blue
+          ),
+          _buildMiniGauge(
+            context,
+            "WRITING", 
+            _calculateSkillProgress(path, "writing"), 
+            const Color(0xFFF43F5E)
+          ),
+          _buildMiniGauge(
+            context,
+            "SPEAKING", 
+            _calculateSkillProgress(path, "speaking"), 
+            Colors.orange
+          ),
         ],
       ),
     );
@@ -572,8 +615,17 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
   }
 
   // --- PATHFINDER FLOATING BUBBLE ---
-  Widget _buildPathfinderBubble(BuildContext context) {
+  Widget _buildPathfinderBubble(BuildContext context, FormattedLearningPath path) {
     final primaryColor = DesignSystem.primary(context);
+    
+    String insight = "You are ready for the Test in Mission 01!";
+    final gap = path.competencyGapAnalysis;
+    if (gap is Map) {
+      insight = gap['proficiency_profile'] ?? gap.values.firstWhere((v) => v is String, orElse: () => insight);
+    } else if (gap is String) {
+      insight = gap;
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -604,8 +656,8 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const TextSpan(
-                        text: "You are ready for the Test in Mission 01!",
+                      TextSpan(
+                        text: insight,
                       ),
                     ],
                   ),

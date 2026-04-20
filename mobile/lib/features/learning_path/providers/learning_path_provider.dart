@@ -30,6 +30,8 @@ class LearningPathNotifier extends AsyncNotifier<FormattedLearningPath?> {
     int? videoId,
     required String section,
     bool isCompleted = true,
+    bool isNote = false,
+    int? questionIndex,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -37,6 +39,8 @@ class LearningPathNotifier extends AsyncNotifier<FormattedLearningPath?> {
         videoId: videoId,
         section: section,
         isCompleted: isCompleted,
+        isNote: isNote,
+        questionIndex: questionIndex,
       );
       await ref.read(authProvider.future);
       final auth = ref.read(authProvider).valueOrNull;

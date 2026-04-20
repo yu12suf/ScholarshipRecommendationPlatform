@@ -24,6 +24,10 @@ class DiagnosticAssessmentScreen extends ConsumerStatefulWidget {
 }
 
 class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmentScreen> {
+  bool _isSetupPhase = true;
+  String _selectedExam = 'IELTS';
+  String _selectedDifficulty = 'Medium';
+
   int _currentSectionIndex = 0;
   final List<String> _sections = ['Reading', 'Listening', 'Writing', 'Speaking'];
   
@@ -44,13 +48,21 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(assessmentProvider.notifier).generateAssessment(
-        examType: 'IELTS', // Default for now
-        difficulty: 'Medium',
-        force: widget.force,
-      );
+    if (!widget.force) {
+      // If we are not forcing a retake, we could check if they already have an assessment.
+      // But the provider already does this.
+    }
+  }
+
+  void _startAssessmentNow() {
+    setState(() {
+      _isSetupPhase = false;
     });
+    ref.read(assessmentProvider.notifier).generateAssessment(
+      examType: _selectedExam,
+      difficulty: _selectedDifficulty,
+      force: widget.force,
+    );
     _startTimer();
   }
 
@@ -359,6 +371,10 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
 
   @override
   Widget build(BuildContext context) {
+    if (_isSetupPhase) {
+      return _buildSetupScreen(context);
+    }
+
     final assessmentState = ref.watch(assessmentProvider);
 
     if (assessmentState.isLoading) {
@@ -423,6 +439,125 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSetupScreen(BuildContext context) {
+    return Scaffold(
+      backgroundColor: DesignSystem.themeBackground(context),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(LucideIcons.arrowLeft, color: DesignSystem.mainText(context)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "ASSESSMENT SETUP",
+          style: DesignSystem.labelStyle(buildContext: context, fontSize: 12).copyWith(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+            color: DesignSystem.primary(context),
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Stack(
+        children: [
+          Positioned(
+            top: -50,
+            right: -50,
+            child: _buildBlurCircle(DesignSystem.emerald.withOpacity(0.05), 300),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Customize Your Path",
+                    style: DesignSystem.headingStyle(buildContext: context, fontSize: 24),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Select the exam type and difficulty level for your diagnostic assessment. This will tailor your entire learning journey.",
+                    style: DesignSystem.bodyStyle(buildContext: context, fontSize: 14),
+                  ),
+                  const SizedBox(height: 40),
+
+                  Text(
+                    "EXAM TYPE",
+                    style: DesignSystem.labelStyle(buildContext: context, fontSize: 12).copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _buildSelectionCard("IELTS", _selectedExam == "IELTS", () => setState(() => _selectedExam = "IELTS"))),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildSelectionCard("TOEFL", _selectedExam == "TOEFL", () => setState(() => _selectedExam = "TOEFL"))),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  Text(
+                    "DIFFICULTY LEVEL",
+                    style: DesignSystem.labelStyle(buildContext: context, fontSize: 12).copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSelectionCard("Easy", _selectedDifficulty == "Easy", () => setState(() => _selectedDifficulty = "Easy")),
+                  const SizedBox(height: 12),
+                  _buildSelectionCard("Medium", _selectedDifficulty == "Medium", () => setState(() => _selectedDifficulty = "Medium")),
+                  const SizedBox(height: 12),
+                  _buildSelectionCard("Hard", _selectedDifficulty == "Hard", () => setState(() => _selectedDifficulty = "Hard")),
+
+                  const Spacer(),
+                  PrimaryButton(
+                    text: "GENERATE ASSESSMENT",
+                    onPressed: _startAssessmentNow,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectionCard(String title, bool isSelected, VoidCallback onTap) {
+    final primaryColor = DesignSystem.primary(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryColor.withOpacity(0.1) : DesignSystem.surface(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? primaryColor : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isSelected) ...[
+              Icon(LucideIcons.checkCircle2, color: primaryColor, size: 18),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                color: DesignSystem.mainText(context),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
