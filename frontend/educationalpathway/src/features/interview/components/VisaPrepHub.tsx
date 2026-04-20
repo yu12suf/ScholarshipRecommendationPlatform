@@ -9,16 +9,19 @@ import {
   ShieldCheck,
   Zap,
   CheckCircle2,
-  ChevronRight,
   Loader2,
-  Info
+  Info,
+  Search,
+  Building2,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Card, CardBody } from "@/components/ui/Card";
 import { getVisaGuidelines } from "../api/visa-api";
 
 interface VisaPrepHubProps {
-  onStartInterview: (country: string) => void;
+  onStartInterview: (country: string, university: string) => void;
 }
 
 const countries = [
@@ -32,6 +35,9 @@ export function VisaPrepHub({ onStartInterview }: VisaPrepHubProps) {
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [guidelines, setGuidelines] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [university, setUniversity] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     async function loadGuidelines() {
@@ -49,6 +55,31 @@ export function VisaPrepHub({ onStartInterview }: VisaPrepHubProps) {
     }
     loadGuidelines();
   }, [selectedCountry]);
+
+  // Handle university search
+  useEffect(() => {
+    if (university.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(
+          `http://universities.hipolabs.com/search?name=${encodeURIComponent(university)}&country=${encodeURIComponent(selectedCountry.name === "United States" ? "United States" : selectedCountry.name)}`
+        );
+        const data = await response.json();
+        setSuggestions(data.slice(0, 5).map((u: any) => u.name));
+      } catch (err) {
+        console.error("Failed to fetch universities", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [university, selectedCountry]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -98,16 +129,67 @@ export function VisaPrepHub({ onStartInterview }: VisaPrepHubProps) {
             ))}
           </div>
 
-          <Card className="border-2 border-dashed border-border/60 bg-muted/5">
+          {/* University Selection */}
+          <div className="space-y-4 p-5 rounded-3xl bg-primary/5 border-2 border-primary/20 shadow-xl shadow-primary/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Building2 size={40} />
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-primary px-1 flex items-center gap-2">
+              <Building2 size={14} className="fill-primary" /> 2. Target University
+            </h3>
+            <div className="relative">
+              <Input
+                placeholder="Search university in destination..."
+                value={university}
+                onChange={(e) => setUniversity(e.target.value)}
+                className="pl-12 h-14 rounded-2xl border-2 border-primary/20 focus:border-primary bg-background shadow-sm transition-all text-sm font-bold"
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60" size={20} />
+              
+              {isSearching && (
+                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-primary animate-spin" size={18} />
+              )}
+
+              <AnimatePresence>
+                {suggestions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute left-0 right-0 top-full mt-2 z-50 overflow-hidden rounded-2xl border-2 border-primary/20 bg-background shadow-2xl"
+                  >
+                    {suggestions.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setUniversity(s);
+                          setSuggestions([]);
+                        }}
+                        className="w-full px-6 py-4 text-left text-xs font-black uppercase tracking-tight hover:bg-primary/10 transition-colors border-b border-border last:border-0 flex items-center justify-between group/item"
+                      >
+                        {s}
+                        <ChevronRight size={14} className="opacity-0 group-hover/item:opacity-100 transition-all -translate-x-2 group-hover/item:translate-x-0" />
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <p className="text-[9px] text-primary/60 font-black uppercase tracking-widest px-2 italic">
+              REQUIRED: AI will test your knowledge of this campus
+            </p>
+          </div>
+
+          <Card className="border-2 border-dashed border-border/60 bg-muted/5 opacity-80">
             <CardBody className="p-6 space-y-4">
                <div className="flex items-start gap-4">
                   <div className="rounded-xl bg-primary/10 p-2 shrink-0">
                     <ShieldCheck className="text-primary" size={20} />
                   </div>
                   <div className="space-y-1">
-                    <h4 className="font-black text-sm uppercase italic">Strict Evaluation</h4>
+                    <h4 className="font-black text-[10px] uppercase tracking-widest text-muted-foreground italic">System Warning</h4>
                     <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                      Our AI replicates the strict questioning and high-pressure environment of official embassy interviews.
+                      Our AI chief is programmed for maximum skepticism. Vague answers will result in instant failure.
                     </p>
                   </div>
                </div>
@@ -128,7 +210,7 @@ export function VisaPrepHub({ onStartInterview }: VisaPrepHubProps) {
             >
               <Card className="border-none bg-background shadow-2xl overflow-hidden rounded-[2.5rem]">
                 {/* Visual Backdrop */}
-                <div className={`h-3 bg-gradient-to-r ${selectedCountry.color}`} />
+                <div className={`h-3 bg-linear-to-r ${selectedCountry.color}`} />
                 
                 <CardBody className="p-8 lg:p-12 space-y-10">
                   <div className="flex items-center justify-between">
@@ -181,7 +263,13 @@ export function VisaPrepHub({ onStartInterview }: VisaPrepHubProps) {
 
                   <div className="pt-8 border-t border-border mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                     <Button 
-                      onClick={() => onStartInterview(selectedCountry.id)}
+                      onClick={() => {
+                        if (!university) {
+                          alert("Please select or enter a target university first!");
+                          return;
+                        }
+                        onStartInterview(selectedCountry.id, university);
+                      }}
                       size="xl" 
                       className="w-full sm:w-auto px-12 h-16 rounded-2xl primary-gradient text-lg gap-3 shadow-xl hover:scale-[1.02] transition-transform"
                     >

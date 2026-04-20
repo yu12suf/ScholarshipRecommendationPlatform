@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Scholarship, ScholarshipFilters } from "../types";
 import { getScholarships } from "../api/get-scholarships";
+import { getTrackedScholarships } from "../api/tracking";
 import { ScholarshipCard } from "./ScholarshipCard";
 import { Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui";
@@ -23,16 +24,30 @@ export const ScholarshipList = ({ filters, activeTab }: ScholarshipListProps) =>
       setLoading(true);
 
       try {
-        const data = await getScholarships(filters);
-        
-        // Frontend filtering for labs if API doesn't handle saved/applied yet
-        let filteredData = data;
-        if (activeTab === 'saved') {
-          // Placeholder filtering logic
-          filteredData = data.filter(s => s.matchScore && s.matchScore > 85); 
+        let data;
+        if (activeTab === 'matched') {
+          data = await getScholarships(filters);
+        } else {
+          // Fetch tracked scholarships from backend
+          const response = await getTrackedScholarships();
+          const tracked = response.status === 'success' ? response.data : response;
+          
+          if (activeTab === 'saved') {
+            // Include both NOT_STARTED and WATCHING for parity
+            data = tracked.filter((item: any) => ['NOT_STARTED', 'WATCHING'].includes(item.status)).map((item: any) => ({
+              ...item.scholarship,
+              tracking: { id: item.id, status: item.status }
+            }));
+          } else if (activeTab === 'applied') {
+            // Include APPLIED, SUBMITTED, and ACCEPTED
+            data = tracked.filter((item: any) => ['APPLIED', 'SUBMITTED', 'ACCEPTED'].includes(item.status)).map((item: any) => ({
+              ...item.scholarship,
+              tracking: { id: item.id, status: item.status }
+            }));
+          }
         }
         
-        setScholarships(filteredData);
+        setScholarships(data || []);
         setError(null);
       } catch (err: any) {
         console.error("Failed to fetch scholarships", err);
