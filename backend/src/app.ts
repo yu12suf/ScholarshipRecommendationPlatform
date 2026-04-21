@@ -83,6 +83,7 @@ app.use("/api/videos", routes.videoRouter);
 app.use("/api/learning-path", routes.learningPathRouter);
 app.use("/api/chat", routes.chatRouter);
 app.use("/api/writing-lab", routes.writingLabRouter);
+app.use("/api/speaking-lab", routes.speakingLabRouter);
 app.use("/api/payments", routes.paymentRouter);
 app.use("/api/debug", debugRoutes);
 // Health Check

@@ -182,7 +182,7 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to evaluate $skill: $e'),
-            backgroundColor: Colors.red.withOpacity(0.8),
+            backgroundColor: Colors.red.withValues(alpha: 0.8),
             action: SnackBarAction(
               label: 'Retry',
               textColor: Colors.white,
@@ -277,6 +277,19 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
 
     if (mounted) {
       _showGradingOverlay();
+      _startPolling(state.testId!);
+    }
+  }
+
+  void _startPolling(String testId) async {
+    while (mounted) {
+      final state = ref.read(assessmentProvider);
+      if (state.status == 'success' || state.status == 'failed') {
+        break;
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) break;
+      await ref.read(assessmentProvider.notifier).pollResult(testId);
     }
   }
 
@@ -288,22 +301,17 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
         builder: (context, ref, _) {
           final state = ref.watch(assessmentProvider);
           
-          // Poll result if not yet successful
-          if (state.status != 'success') {
-             Future.delayed(const Duration(seconds: 2), () {
-               if (mounted && state.testId != null) {
-                ref.read(assessmentProvider.notifier).pollResult(state.testId!);
-               }
-             });
-          }
-
+          // The polling is now handled asynchronously outside the builder
+          
           if (state.status == 'success') {
-            Future.delayed(Duration.zero, () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const AssessmentResultScreen()),
-              );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AssessmentResultScreen()),
+                );
+              }
             });
           }
 
@@ -423,7 +431,7 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
           Positioned(
             top: -100,
             left: -50,
-            child: _buildBlurCircle(DesignSystem.emerald.withOpacity(0.05), 300),
+            child: _buildBlurCircle(DesignSystem.emerald.withValues(alpha: 0.05), 300),
           ),
           
           SafeArea(
@@ -468,7 +476,7 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
           Positioned(
             top: -50,
             right: -50,
-            child: _buildBlurCircle(DesignSystem.emerald.withOpacity(0.05), 300),
+            child: _buildBlurCircle(DesignSystem.emerald.withValues(alpha: 0.05), 300),
           ),
           SafeArea(
             child: Padding(
@@ -534,7 +542,7 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: isSelected ? primaryColor.withOpacity(0.1) : DesignSystem.surface(context),
+          color: isSelected ? primaryColor.withValues(alpha: 0.1) : DesignSystem.surface(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? primaryColor : Colors.transparent,
@@ -577,7 +585,7 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
             decoration: BoxDecoration(
               color: DesignSystem.surface(context),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: DesignSystem.surface(context).withOpacity(0.2)),
+              border: Border.all(color: DesignSystem.surface(context).withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
@@ -663,7 +671,7 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
             child: Text(
               reading.passage,
               style: GoogleFonts.inter(
-                color: DesignSystem.mainText(context).withOpacity(0.8),
+                color: DesignSystem.mainText(context).withValues(alpha: 0.8),
                 height: 1.6,
               ),
             ),
@@ -833,7 +841,7 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _isRecording ? Colors.red.withOpacity(0.1) : DesignSystem.emerald.withOpacity(0.1),
+                      color: _isRecording ? Colors.red.withValues(alpha: 0.1) : DesignSystem.emerald.withValues(alpha: 0.1),
                       border: Border.all(
                         color: _isRecording ? Colors.red : DesignSystem.emerald,
                         width: 2,
@@ -875,7 +883,7 @@ class _DiagnosticAssessmentScreenState extends ConsumerState<DiagnosticAssessmen
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? primaryColor.withOpacity(0.1) : DesignSystem.surface(context),
+          color: isSelected ? primaryColor.withValues(alpha: 0.1) : DesignSystem.surface(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? primaryColor : Colors.transparent,

@@ -10,6 +10,8 @@ import 'package:mobile/features/learning_path/services/learning_path_api_service
 import 'package:mobile/features/learning_path/services/assessment_api_service.dart';
 import 'package:mobile/features/learning_path/services/writing_lab_api_service.dart';
 
+import 'package:mobile/features/learning_path/services/speaking_lab_api_service.dart';
+
 final tokenStorageProvider = Provider<TokenStorage>((ref) => TokenStorage());
 
 final apiClientProvider = Provider<ApiClient>((ref) {
@@ -37,6 +39,10 @@ final assessmentApiServiceProvider = Provider<AssessmentApiService>((ref) {
 
 final writingLabApiServiceProvider = Provider<WritingLabApiService>((ref) {
   return WritingLabApiService(apiClient: ref.watch(apiClientProvider));
+});
+
+final speakingLabApiServiceProvider = Provider<SpeakingLabApiService>((ref) {
+  return SpeakingLabApiService(apiClient: ref.watch(apiClientProvider));
 });
 
 

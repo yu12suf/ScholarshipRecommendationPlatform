@@ -478,6 +478,90 @@ export class AssessmentService {
     return finalEvaluation;
   }
 
+  /**
+   * Evaluates a speaking recording directly without a full assessment context.
+   * Useful for specialized Practice Labs.
+   */
+  static async evaluateSpeakingDirect(
+    audioBuffer: Buffer,
+    prompt: string,
+    examType: string = "IELTS"
+  ) {
+    console.log("Evaluating speaking directly with Groq Whisper...");
+    let transcriptionText = "";
+
+    try {
+      const tempPath = path.join(os.tmpdir(), `speaking_direct_${Date.now()}.m4a`);
+      fs.writeFileSync(tempPath, audioBuffer);
+
+      const transcription = await groqClient.audio.transcriptions.create({
+        file: fs.createReadStream(tempPath),
+        model: "whisper-large-v3",
+        response_format: "json",
+      });
+
+      transcriptionText = transcription.text;
+      fs.unlinkSync(tempPath);
+      console.log("Direct transcription successful:", transcriptionText.substring(0, 50) + "...");
+    } catch (err) {
+      console.error("Direct transcription failed:", err);
+      throw new Error("Failed to transcribe audio.");
+    }
+
+    const promptTemplate = PromptTemplate.fromTemplate(`
+      Role: Senior Speaking Examiner
+      Task: Evaluate the student's speaking response.
+      
+      Speaking Prompt: {prompt}
+      Student Transcription: {transcription}
+      Exam Type: {examType}
+      
+      Instructions:
+      1. Assign a score (0-9 for IELTS, 0-30 for TOEFL).
+      2. Provide detailed feedback (min 200 chars).
+      3. Focus on: Fluency, Pronunciation, Lexical Resource, and Grammatical Range.
+      4. Suggest 3 specific improvements.
+
+      Return JSON schema:
+      {{
+        "score": 0.0,
+        "feedback": "string",
+        "detailed_feedback": [
+          {{ "type": "fluency|pronunciation|vocabulary|grammar", "suggestion": "string", "reason": "string" }}
+        ],
+        "overall_band": 0.0
+      }}
+
+      CRITICAL: Return ONLY valid JSON. NO preamble, NO markdown blocks (\`\`\`json), and NO extra text.
+    `);
+
+    const textPrompt = await promptTemplate.format({
+      prompt,
+      transcription: transcriptionText,
+      examType
+    });
+
+    const { HumanMessage, SystemMessage } = await import("@langchain/core/messages");
+    const systemInstruction = new SystemMessage(
+      "You are a strict JSON generator. Return ONLY valid JSON objects. NO markdown, NO preamble, NO explanations."
+    );
+
+    const chain = groq70b.pipe(new StringOutputParser());
+    
+    const responseText = await chain.invoke(
+      [systemInstruction, new HumanMessage({ content: textPrompt })],
+      { response_format: { type: "json_object" } }
+    );
+
+    const sanitized = this.sanitizeJSONString(responseText);
+    const result = JSON.parse(sanitized);
+    
+    return {
+      ...result,
+      transcription: transcriptionText
+    };
+  }
+
   private static async evaluateSingleSkill(
     skill: string,
     blueprint: any,
@@ -611,23 +695,31 @@ export class AssessmentService {
       
       Return ONLY a valid JSON object with this EXACT structure:
       {{
-        "competency_gap_analysis": {{ "skill_name": "detailed analysis of gaps" }},
-        "adaptive_curriculum_map": {{ "week_1": ["topic_to_study"] }},
-        "feedback_report": "overall improvement strategy",
+        "competency_gap_analysis": {{ 
+          "proficiency_profile": "A 1-sentence executive summary of the student level.",
+          "strengths": ["list of specific areas where the student excelled"],
+          "gaps": ["list of specific areas needing improvement"],
+          "recommendation": "The single most important focus for the next 48 hours."
+        }},
+        "adaptive_curriculum_map": {{ 
+          "week_1": ["Phase 1: Foundation Building", "Phase 2: Strategy Application"],
+          "week_2": ["Phase 3: Advanced Drill", "Phase 4: Full Simulation"]
+        }},
+        "feedback_report": "A long-form professional encouraging strategy (300+ words).",
         "learning_mode": {{
            "reading": [{{ "question": "", "options": ["", "", "", ""], "correct_answer": 0, "explanation": "" }}],
            "listening": [...],
-           "writing": [...],
-           "speaking": [...]
+           "writing": [{{ "prompt": "", "sample_answer": "", "explanation": "" }}],
+           "speaking": [{{ "prompt": "", "tips": "", "sample_response": "" }}]
         }},
-        "adaptive_learning_tags": ["list", "of", "tags"]
+        "adaptive_learning_tags": ["list", "of", "skill-based", "tags"]
       }}
       
       Rules:
-      1. Provide 3-5 high-quality practice questions per skill in "learning_mode".
-      2. NO MARKDOWN (no \`\`\`json blocks).
-      3. NO PREAMBLE or post-text.
-      4. Be professional and encouraging.
+      1. Provide 3-5 high-quality practice questions for Reading/Listening.
+      2. Provide 1-2 high-quality prompts for Writing/Speaking.
+      3. Ensure "proficiency_profile" is punchy and suitable for a mobile UI bubble.
+      4. NO MARKDOWN (no \`\`\`json blocks).
     `);
 
     const chain = groq70b.pipe(new StringOutputParser());

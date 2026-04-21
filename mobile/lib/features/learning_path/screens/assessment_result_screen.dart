@@ -35,7 +35,7 @@ class AssessmentResultScreen extends ConsumerWidget {
           Positioned(
             top: -100,
             left: -50,
-            child: _buildBlurCircle(DesignSystem.emerald.withOpacity(0.05), 300),
+            child: _buildBlurCircle(DesignSystem.emerald.withValues(alpha: 0.05), 300),
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -166,7 +166,7 @@ class AssessmentResultScreen extends ConsumerWidget {
           Text(
             feedback,
             style: GoogleFonts.inter(
-              color: DesignSystem.mainText(context).withOpacity(0.8),
+              color: DesignSystem.mainText(context).withValues(alpha: 0.8),
               height: 1.5,
               fontSize: 13,
             ),

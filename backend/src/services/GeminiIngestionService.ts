@@ -51,37 +51,18 @@ export class GeminiIngestionService {
    */
   static async generateEmbedding(text: string): Promise<number[]> {
     try {
-      // Primary Model: gemini-embedding-001 (Available in 2026)
-      const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+      // Primary Model: text-embedding-004 (Current standard for Gemini Embeddings)
+      const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
       const result = await model.embedContent({
         content: {
           role: "user",
           parts: [{ text: text }],
         },
-        // taskType: TaskType.SEMANTIC_SIMILARITY, // taskType is optional and can be omitted if causing issues
       });
       return result.embedding.values;
     } catch (error: any) {
-      console.warn(
-        `[Gemini] gemini-embedding-001 failed (${error.message}). Attempting fallback to gemini-embedding-2-preview.`,
-      );
-
-      try {
-        // Fallback Model: gemini-embedding-2-preview
-        const fallbackModel = genAI.getGenerativeModel({
-          model: "gemini-embedding-2-preview",
-        });
-        const result = await fallbackModel.embedContent({
-          content: {
-            role: "user",
-            parts: [{ text: text }],
-          },
-        });
-        return result.embedding.values;
-      } catch (fallbackError) {
-        console.error("[Gemini] Both embedding models failed:", fallbackError);
-        throw fallbackError;
-      }
+      console.error("[Gemini] Embedding generation failed:", error);
+      throw error;
     }
   }
 
