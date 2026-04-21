@@ -11,8 +11,8 @@ async function testExtraction() {
         await sequelize.authenticate();
         console.log("✅ Database connected.");
 
-        await sequelize.sync({ alter: true });
-        console.log("✅ Database synchronized.");
+        // await sequelize.sync({ alter: true });
+        // console.log("✅ Database synchronized.");
 
         // 0. Ensure a test student exists (to satisfy Foreign Key constraint)
         let testStudent = await Student.findByPk(1);
@@ -61,22 +61,20 @@ async function testExtraction() {
 
         // 2. Mock AI Evaluation Result
         const mockEvaluation = {
-            evaluation: {
-                overall_band: 6.5,
-                subscores: { reading: 6.0, listening: 7.0, writing: 6.5, speaking: 6.5 },
-                feedback_report: "Your overall performance is good.",
-                section_notes: {
-                    reading: "D".repeat(1050), // 1000+ chars
-                    listening: "D".repeat(1050),
-                    writing: "D".repeat(1050),
-                    speaking: "D".repeat(1050)
-                },
-                learning_mode: {
-                    reading: [{ question: "Test Reading Question", options: ["A", "B"], answer: "A", explanation: "Because..." }],
-                    listening: [{ question: "Test Listening Question", options: ["A", "B"], answer: "B", explanation: "Because..." }],
-                    writing: [{ prompt: "Test Writing Prompt", sample_answer: "Sample...", explanation: "Because..." }],
-                    speaking: [{ prompt: "Test Speaking Prompt", tips: "Tip...", sample_response: "Sample..." }]
-                }
+            overall_band: 6.5,
+            subscores: { reading: 6.0, listening: 7.0, writing: 6.5, speaking: 6.5 },
+            feedback_report: "Your overall performance is good.",
+            section_notes: {
+                reading: "D".repeat(1050), // 1000+ chars
+                listening: "D".repeat(1050),
+                writing: "D".repeat(1050),
+                speaking: "D".repeat(1050)
+            },
+            learning_mode: {
+                reading: [{ question: "Test Reading Question", options: ["A", "B"], answer: "A", explanation: "Because..." }],
+                listening: [{ question: "Test Listening Question", options: ["A", "B"], answer: "B", explanation: "Because..." }],
+                writing: [{ prompt: "Test Writing Prompt", sample_answer: "Sample...", explanation: "Because..." }],
+                speaking: [{ prompt: "Test Speaking Prompt", tips: "Tip...", sample_response: "Sample..." }]
             }
         };
 

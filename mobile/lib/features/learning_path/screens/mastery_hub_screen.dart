@@ -47,7 +47,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
           Positioned(
             top: -50,
             left: -50,
-            child: _buildBlurCircle(primaryColor.withOpacity(0.05), 250),
+            child: _buildBlurCircle(primaryColor.withValues(alpha: 0.05), 250),
           ),
 
           SafeArea(
@@ -157,23 +157,500 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                 ),
               ),
             ),
+          if (pathState.value?.proficiencyLevel?.toLowerCase() == 'easy') ...[
+            if (_selectedTab.toLowerCase() == 'reading')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.sparkles, color: DesignSystem.easyPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: You missed a few vocabulary questions in your assessment. This phase will help you master word-matching secrets!",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'listening')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.headphones, color: DesignSystem.easyPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: You missed a few detail-oriented audio cues. This phase will sharpen your ear for precision and distractors!",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'writing')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.penTool, color: DesignSystem.easyPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: Your grammar and sentence structures need a solid foundation. Let's build your writing engine step-by-step!",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'speaking')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.mic, color: DesignSystem.easyPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: Let's build your speaking confidence from safe topics to full interactions. Prepare for the final AI mock interview!",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ] else if (pathState.value?.proficiencyLevel?.toLowerCase() == 'medium') ...[
+            if (_selectedTab.toLowerCase() == 'reading')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.sparkles, color: DesignSystem.mediumPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: You're reading well, but complex logic traps like TFNG are slowing you down. Let's master advanced inference.",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'listening')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.headphones, color: DesignSystem.mediumPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: Multi-speaker flows and fast lectures are tricky. Time to practice spatial navigation and note-taking.",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'writing')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.penTool, color: DesignSystem.mediumPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: Your coherence is improving, but try using more advanced cohesive devices to link these academic points.",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'speaking')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.mic, color: DesignSystem.mediumPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: Your fluency is good, but you need to transition from safe topics to abstract reasoning and conditionals for a Band 7+.",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+          ] else if (pathState.value?.proficiencyLevel?.toLowerCase() == 'hard') ...[
+            if (_selectedTab.toLowerCase() == 'reading')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.sparkles, color: DesignSystem.hardPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: Your comprehension is excellent, but abstract meaning and speed are the final hurdles. Let's master rapid inference.",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'listening')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.headphones, color: DesignSystem.hardPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: Your ear is sharp. Now we introduce high-speed synthesis and complex global accents. Focus on subtle distractors.",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'writing')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.penTool, color: DesignSystem.hardPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: Your grammar is perfect, but stylistic choices matter. Try using a more active structure to sound authoritative.",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (_selectedTab.toLowerCase() == 'speaking')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GlassContainer(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.mic, color: DesignSystem.hardPhaseGradient.colors.first, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          "Pathfinder Tip: It's time for the panel pressure. Focus on idiomatic naturalness and deep abstract reasoning.",
+                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
           ...videos.asMap().entries.map((entry) {
             int index = entry.key;
             var video = entry.value;
             // Unlocks if it's the first video or the previous video is completed
             bool isLocked = index > 0 && !(videos[index - 1].isCompleted);
+            bool isPracticeCompleted = false;
+            final skillKey = _selectedTab.toLowerCase();
+            final learningMode = pathState.value!.learningMode;
+            if (learningMode is Map) {
+              final skillLm = learningMode[skillKey];
+              List<dynamic> questions = [];
+              if (skillLm is List) {
+                questions = skillLm;
+              } else if (skillLm is Map && skillLm['questions'] is List) {
+                questions = skillLm['questions'];
+              }
+              for (var q in questions) {
+                 if (q is Map && (q['isCompleted'] == true || q['is_completed'] == true)) {
+                   isPracticeCompleted = true;
+                   break;
+                 }
+              }
+            }
+            
+            bool isFullyCompleted = video.isCompleted && 
+                pathState.value!.skills[skillKey]!.isNoteCompleted && 
+                isPracticeCompleted;
+
             MissionStatus status = isLocked
                 ? MissionStatus.locked
-                : (video.isCompleted
+                : (isFullyCompleted
                       ? MissionStatus.completed
                       : MissionStatus.active);
+
+            String missionTitle = "Instructional Module 0${index + 1}";
+            String missionPhase = "MASTERY PHASE ${index + 1}";
+            
+            if (pathState.value?.proficiencyLevel?.toLowerCase() == 'easy') {
+              if (skillKey == 'reading') {
+                const readingEasyTitles = [
+                  "The Bird's Eye View",
+                  "Skimming vs. Scanning",
+                  "The Power of Paraphrasing",
+                  "Conquering the MCQ",
+                  "Review & Reinforce",
+                ];
+                const readingEasyPhases = [
+                  "Phase 1: The Decoding Phase",
+                  "Phase 2: The Navigation Phase",
+                  "Phase 3: The Synonym Phase",
+                  "Phase 4: The Tactical Phase",
+                  "Phase 5: Final Review",
+                ];
+                if (index < readingEasyTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${readingEasyTitles[index]}";
+                  missionPhase = readingEasyPhases[index];
+                }
+              } else if (skillKey == 'listening') {
+                const listeningEasyTitles = [
+                  "Precision Hearing",
+                  "Situational Tracking",
+                  "The Echo Trap",
+                ];
+                const listeningEasyPhases = [
+                  "Phase 1: Spellings & Numbers",
+                  "Phase 2: Context & Location",
+                  "Phase 3: Mastering Distractors",
+                ];
+                if (index < listeningEasyTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${listeningEasyTitles[index]}";
+                  missionPhase = listeningEasyPhases[index];
+                }
+              } else if (skillKey == 'writing') {
+                const writingEasyTitles = [
+                  "The Grammar Engine",
+                  "Sentence Architecture",
+                  "Describing Trends",
+                  "The 4-Paragraph Blueprint",
+                  "Idea Generation",
+                ];
+                const writingEasyPhases = [
+                  "Phase 1: Foundation & Tenses",
+                  "Phase 2: Compound & Complex",
+                  "Phase 3: Task 1 Vocabulary",
+                  "Phase 4: Essay Structure",
+                  "Phase 5: Brainstorming Basics",
+                ];
+                if (index < writingEasyTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${writingEasyTitles[index]}";
+                  missionPhase = writingEasyPhases[index];
+                }
+              } else if (skillKey == 'speaking') {
+                const speakingEasyTitles = [
+                  "The Icebreaker",
+                  "Clear Comms",
+                  "The Storyteller",
+                  "Opinion Logic",
+                ];
+                const speakingEasyPhases = [
+                  "Phase 1: Part 1 Topics",
+                  "Phase 2: Pronunciation & Fillers",
+                  "Phase 3: The Cue Card",
+                  "Phase 4: Abstract Opinions",
+                ];
+                if (index < speakingEasyTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${speakingEasyTitles[index]}";
+                  missionPhase = speakingEasyPhases[index];
+                }
+              }
+            } else if (pathState.value?.proficiencyLevel?.toLowerCase() == 'medium') {
+              if (skillKey == 'reading') {
+                const readingMediumTitles = [
+                  "The Logic Trap",
+                  "The Macro View",
+                  "Deep Inference",
+                  "Data Synthesis",
+                ];
+                const readingMediumPhases = [
+                  "Phase 1: True/False/Not Given",
+                  "Phase 2: Matching Headings",
+                  "Phase 3: Section 3 MCQs",
+                  "Phase 4: Summary Completion",
+                ];
+                if (index < readingMediumTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${readingMediumTitles[index]}";
+                  missionPhase = readingMediumPhases[index];
+                }
+              } else if (skillKey == 'listening') {
+                const listeningMediumTitles = [
+                  "Multi-Speaker Flow",
+                  "Spatial Navigation",
+                  "The Academic Lecture",
+                ];
+                const listeningMediumPhases = [
+                  "Phase 1: Group Discussions",
+                  "Phase 2: Maps & Diagrams",
+                  "Phase 3: Note-Taking Speed",
+                ];
+                if (index < listeningMediumTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${listeningMediumTitles[index]}";
+                  missionPhase = listeningMediumPhases[index];
+                }
+              } else if (skillKey == 'writing') {
+                const writingMediumTitles = [
+                  "Data Comparison",
+                  "Cohesion Logic",
+                  "The Dual Argument",
+                  "Lexical Range",
+                  "The Critical Review",
+                ];
+                const writingMediumPhases = [
+                  "Phase 1: Analyzing 2+ Charts",
+                  "Phase 2: Advanced Cohesion",
+                  "Phase 3: Both Views Essay",
+                  "Phase 4: Academic Collocations",
+                  "Phase 5: Top B2 Mistakes",
+                ];
+                if (index < writingMediumTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${writingMediumTitles[index]}";
+                  missionPhase = writingMediumPhases[index];
+                }
+              } else if (skillKey == 'speaking') {
+                const speakingMediumTitles = [
+                  "The Natural Flow",
+                  "Abstract Reasoning",
+                  "Grammatical Range",
+                  "The Stress Test",
+                ];
+                const speakingMediumPhases = [
+                  "Phase 1: Part 2 Memory",
+                  "Phase 2: Deep Logic & Speculation",
+                  "Phase 3: Advanced Structures",
+                  "Phase 4: Fast Follow-ups",
+                ];
+                if (index < speakingMediumTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${speakingMediumTitles[index]}";
+                  missionPhase = speakingMediumPhases[index];
+                }
+              }
+            } else if (pathState.value?.proficiencyLevel?.toLowerCase() == 'hard') {
+              if (skillKey == 'reading') {
+                const readingHardTitles = [
+                  "The Abstract Layer",
+                  "Cognitive Speed",
+                  "Scientific Synthesis",
+                ];
+                const readingHardPhases = [
+                  "Phase 1: Abstract Meaning",
+                  "Phase 2: Vertical Reading",
+                  "Phase 3: Technical Terminology",
+                ];
+                if (index < readingHardTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${readingHardTitles[index]}";
+                  missionPhase = readingHardPhases[index];
+                }
+              } else if (skillKey == 'listening') {
+                const listeningHardTitles = [
+                  "The Global Ear",
+                  "Lecture Logic",
+                ];
+                const listeningHardPhases = [
+                  "Phase 1: Diverse Accents",
+                  "Phase 2: 10-Minute Endurance",
+                ];
+                if (index < listeningHardTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${listeningHardTitles[index]}";
+                  missionPhase = listeningHardPhases[index];
+                }
+              } else if (skillKey == 'writing') {
+                const writingHardTitles = [
+                  "Lexical Precision",
+                  "The Deep Argument",
+                  "Complex Data Sets",
+                  "The Final Polish",
+                ];
+                const writingHardPhases = [
+                  "Phase 1: The Perfect Word",
+                  "Phase 2: Philosophical Logic",
+                  "Phase 3: 3+ Charts & Processes",
+                  "Phase 4: Invisible Errors",
+                ];
+                if (index < writingHardTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${writingHardTitles[index]}";
+                  missionPhase = writingHardPhases[index];
+                }
+              } else if (skillKey == 'speaking') {
+                const speakingHardTitles = [
+                  "The Native Vibe",
+                  "The Philosopher",
+                  "The Panel Pressure",
+                ];
+                const speakingHardPhases = [
+                  "Phase 1: Idioms & Phrasal Verbs",
+                  "Phase 2: High-Level Debate",
+                  "Phase 3: Mock Panel Interview",
+                ];
+                if (index < speakingHardTitles.length) {
+                  missionTitle = "Mission 0${index + 1}: ${speakingHardTitles[index]}";
+                  missionPhase = speakingHardPhases[index];
+                }
+              }
+            }
+
 
             return _buildMissionCard(
               context,
               video: video,
               missionNumber: "0${index + 1}",
-              title: "Instructional Module 0${index + 1}",
-              phase: "MASTERY PHASE ${index + 1}",
+              title: missionTitle,
+              phase: missionPhase,
               status: status,
               unlockCondition: isLocked ? "Complete Module 0${index}" : null,
               onTap: status != MissionStatus.locked
@@ -211,7 +688,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
         ),
         IconButton(
           onPressed: () => _retakeAssessment(context),
-          icon: Icon(LucideIcons.refreshCcw, size: 20, color: DesignSystem.labelText(context).withOpacity(0.5)),
+          icon: Icon(LucideIcons.refreshCcw, size: 20, color: DesignSystem.labelText(context).withValues(alpha: 0.5)),
           tooltip: "Retake Assessment",
         ),
       ],
@@ -491,7 +968,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                                   color: isLocked
                                       ? DesignSystem.labelText(
                                           context,
-                                        ).withOpacity(0.5)
+                                        ).withValues(alpha: 0.5)
                                       : primaryColor,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 1,
@@ -518,7 +995,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                                         color: isLocked
                                             ? DesignSystem.mainText(
                                                 context,
-                                              ).withOpacity(0.2)
+                                              ).withValues(alpha: 0.2)
                                             : null,
                                       ),
                                 ),
@@ -530,7 +1007,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                               LucideIcons.lock,
                               color: DesignSystem.labelText(
                                 context,
-                              ).withOpacity(0.5),
+                              ).withValues(alpha: 0.5),
                               size: 24,
                             ),
                           if (isCompleted)
@@ -633,9 +1110,9 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.1),
+            color: primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: primaryColor.withOpacity(0.2)),
+            border: Border.all(color: primaryColor.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
