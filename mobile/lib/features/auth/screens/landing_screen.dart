@@ -25,7 +25,7 @@ class LandingScreen extends StatelessWidget {
                   top: -100,
                   right: -100,
                   child: DesignSystem.buildBlurCircle(
-                    DesignSystem.emerald.withOpacity(0.12),
+                    DesignSystem.emerald.withValues(alpha: 0.12),
                     350,
                   ),
                 ),
@@ -33,7 +33,7 @@ class LandingScreen extends StatelessWidget {
                   bottom: -50,
                   left: -100,
                   child: DesignSystem.buildBlurCircle(
-                    const Color(0xFF2563EB).withOpacity(0.08),
+                    const Color(0xFF2563EB).withValues(alpha: 0.08),
                     300,
                   ),
                 ),
@@ -59,7 +59,7 @@ class LandingScreen extends StatelessWidget {
                                 height: 160,
                                 width: 160,
                                 decoration: BoxDecoration(
-                                  color: DesignSystem.emerald.withOpacity(0.1),
+                                  color: DesignSystem.emerald.withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -164,7 +164,7 @@ class LandingScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: DesignSystem.emerald.withOpacity(0.1),
+                color: DesignSystem.emerald.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: DesignSystem.emerald, size: 22),

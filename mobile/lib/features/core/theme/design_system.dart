@@ -24,19 +24,19 @@ class DesignSystem {
     Theme.of(context).brightness == Brightness.dark ? Colors.white54 : const Color(0xFF64748B);
 
   static Color surface(BuildContext context) => 
-    Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04);
+    Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04);
 
   static Color surfaceMediumColor(BuildContext context) => 
-    Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);
+    Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08);
 
   static Color glassBackground(BuildContext context) => 
-    Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.03);
+    Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.03);
 
   static Color glassBorder(BuildContext context) => 
-    Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08);
+    Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08);
 
   static Color inputFill(BuildContext context) => 
-    Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03);
+    Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03);
 
   // --- OVERLAYS ---
   static Color overlayBackground(BuildContext context) => 
@@ -54,6 +54,25 @@ class DesignSystem {
     Color(0xFFF59E0B), // Amber
     Color(0xFF06B6D4), // Cyan
   ];
+
+  // --- GRADIENTS ---
+  static const LinearGradient easyPhaseGradient = LinearGradient(
+    colors: [Color(0xFF0D9488), Color(0xFF3B82F6)], // Emerald to Blue
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient mediumPhaseGradient = LinearGradient(
+    colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)], // Blue to Violet
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient hardPhaseGradient = LinearGradient(
+    colors: [Color(0xFF334155), Color(0xFF94A3B8)], // Diamond / Blue Steel
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   // --- TYPOGRAPHY ---
   static TextStyle headingStyle({BuildContext? buildContext, Color? color, double fontSize = 28, FontWeight? fontWeight}) {

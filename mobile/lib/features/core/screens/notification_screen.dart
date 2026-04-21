@@ -23,12 +23,12 @@ class NotificationScreen extends ConsumerWidget {
           Positioned(
             top: -100,
             right: -100,
-            child: DesignSystem.buildBlurCircle(primaryColor.withOpacity(0.1), 300),
+            child: DesignSystem.buildBlurCircle(primaryColor.withValues(alpha: 0.1), 300),
           ),
           Positioned(
             bottom: -50,
             left: -50,
-            child: DesignSystem.buildBlurCircle(Colors.blue.withOpacity(0.05), 250),
+            child: DesignSystem.buildBlurCircle(Colors.blue.withValues(alpha: 0.05), 250),
           ),
 
           SafeArea(
@@ -153,10 +153,10 @@ class NotificationScreen extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: notification.isRead ? DesignSystem.surface(context) : primaryColor.withOpacity(0.08),
+          color: notification.isRead ? DesignSystem.surface(context) : primaryColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: notification.isRead ? DesignSystem.glassBorder(context) : primaryColor.withOpacity(0.2),
+            color: notification.isRead ? DesignSystem.glassBorder(context) : primaryColor.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -165,7 +165,7 @@ class NotificationScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: notification.isRead ? DesignSystem.surface(context) : primaryColor.withOpacity(0.15),
+                color: notification.isRead ? DesignSystem.surface(context) : primaryColor.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -202,7 +202,7 @@ class NotificationScreen extends ConsumerWidget {
                   Text(
                     notification.message,
                     style: GoogleFonts.inter(
-                      color: notification.isRead ? DesignSystem.subText(context) : DesignSystem.mainText(context).withOpacity(0.7),
+                      color: notification.isRead ? DesignSystem.subText(context) : DesignSystem.mainText(context).withValues(alpha: 0.7),
                       fontSize: 13,
                       height: 1.4,
                     ),

@@ -38,12 +38,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Positioned(
             top: -100,
             right: -100,
-            child: DesignSystem.buildBlurCircle(DesignSystem.emerald.withOpacity(0.15), 300),
+            child: DesignSystem.buildBlurCircle(DesignSystem.emerald.withValues(alpha: 0.15), 300),
           ),
           Positioned(
             bottom: -50,
             left: -50,
-            child: DesignSystem.buildBlurCircle(Colors.blue.withOpacity(0.1), 250),
+            child: DesignSystem.buildBlurCircle(Colors.blue.withValues(alpha: 0.1), 250),
           ),
 
           SafeArea(
@@ -91,7 +91,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               decoration: BoxDecoration(
                 color: DesignSystem.surface(context),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: DesignSystem.surface(context).withOpacity(0.2)),
+                border: Border.all(color: DesignSystem.surface(context).withValues(alpha: 0.2)),
               ),
               child: Icon(LucideIcons.chevronLeft, color: DesignSystem.mainText(context), size: 20),
             ),
@@ -126,10 +126,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
-                color: isSelected ? primaryColor.withOpacity(0.15) : Colors.transparent,
+                color: isSelected ? primaryColor.withValues(alpha: 0.15) : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? primaryColor.withOpacity(0.5) : DesignSystem.glassBorder(context),
+                  color: isSelected ? primaryColor.withValues(alpha: 0.5) : DesignSystem.glassBorder(context),
                 ),
               ),
               child: Row(
@@ -271,7 +271,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   boxShadow: [
                     if (isSelected)
                       BoxShadow(
-                        color: color.withOpacity(0.4),
+                        color: color.withValues(alpha: 0.4),
                         blurRadius: 10,
                         spreadRadius: 2,
                       )
@@ -301,10 +301,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
-            color: isSelected ? primaryColor.withOpacity(0.1) : DesignSystem.surface(context),
+            color: isSelected ? primaryColor.withValues(alpha: 0.1) : DesignSystem.surface(context),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected ? primaryColor : DesignSystem.surface(context).withOpacity(0.2),
+              color: isSelected ? primaryColor : DesignSystem.surface(context).withValues(alpha: 0.2),
               width: 2,
             ),
           ),
@@ -399,7 +399,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       decoration: BoxDecoration(
         color: DesignSystem.surface(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DesignSystem.surface(context).withOpacity(0.2)),
+        border: Border.all(color: DesignSystem.surface(context).withValues(alpha: 0.2)),
       ),
       child: ListTile(
         onTap: onTap,
@@ -407,7 +407,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: DesignSystem.primary(context).withOpacity(0.1),
+            color: DesignSystem.primary(context).withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: DesignSystem.primary(context), size: 18),
@@ -448,11 +448,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               backgroundColor: DesignSystem.overlayBackground(context),
               surfaceTintColor: Colors.transparent, // Prevents Material 3 tinting over the custom color
               elevation: 24,
-              shadowColor: Colors.black.withOpacity(0.4),
+              shadowColor: Colors.black.withValues(alpha: 0.4),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
                 side: BorderSide(
-                  color: DesignSystem.primary(context).withOpacity(0.3), 
+                  color: DesignSystem.primary(context).withValues(alpha: 0.3), 
                   width: 1.5
                 ),
               ),
@@ -475,11 +475,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, true),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent.withOpacity(0.1),
+                    backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    side: BorderSide(color: Colors.redAccent.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.3)),
                   ),
                   child: const Text("Logout", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
@@ -496,9 +496,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.redAccent.withOpacity(0.1),
+          color: Colors.redAccent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

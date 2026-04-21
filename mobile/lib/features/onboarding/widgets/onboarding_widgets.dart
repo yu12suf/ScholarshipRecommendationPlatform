@@ -52,7 +52,7 @@ class StepProgress extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: isActive ? [
                     BoxShadow(
-                      color: DesignSystem.primary(context).withOpacity(0.3),
+                      color: DesignSystem.primary(context).withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     )
@@ -172,7 +172,7 @@ class UploadBox extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: DesignSystem.primary(context).withOpacity(0.1),
+                      color: DesignSystem.primary(context).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -327,7 +327,7 @@ class CustomPillChip extends StatelessWidget {
           ),
           boxShadow: isSelected ? [
             BoxShadow(
-              color: primaryColor.withOpacity(0.3),
+              color: primaryColor.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             )

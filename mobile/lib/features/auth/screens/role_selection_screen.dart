@@ -23,7 +23,7 @@ class RoleSelectionScreen extends StatelessWidget {
             top: -100,
             left: -100,
             child: DesignSystem.buildBlurCircle(
-              DesignSystem.primary(context).withOpacity(0.12),
+              DesignSystem.primary(context).withValues(alpha: 0.12),
               350,
             ),
           ),
@@ -31,7 +31,7 @@ class RoleSelectionScreen extends StatelessWidget {
             bottom: -50,
             right: -100,
             child: DesignSystem.buildBlurCircle(
-              const Color(0xFF2563EB).withOpacity(0.08),
+              const Color(0xFF2563EB).withValues(alpha: 0.08),
               300,
             ),
           ),
@@ -110,7 +110,7 @@ class RoleSelectionScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: DesignSystem.primary(context).withOpacity(0.1),
+                color: DesignSystem.primary(context).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(icon, color: DesignSystem.primary(context), size: 32),

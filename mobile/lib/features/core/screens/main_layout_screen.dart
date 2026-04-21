@@ -59,10 +59,10 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
           child: Container(
             height: 64, // Compact professional height
             decoration: BoxDecoration(
-              color: (isDark ? const Color(0xFF0F172A) : Colors.white).withOpacity(0.95),
+              color: (isDark ? const Color(0xFF0F172A) : Colors.white).withValues(alpha: 0.95),
               border: Border(
                 top: BorderSide(
-                  color: DesignSystem.surface(context).withOpacity(0.1),
+                  color: DesignSystem.surface(context).withValues(alpha: 0.1),
                   width: 1,
                 ),
               ),

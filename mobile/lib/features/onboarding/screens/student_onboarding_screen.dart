@@ -142,7 +142,7 @@ class _StudentOnboardingScreenState
             top: -50,
             left: -100,
             child: DesignSystem.buildBlurCircle(
-              DesignSystem.primary(context).withOpacity(0.08),
+              DesignSystem.primary(context).withValues(alpha: 0.08),
               300,
             ),
           ),
@@ -150,7 +150,7 @@ class _StudentOnboardingScreenState
             bottom: 100,
             right: -150,
             child: DesignSystem.buildBlurCircle(
-              const Color(0xFF2563EB).withOpacity(0.06),
+              const Color(0xFF2563EB).withValues(alpha: 0.06),
               400,
             ),
           ),
@@ -499,7 +499,7 @@ class _StudentOnboardingScreenState
                             (s) => s.copyWith(fieldOfStudyInput: updated),
                           );
                         },
-                        backgroundColor: DesignSystem.primary(context).withOpacity(0.2),
+                        backgroundColor: DesignSystem.primary(context).withValues(alpha: 0.2),
                         deleteIconColor: DesignSystem.primary(context),
                         side: BorderSide.none,
                         shape: RoundedRectangleBorder(
@@ -716,7 +716,7 @@ class _StudentOnboardingScreenState
                           ),
                         ),
                         onDeleted: () => notifier.togglePreferredCountry(c),
-                        backgroundColor: DesignSystem.primary(context).withOpacity(0.2),
+                        backgroundColor: DesignSystem.primary(context).withValues(alpha: 0.2),
                         deleteIconColor: DesignSystem.primary(context),
                         side: BorderSide.none,
                         shape: RoundedRectangleBorder(
@@ -761,7 +761,7 @@ class _StudentOnboardingScreenState
                         },
                         backgroundColor: const Color(
                           0xFF2563EB,
-                        ).withOpacity(0.2),
+                        ).withValues(alpha: 0.2),
                         deleteIconColor: const Color(0xFF2563EB),
                         side: BorderSide.none,
                         shape: RoundedRectangleBorder(
@@ -854,7 +854,7 @@ class _StudentOnboardingScreenState
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: DesignSystem.primary(context).withOpacity(0.1),
+                              color: DesignSystem.primary(context).withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -1372,7 +1372,7 @@ class _StudentOnboardingScreenState
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: DesignSystem.labelText(context).withOpacity(0.2),
+                      color: DesignSystem.labelText(context).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),

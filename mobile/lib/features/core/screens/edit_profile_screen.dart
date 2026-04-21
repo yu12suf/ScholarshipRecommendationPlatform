@@ -106,12 +106,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           Positioned(
             top: -100,
             right: -100,
-            child: DesignSystem.buildBlurCircle(primaryColor.withOpacity(0.1), 300),
+            child: DesignSystem.buildBlurCircle(primaryColor.withValues(alpha: 0.1), 300),
           ),
           Positioned(
             bottom: -50,
             left: -50,
-            child: DesignSystem.buildBlurCircle(Colors.blue.withOpacity(0.05), 250),
+            child: DesignSystem.buildBlurCircle(Colors.blue.withValues(alpha: 0.05), 250),
           ),
 
           SafeArea(
@@ -195,7 +195,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: primaryColor.withOpacity(0.3), width: 2),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 2),
             ),
             child: CircleAvatar(
               radius: 60,
@@ -266,7 +266,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: DesignSystem.surface(context).withOpacity(0.03),
+            color: DesignSystem.surface(context).withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: DesignSystem.glassBorder(context)),
           ),
