@@ -195,7 +195,7 @@ class _UnitTestScreenState extends ConsumerState<UnitTestScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? primaryColor.withOpacity(0.1) : DesignSystem.surface(context),
+          color: isSelected ? primaryColor.withValues(alpha: 0.1) : DesignSystem.surface(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? primaryColor : Colors.transparent,

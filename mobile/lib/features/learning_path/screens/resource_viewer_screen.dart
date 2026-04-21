@@ -86,10 +86,10 @@ class _ResourceViewerScreenState extends State<ResourceViewerScreen> {
                     height: 80,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       border: Border(
                         top: BorderSide(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           width: 1,
                         ),
                       ),
@@ -137,7 +137,7 @@ class _ResourceViewerScreenState extends State<ResourceViewerScreen> {
               const SizedBox(height: 8),
               Text(
                 widget.url,
-                style: GoogleFonts.inter(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -156,7 +156,7 @@ class _ResourceViewerScreenState extends State<ResourceViewerScreen> {
             const SizedBox(height: 8),
             Text(
               widget.url,
-              style: GoogleFonts.inter(color: Colors.white.withOpacity(0.5), fontSize: 12),
+              style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ],
@@ -177,7 +177,7 @@ class _ResourceViewerScreenState extends State<ResourceViewerScreen> {
         Text(
           label,
           style: GoogleFonts.inter(
-            color: isMain ? DesignSystem.emerald : Colors.white.withOpacity(0.7),
+            color: isMain ? DesignSystem.emerald : Colors.white.withValues(alpha: 0.7),
             fontSize: 10,
           ),
         ),

@@ -92,7 +92,7 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
           Positioned(
             top: -50,
             right: -50,
-            child: _buildBlurCircle(DesignSystem.emerald.withOpacity(0.05), 300),
+            child: _buildBlurCircle(DesignSystem.emerald.withValues(alpha: 0.05), 300),
           ),
           
           SafeArea(
@@ -159,16 +159,16 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
     
     if (isSelected) {
       borderColor = primaryColor;
-      bgColor = primaryColor.withOpacity(0.1);
+      bgColor = primaryColor.withValues(alpha: 0.1);
     }
     
     if (_showFeedback) {
       if (index == correctIdx) {
         borderColor = DesignSystem.emerald;
-        bgColor = DesignSystem.emerald.withOpacity(0.1);
+        bgColor = DesignSystem.emerald.withValues(alpha: 0.1);
       } else if (isSelected && index != correctIdx) {
         borderColor = const Color(0xFFF43F5E); // Red
-        bgColor = const Color(0xFFF43F5E).withOpacity(0.1);
+        bgColor = const Color(0xFFF43F5E).withValues(alpha: 0.1);
       }
     }
 
@@ -215,7 +215,7 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
     final explanation = question['explanation'] ?? "The correct answer is highlighted in green.";
 
     return Container(
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withValues(alpha: 0.5),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -226,9 +226,9 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: DesignSystem.themeBackground(context).withOpacity(0.8),
+                  color: DesignSystem.themeBackground(context).withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: color.withOpacity(0.5)),
+                  border: Border.all(color: color.withValues(alpha: 0.5)),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -244,7 +244,7 @@ class _PracticeEngineScreenState extends ConsumerState<PracticeEngineScreen> {
                       explanation,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
-                        color: DesignSystem.mainText(context).withOpacity(0.8),
+                        color: DesignSystem.mainText(context).withValues(alpha: 0.8),
                         height: 1.5,
                       ),
                     ),

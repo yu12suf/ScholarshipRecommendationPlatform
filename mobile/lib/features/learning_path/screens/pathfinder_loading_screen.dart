@@ -68,8 +68,8 @@ class _PathfinderLoadingScreenState extends State<PathfinderLoadingScreen> with 
                     height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: DesignSystem.emerald.withOpacity(0.1),
-                      border: Border.all(color: DesignSystem.emerald.withOpacity(0.3), width: 2),
+                      color: DesignSystem.emerald.withValues(alpha: 0.1),
+                      border: Border.all(color: DesignSystem.emerald.withValues(alpha: 0.3), width: 2),
                     ),
                   ),
                 ),

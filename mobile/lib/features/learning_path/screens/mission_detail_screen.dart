@@ -50,7 +50,7 @@ class MissionDetailScreen extends ConsumerWidget {
             top: -100,
             right: -50,
             child: DesignSystem.buildBlurCircle(
-              DesignSystem.emerald.withOpacity(0.05),
+              DesignSystem.emerald.withValues(alpha: 0.05),
               300,
             ),
           ),
@@ -222,7 +222,7 @@ class MissionDetailScreen extends ConsumerWidget {
               Text(
                 "OBJECTIVE",
                 style: GoogleFonts.plusJakartaSans(
-                  color: DesignSystem.labelText(context).withOpacity(0.5),
+                  color: DesignSystem.labelText(context).withValues(alpha: 0.5),
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
@@ -255,8 +255,30 @@ class MissionDetailScreen extends ConsumerWidget {
     // 2. Check if the briefing (note) is completed
     if (!sectionData.isNoteCompleted) return false;
     
-    // 3. Optional: Check if at least one practice question is completed 
-    // (For now, let's keep it simple with just Video + Briefing to allow testing)
+    // 3. Check if at least one practice question is completed 
+    final lm = learningMode;
+    if (lm is Map) {
+      final skillKey = section.toLowerCase();
+      final skillLm = lm[skillKey] ?? lm[section];
+      List<dynamic> questions = [];
+      if (skillLm is List) {
+        questions = skillLm;
+      } else if (skillLm is Map && skillLm['questions'] is List) {
+        questions = skillLm['questions'];
+      }
+      
+      if (questions.isNotEmpty) {
+        bool anyCompleted = false;
+        for (var q in questions) {
+           if (q is Map && (q['isCompleted'] == true || q['is_completed'] == true)) {
+             anyCompleted = true;
+             break;
+           }
+        }
+        if (!anyCompleted) return false;
+      }
+    }
+    
     return true;
   }
 
@@ -278,7 +300,7 @@ class MissionDetailScreen extends ConsumerWidget {
           children: [
             Icon(
               icon,
-              color: isLocked ? DesignSystem.labelText(context).withOpacity(0.1) : DesignSystem.emerald,
+              color: isLocked ? DesignSystem.labelText(context).withValues(alpha: 0.1) : DesignSystem.emerald,
               size: 32,
             ),
             const SizedBox(height: 16),
@@ -287,7 +309,7 @@ class MissionDetailScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: DesignSystem.headingStyle(
                 buildContext: context,
-                color: isLocked ? DesignSystem.mainText(context).withOpacity(0.24) : null,
+                color: isLocked ? DesignSystem.mainText(context).withValues(alpha: 0.24) : null,
                 fontSize: 14,
               ),
             ),

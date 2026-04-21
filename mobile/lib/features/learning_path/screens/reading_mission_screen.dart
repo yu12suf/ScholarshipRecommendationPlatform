@@ -28,7 +28,7 @@ class ReadingMissionScreen extends StatelessWidget {
             top: -100,
             right: -50,
             child: _buildBlurCircle(
-              const Color(0xFF10B981).withOpacity(0.05),
+              const Color(0xFF10B981).withValues(alpha: 0.05),
               300,
             ),
           ),
@@ -219,7 +219,7 @@ class ReadingMissionScreen extends StatelessWidget {
   Widget _buildPathfinderInsight() {
     return GlassContainer(
       padding: const EdgeInsets.all(20),
-      borderColor: const Color(0xFF10B981).withOpacity(0.2),
+      borderColor: const Color(0xFF10B981).withValues(alpha: 0.2),
       child: Row(
         children: [
           const Icon(LucideIcons.sparkles, color: Color(0xFF10B981), size: 20),

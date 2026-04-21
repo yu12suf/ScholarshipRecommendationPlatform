@@ -76,7 +76,7 @@ class VideoLibraryScreen extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.2,
-                color: DesignSystem.labelText(context).withOpacity(0.7),
+                color: DesignSystem.labelText(context).withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -124,7 +124,7 @@ class VideoLibraryScreen extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(LucideIcons.play, color: Colors.white, size: 16),
@@ -148,7 +148,7 @@ class VideoLibraryScreen extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Row(
                         children: [
-                          Icon(LucideIcons.clock, size: 12, color: DesignSystem.labelText(context).withOpacity(0.5)),
+                          Icon(LucideIcons.clock, size: 12, color: DesignSystem.labelText(context).withValues(alpha: 0.5)),
                           const SizedBox(width: 4),
                           Text(
                             "8:45 mins", // Mock duration
@@ -176,7 +176,7 @@ class VideoLibraryScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(LucideIcons.chevronRight, color: DesignSystem.labelText(context).withOpacity(0.3), size: 18),
+              Icon(LucideIcons.chevronRight, color: DesignSystem.labelText(context).withValues(alpha: 0.3), size: 18),
             ],
           ),
         ),

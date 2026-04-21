@@ -35,7 +35,7 @@ class DashboardScreen extends ConsumerWidget {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF10B981).withOpacity(0.05),
+                color: const Color(0xFF10B981).withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -118,7 +118,7 @@ class DashboardScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: DesignSystem.glassBackground(context),
             borderRadius: BorderRadius.circular(borderRadius ?? 28),
-            border: Border.all(color: borderColor ?? DesignSystem.surface(context).withOpacity(0.1)),
+            border: Border.all(color: borderColor ?? DesignSystem.surface(context).withValues(alpha: 0.1)),
           ),
           child: child,
         ),
@@ -138,7 +138,7 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 26,
-                backgroundColor: DesignSystem.primary(context).withOpacity(0.1),
+                backgroundColor: DesignSystem.primary(context).withValues(alpha: 0.1),
                 backgroundImage: user?.avatarUrl != null 
                   ? NetworkImage(user!.avatarUrl!) 
                   : NetworkImage('https://api.dicebear.com/7.x/avataaars/png?seed=$avatarSeed') as ImageProvider,
@@ -259,7 +259,7 @@ class DashboardScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: DesignSystem.surface(context),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: DesignSystem.surface(context).withOpacity(0.1)),
+              border: Border.all(color: DesignSystem.surface(context).withValues(alpha: 0.1)),
             ),
             child: TextField(
               style: DesignSystem.bodyStyle(buildContext: context),
@@ -363,7 +363,7 @@ class DashboardScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: DesignSystem.surface(context),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: DesignSystem.surface(context).withOpacity(0.1)),
+          border: Border.all(color: DesignSystem.surface(context).withValues(alpha: 0.1)),
         ),
         child: Column(
           children: [
@@ -443,7 +443,7 @@ class DashboardScreen extends ConsumerWidget {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
             child: Text("LIVE", style: GoogleFonts.inter(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 15),
@@ -489,7 +489,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
             Container(
               padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
               child: Text(match, style: GoogleFonts.inter(color: primaryColor, fontSize: 10, fontWeight: FontWeight.bold)),
             )
           ],

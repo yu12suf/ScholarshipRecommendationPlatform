@@ -76,7 +76,7 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
           Positioned(
             top: 100,
             left: -50,
-            child: DesignSystem.buildBlurCircle(DesignSystem.primary(context).withOpacity(0.05), 300),
+            child: DesignSystem.buildBlurCircle(DesignSystem.primary(context).withValues(alpha: 0.05), 300),
           ),
           Column(
             children: [
@@ -113,14 +113,14 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
         padding: const EdgeInsets.all(16),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isUser ? primaryColor.withOpacity(0.2) : DesignSystem.surface(context),
+          color: isUser ? primaryColor.withValues(alpha: 0.2) : DesignSystem.surface(context),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
             bottomLeft: isUser ? const Radius.circular(20) : Radius.zero,
             bottomRight: isUser ? Radius.zero : const Radius.circular(20),
           ),
-          border: Border.all(color: isUser ? primaryColor.withOpacity(0.5) : DesignSystem.glassBorder(context)),
+          border: Border.all(color: isUser ? primaryColor.withValues(alpha: 0.5) : DesignSystem.glassBorder(context)),
         ),
         child: Text(
           text,
@@ -134,7 +134,7 @@ class _PathfinderChatScreenState extends State<PathfinderChatScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
       decoration: BoxDecoration(
-        color: DesignSystem.themeBackground(context).withOpacity(0.8),
+        color: DesignSystem.themeBackground(context).withValues(alpha: 0.8),
         border: Border(top: BorderSide(color: DesignSystem.glassBorder(context))),
       ),
       child: Row(

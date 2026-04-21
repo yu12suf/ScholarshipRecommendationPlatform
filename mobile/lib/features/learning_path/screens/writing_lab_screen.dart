@@ -6,6 +6,7 @@ import 'package:mobile/features/core/widgets/glass_container.dart';
 import 'package:mobile/features/core/widgets/primary_button.dart';
 import 'package:mobile/features/core/theme/design_system.dart';
 import 'package:mobile/core/providers/dependencies.dart';
+import 'package:mobile/features/learning_path/providers/learning_path_provider.dart';
 
 class WritingLabScreen extends ConsumerStatefulWidget {
   final String initialPrompt;
@@ -50,6 +51,18 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
         essay: _controller.text,
         prompt: widget.initialPrompt,
       );
+      
+      // Mark progress on backend
+      try {
+        await ref.read(learningPathProvider.notifier).markProgress(
+          section: 'Writing',
+          questionIndex: 0,
+          isCompleted: true,
+        );
+      } catch (e) {
+        debugPrint("Error marking progress: $e");
+      }
+
       setState(() {
         _feedback = result;
         _isLoading = false;
@@ -129,7 +142,7 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: primaryColor.withOpacity(0.3),
+                                color: primaryColor.withValues(alpha: 0.3),
                                 blurRadius: 20,
                                 spreadRadius: 2,
                               ),
@@ -167,7 +180,7 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
                       _feedback!['enhanced_version'] ?? "",
                       style: GoogleFonts.inter(
                         fontSize: 15,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         height: 1.6,
                       ),
                     ),
@@ -233,7 +246,7 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),
@@ -306,7 +319,7 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: primaryColor.withOpacity(0.15),
+                color: primaryColor.withValues(alpha: 0.15),
               ),
             ),
           ),
@@ -322,7 +335,7 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.05),
+                          backgroundColor: Colors.white.withValues(alpha: 0.05),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -379,7 +392,7 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
                                 widget.initialPrompt,
                                 style: GoogleFonts.inter(
                                   fontSize: 15,
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                   height: 1.5,
                                 ),
                               ),
@@ -412,7 +425,7 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
                         Container(
                           height: 400,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.03),
+                            color: Colors.white.withValues(alpha: 0.03),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: Colors.white10),
                           ),
@@ -452,7 +465,7 @@ class _WritingLabScreenState extends ConsumerState<WritingLabScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF0A0E21).withOpacity(0),
+                    const Color(0xFF0A0E21).withValues(alpha: 0),
                     const Color(0xFF0A0E21),
                   ],
                 ),

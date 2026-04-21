@@ -87,7 +87,7 @@ class PDFLibraryScreen extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.2,
-                color: DesignSystem.labelText(context).withOpacity(0.7),
+                color: DesignSystem.labelText(context).withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -123,7 +123,7 @@ class PDFLibraryScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.1),
+                  color: accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(LucideIcons.fileText, color: accentColor, size: 24),
@@ -145,7 +145,7 @@ class PDFLibraryScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(LucideIcons.chevronRight, color: DesignSystem.labelText(context).withOpacity(0.3), size: 18),
+              Icon(LucideIcons.chevronRight, color: DesignSystem.labelText(context).withValues(alpha: 0.3), size: 18),
             ],
           ),
         ),

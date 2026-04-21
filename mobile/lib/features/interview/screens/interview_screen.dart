@@ -105,7 +105,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
           Positioned(
             top: 200, 
             left: 50, 
-            child: DesignSystem.buildBlurCircle(DesignSystem.primary(context).withOpacity(0.08), 300)
+            child: DesignSystem.buildBlurCircle(DesignSystem.primary(context).withValues(alpha: 0.08), 300)
           ),
 
           SafeArea(
@@ -158,7 +158,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                       : (state.isRecording ? "Recording... (Tap to finish)" : (state.isSending ? "Processing..." : "Tap to Talk")),
                   style: DesignSystem.headingStyle(
                     buildContext: context,
-                    color: state.isMuted || state.isRecording ? Colors.redAccent : DesignSystem.primary(context).withOpacity(0.7), 
+                    color: state.isMuted || state.isRecording ? Colors.redAccent : DesignSystem.primary(context).withValues(alpha: 0.7), 
                     fontSize: 14,
                   ),
                 ),
@@ -255,7 +255,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: DesignSystem.primary(context).withOpacity(0.1),
+                                color: DesignSystem.primary(context).withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Text(
@@ -356,7 +356,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                 children: [
                   Container(
                     width: 40, height: 4,
-                    decoration: BoxDecoration(color: DesignSystem.labelText(context).withOpacity(0.2), borderRadius: BorderRadius.circular(2)),
+                    decoration: BoxDecoration(color: DesignSystem.labelText(context).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)),
                   ),
                   const SizedBox(height: 16),
                   Text("Select University", style: DesignSystem.headingStyle(buildContext: context, fontSize: 22)),
@@ -469,12 +469,12 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                 gradient: RadialGradient(
                   colors: [
                     orbColor, 
-                    (isMuted || isRecording) ? Colors.red.shade900 : primaryColor.withOpacity(0.8)
+                    (isMuted || isRecording) ? Colors.red.shade900 : primaryColor.withValues(alpha: 0.8)
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: orbColor.withOpacity(0.4 + (0.3 * pulseVal)),
+                    color: orbColor.withValues(alpha: 0.4 + (0.3 * pulseVal)),
                     blurRadius: 40 + (30 * pulseVal),
                     spreadRadius: 5 + (10 * pulseVal)
                   ),
@@ -498,7 +498,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: (color ?? DesignSystem.primary(context)).withOpacity(opacity), width: 2),
+        border: Border.all(color: (color ?? DesignSystem.primary(context)).withValues(alpha: opacity), width: 2),
       ),
     );
   }
@@ -541,11 +541,11 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
-              icon: Icon(isMuted ? LucideIcons.micOff : LucideIcons.mic, color: isMuted ? Colors.redAccent : DesignSystem.mainText(context).withOpacity(0.5)),
+              icon: Icon(isMuted ? LucideIcons.micOff : LucideIcons.mic, color: isMuted ? Colors.redAccent : DesignSystem.mainText(context).withValues(alpha: 0.5)),
               onPressed: () => ref.read(interviewProvider.notifier).toggleMute(),
             ),
             IconButton(
-              icon: Icon(LucideIcons.pause, color: DesignSystem.mainText(context).withOpacity(0.5)),
+              icon: Icon(LucideIcons.pause, color: DesignSystem.mainText(context).withValues(alpha: 0.5)),
               onPressed: () {
                 // Implement pause logic if needed, for now just show a hint
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -557,7 +557,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
               onTap: () => ref.read(interviewProvider.notifier).endInterview(),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.redAccent.withOpacity(0.2))),
+                decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2))),
                 child: Text("END SESSION", style: GoogleFonts.plusJakartaSans(color: Colors.redAccent, fontWeight: FontWeight.w900, fontSize: 11)),
               ),
             ),
@@ -600,7 +600,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
                 decoration: BoxDecoration(
                   color: DesignSystem.surface(context),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: DesignSystem.surface(context).withOpacity(0.2)),
+                  border: Border.all(color: DesignSystem.surface(context).withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -680,7 +680,7 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> with SingleTi
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.1),
+            color: primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: primaryColor, size: 24),
