@@ -1,0 +1,43 @@
+{
+  "name": "educationalpathway",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@react-oauth/google": "^0.13.4",
+    "@types/socket.io-client": "^3.0.0",
+    "@vapi-ai/web": "^2.5.2",
+    "axios": "^1.13.6",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "emoji-picker-react": "^4.18.0",
+    "framer-motion": "^12.35.1",
+    "lucide-react": "^0.577.0",
+    "next": "15.1.7",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.71.2",
+    "react-hot-toast": "^2.6.0",
+    "react-international-phone": "^4.8.0",
+    "react-select": "^5.10.2",
+    "socket.io-client": "^4.8.3",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.1.7",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
