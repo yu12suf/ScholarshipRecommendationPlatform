@@ -8,6 +8,34 @@ import { AIService } from "./AIService.js";
 import { AssessmentRepository } from "../repositories/AssessmentRepository.js";
 
 export class LearningPathService {
+  private static missionData: any = {
+    reading: [
+      { title: "The Bird's Eye View", objective: "Master timing and test structure to stop feeling rushed." },
+      { title: "Skimming vs. Scanning", objective: "Learn to navigate text rapidly without reading every word." },
+      { title: "The Paraphrase Key", objective: "Unlock the secret to finding answers hidden in synonyms." },
+      { title: "The Logic Traps", objective: "Stop falling for 'Not Given' and 'False' traps in Section 3." },
+      { title: "The Full Run", objective: "Practice full-length passages under strict simulated conditions." }
+    ],
+    listening: [
+      { title: "Precision Hearing", objective: "Capture names, numbers, and dates without missing a beat." },
+      { title: "Situational Tracking", objective: "Follow directions and map locations without getting lost." },
+      { title: "The Echo Trap", objective: "Identify distractors and speaker corrections in real-time." }
+    ],
+    writing: [
+      { title: "The Grammar Engine", objective: "Build the foundation of tenses and subject-verb agreement." },
+      { title: "Sentence Architecture", objective: "Combine simple ideas into high-scoring complex sentences." },
+      { title: "Describing Trends", objective: "Master the vocabulary for charts, graphs, and line trends." },
+      { title: "The 4-Paragraph Blueprint", objective: "Learn the universal structure for a high-scoring Task 2 essay." },
+      { title: "Idea Generation", objective: "Never run out of points to write about in Task 2 brainstorming." }
+    ],
+    speaking: [
+      { title: "The Icebreaker", objective: "Master Part 1 confidence for hometown, hobbies, and studies." },
+      { title: "Clear Comms", objective: "Reduce filler words and improve natural pronunciation flow." },
+      { title: "The Storyteller", objective: "Master the Part 2 cue card and talk for 2 minutes non-stop." },
+      { title: "Opinion Logic", objective: "Structure abstract arguments in Part 3 using the A.R.E method." }
+    ]
+  };
+
   /**
    * Maps overall band score to a difficulty level (easy, medium, hard).
    */
@@ -34,7 +62,7 @@ export class LearningPathService {
 
     // 1. Fetch 5 videos and 5 pdfs per skill matching the student's level and exam type
     const [videoMap, pdfMap] = await Promise.all([
-      VideoService.getFivePerType(level, normalizedExamType),
+      VideoService.getAllPerType(level, normalizedExamType),
       PdfService.getFivePerType(level, normalizedExamType)
     ]);
 
@@ -214,11 +242,35 @@ export class LearningPathService {
       totalItems++; // 1 Note per skill section
       if (isNoteCompleted) completedItems++;
 
+      // --- 4. Group into Missions ---
+      const missions: any[] = [];
+      const skillMissions = this.missionData[skill] || [];
+      const validVideos = videosProgress.filter((v) => v !== null);
+
+      for (let i = 0; i < skillMissions.length; i++) {
+        const missionInfo = skillMissions[i];
+        const start = i * 5;
+        const end = Math.min(start + 5, validVideos.length);
+        
+        if (start < validVideos.length) {
+          const missionVideos = validVideos.slice(start, end);
+          const isMissionCompleted = missionVideos.every(v => v.isCompleted);
+          
+          missions.push({
+            title: missionInfo.title,
+            objective: missionInfo.objective,
+            videos: missionVideos,
+            isCompleted: isMissionCompleted
+          });
+        }
+      }
+
       result[skill] = {
-        videos: videosProgress.filter((v) => v !== null),
+        videos: validVideos,
         pdfs: pdfsProgress.filter((p) => p !== null),
         notes: (path.noteSections as any)[skill] || "",
-        isNoteCompleted
+        isNoteCompleted,
+        missions
       };
     }
 

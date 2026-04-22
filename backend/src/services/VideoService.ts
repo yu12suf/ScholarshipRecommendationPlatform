@@ -22,7 +22,7 @@ export class VideoService {
         return VideoRepository.delete(id);
     }
 
-    static async getFivePerType(level: string, examType: string = 'IELTS'): Promise<{ [key: string]: Video[] }> {
-        return VideoRepository.findFivePerType(level, examType);
+    static async getAllPerType(level: string, examType: string = 'IELTS'): Promise<{ [key: string]: Video[] }> {
+        return VideoRepository.getAllPerType(level, examType);
     }
 }

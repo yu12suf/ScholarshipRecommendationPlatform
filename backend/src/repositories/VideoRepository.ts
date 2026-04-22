@@ -37,7 +37,7 @@ export class VideoRepository {
         });
     }
 
-    static async findFivePerType(level: string, examType: string = 'IELTS'): Promise<{ [key: string]: Video[] }> {
+    static async getAllPerType(level: string, examType: string = 'IELTS'): Promise<{ [key: string]: Video[] }> {
         const types = ["Reading", "Listening", "Writing", "Speaking"];
         const result: { [key: string]: Video[] } = {};
 
@@ -48,7 +48,7 @@ export class VideoRepository {
                     type: type as any,
                     examType: examType as any
                 },
-                limit: 5
+                order: [['id', 'ASC']]
             });
         }
 
