@@ -12,6 +12,7 @@ import 'package:mobile/features/learning_path/screens/video_library_screen.dart'
 import 'package:mobile/features/learning_path/screens/pdf_library_screen.dart';
 import 'package:mobile/features/learning_path/screens/unit_test_screen.dart';
 import 'package:mobile/features/learning_path/screens/writing_lab_screen.dart';
+import 'package:mobile/features/learning_path/screens/resource_viewer_screen.dart';
 
 class MissionDetailScreen extends ConsumerWidget {
   final PathVideo video;
@@ -20,6 +21,7 @@ class MissionDetailScreen extends ConsumerWidget {
   final String section;
   final SkillPathSection sectionData;
   final Object? learningMode;
+  final Mission? mission;
 
   const MissionDetailScreen({
     super.key,
@@ -29,6 +31,7 @@ class MissionDetailScreen extends ConsumerWidget {
     required this.section,
     required this.sectionData,
     this.learningMode,
+    this.mission,
   });
 
   @override
@@ -81,7 +84,7 @@ class MissionDetailScreen extends ConsumerWidget {
                   child: Material(
                     type: MaterialType.transparency,
                     child: Text(
-                      video.videoLink.contains("sample") ? "Instructional Module 0${index + 1}" : "Dynamic Mastery: ${section}",
+                      mission?.title ?? (video.videoLink.contains("sample") ? "Instructional Module 0${index + 1}" : "Dynamic Mastery: ${section}"),
                       style: DesignSystem.headingStyle(buildContext: context),
                     ),
                   ),
@@ -104,8 +107,8 @@ class MissionDetailScreen extends ConsumerWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => VideoLibraryScreen(
-                              videos: sectionData.videos,
-                              skillName: section,
+                              videos: mission?.videos ?? sectionData.videos,
+                              skillName: mission?.title ?? section,
                             ),
                           ),
                         );
@@ -199,7 +202,18 @@ class MissionDetailScreen extends ConsumerWidget {
                 
                 PrimaryButton(
                   text: video.isCompleted ? "REWATCH LESSON" : "START MISSION",
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ResourceViewerScreen(
+                          type: ResourceType.video,
+                          title: "Instructional Lesson",
+                          url: video.videoLink,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 40),
               ],
@@ -233,10 +247,10 @@ class MissionDetailScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            sectionData.notes.isNotEmpty 
+            mission?.objective ?? (sectionData.notes.isNotEmpty 
                 ? sectionData.notes 
-                : "Complete the instructional modules to master this skill and unlock advanced practice tasks.",
-            maxLines: 4,
+                : "Complete the instructional modules to master this skill and unlock advanced practice tasks."),
+            maxLines: 6,
             overflow: TextOverflow.ellipsis,
             style: DesignSystem.bodyStyle(
               buildContext: context,

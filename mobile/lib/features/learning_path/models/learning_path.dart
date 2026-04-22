@@ -69,18 +69,43 @@ class PathPdf {
   }
 }
 
+class Mission {
+  final String title;
+  final String objective;
+  final List<PathVideo> videos;
+  final bool isCompleted;
+
+  Mission({
+    required this.title,
+    required this.objective,
+    required this.videos,
+    this.isCompleted = false,
+  });
+
+  factory Mission.fromJson(Map<String, dynamic> json) {
+    return Mission(
+      title: json['title'] ?? '',
+      objective: json['objective'] ?? '',
+      videos: (json['videos'] as List?)?.map((v) => PathVideo.fromJson(v)).toList() ?? [],
+      isCompleted: json['isCompleted'] ?? false,
+    );
+  }
+}
+
 class SkillPathSection {
   const SkillPathSection({
     required this.videos,
     required this.pdfs,
     required this.notes,
     required this.isNoteCompleted,
+    this.missions = const [],
   });
 
   final List<PathVideo> videos;
   final List<PathPdf> pdfs;
   final String notes;
   final bool isNoteCompleted;
+  final List<Mission> missions;
 
   factory SkillPathSection.fromJson(Map<String, dynamic> json) {
     final videosRaw = readValue<List<dynamic>>(json, const ['videos']) ?? [];
@@ -97,13 +122,21 @@ class SkillPathSection {
         .map(PathPdf.fromJson)
         .toList();
 
+    final missionsRaw = readValue<List<dynamic>>(json, const ['missions']) ?? [];
+    final missions = missionsRaw
+        .map((e) => asJsonMap(e))
+        .whereType<Map<String, dynamic>>()
+        .map(Mission.fromJson)
+        .toList();
+
     final notes = readValue<String>(json, const ['notes']) ?? '';
     final isNoteCompleted = readBool(json, const ['isNoteCompleted']);
     return SkillPathSection(
       videos: videos, 
       pdfs: pdfs,
       notes: notes, 
-      isNoteCompleted: isNoteCompleted
+      isNoteCompleted: isNoteCompleted,
+      missions: missions,
     );
   }
 }

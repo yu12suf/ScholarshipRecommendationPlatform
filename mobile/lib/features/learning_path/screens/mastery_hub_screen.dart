@@ -19,8 +19,25 @@ class MasteryHubScreen extends ConsumerStatefulWidget {
   ConsumerState<MasteryHubScreen> createState() => _MasteryHubScreenState();
 }
 
-class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
+class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> with TickerProviderStateMixin {
   String _selectedTab = 'Reading';
+  late AnimationController _staggerController;
+  bool _hasTriggeredIntro = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _staggerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+  }
+
+  @override
+  void dispose() {
+    _staggerController.dispose();
+    super.dispose();
+  }
 
   void _startAssessment() async {
     await Navigator.push(
@@ -35,6 +52,10 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
   Widget build(BuildContext context) {
     final pathState = ref.watch(learningPathProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (pathState.value != null && !_hasTriggeredIntro) {
+      _hasTriggeredIntro = true;
+      _staggerController.forward(from: 0.0);
+    }
     final primaryColor = DesignSystem.primary(context);
 
     return Scaffold(
@@ -51,17 +72,31 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
           ),
 
           SafeArea(
-            child: (pathState.value != null)
-                ? _buildHubContent(context, pathState)
-                : _buildAssessmentPrompt(context),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 800),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.05),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                    child: child,
+                  ),
+                );
+              },
+              child: (pathState.value != null)
+                  ? _buildHubContent(context, pathState)
+                  : _buildAssessmentPrompt(context),
+            ),
           ),
 
           // Pathfinder Floating Insight (only show when assessment is done)
           if (pathState.value != null)
             Positioned(
-              bottom: 90,
-              left: 20,
-              right: 20,
+              bottom: 100,
+              left: 0,
               child: _buildPathfinderBubble(context, pathState.value!),
             ),
         ],
@@ -130,9 +165,12 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
   Widget _buildHubContent(BuildContext context, AsyncValue pathState) {
     bool isPathReady = pathState.hasValue && pathState.value != null;
 
-    final videos = isPathReady
-        ? pathState.value!.skills[_selectedTab.toLowerCase()]?.videos ?? []
-        : [];
+    final sectionData = isPathReady
+        ? pathState.value!.skills[_selectedTab.toLowerCase()]
+        : null;
+
+    final videos = sectionData?.videos ?? [];
+    final missions = sectionData?.missions ?? [];
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -159,518 +197,172 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
             ),
           if (pathState.value?.proficiencyLevel?.toLowerCase() == 'easy') ...[
             if (_selectedTab.toLowerCase() == 'reading')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.sparkles, color: DesignSystem.easyPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: You missed a few vocabulary questions in your assessment. This phase will help you master word-matching secrets!",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "You missed a few vocabulary questions in your assessment. This phase will help you master word-matching secrets!",
+                icon: LucideIcons.sparkles,
+                color: DesignSystem.easyPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'listening')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.headphones, color: DesignSystem.easyPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: You missed a few detail-oriented audio cues. This phase will sharpen your ear for precision and distractors!",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "You missed a few detail-oriented audio cues. This phase will sharpen your ear for precision and distractors!",
+                icon: LucideIcons.headphones,
+                color: DesignSystem.easyPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'writing')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.penTool, color: DesignSystem.easyPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: Your grammar and sentence structures need a solid foundation. Let's build your writing engine step-by-step!",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "Your grammar and sentence structures need a solid foundation. Let's build your writing engine step-by-step!",
+                icon: LucideIcons.penTool,
+                color: DesignSystem.easyPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'speaking')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.mic, color: DesignSystem.easyPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: Let's build your speaking confidence from safe topics to full interactions. Prepare for the final AI mock interview!",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "Let's build your speaking confidence from safe topics to full interactions. Prepare for the final AI mock interview!",
+                icon: LucideIcons.mic,
+                color: DesignSystem.easyPhaseGradient.colors.first,
               ),
           ] else if (pathState.value?.proficiencyLevel?.toLowerCase() == 'medium') ...[
             if (_selectedTab.toLowerCase() == 'reading')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.sparkles, color: DesignSystem.mediumPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: You're reading well, but complex logic traps like TFNG are slowing you down. Let's master advanced inference.",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "You're reading well, but complex logic traps like TFNG are slowing you down. Let's master advanced inference.",
+                icon: LucideIcons.sparkles,
+                color: DesignSystem.mediumPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'listening')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.headphones, color: DesignSystem.mediumPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: Multi-speaker flows and fast lectures are tricky. Time to practice spatial navigation and note-taking.",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "Multi-speaker flows and fast lectures are tricky. Time to practice spatial navigation and note-taking.",
+                icon: LucideIcons.headphones,
+                color: DesignSystem.mediumPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'writing')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.penTool, color: DesignSystem.mediumPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: Your coherence is improving, but try using more advanced cohesive devices to link these academic points.",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "Your coherence is improving, but try using more advanced cohesive devices to link these academic points.",
+                icon: LucideIcons.penTool,
+                color: DesignSystem.mediumPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'speaking')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.mic, color: DesignSystem.mediumPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: Your fluency is good, but you need to transition from safe topics to abstract reasoning and conditionals for a Band 7+.",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
+              _InteractivePathfinderTip(
+                tip: "Your fluency is good, but you need to transition from safe topics to abstract reasoning and conditionals for a Band 7+.",
+                icon: LucideIcons.mic,
+                color: DesignSystem.mediumPhaseGradient.colors.first,
+              ),
           ] else if (pathState.value?.proficiencyLevel?.toLowerCase() == 'hard') ...[
             if (_selectedTab.toLowerCase() == 'reading')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.sparkles, color: DesignSystem.hardPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: Your comprehension is excellent, but abstract meaning and speed are the final hurdles. Let's master rapid inference.",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "Your comprehension is excellent, but abstract meaning and speed are the final hurdles. Let's master rapid inference.",
+                icon: LucideIcons.sparkles,
+                color: DesignSystem.hardPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'listening')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.headphones, color: DesignSystem.hardPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: Your ear is sharp. Now we introduce high-speed synthesis and complex global accents. Focus on subtle distractors.",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "Your ear is sharp. Now we introduce high-speed synthesis and complex global accents. Focus on subtle distractors.",
+                icon: LucideIcons.headphones,
+                color: DesignSystem.hardPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'writing')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.penTool, color: DesignSystem.hardPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: Your grammar is perfect, but stylistic choices matter. Try using a more active structure to sound authoritative.",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "Your grammar is perfect, but stylistic choices matter. Try using a more active structure to sound authoritative.",
+                icon: LucideIcons.penTool,
+                color: DesignSystem.hardPhaseGradient.colors.first,
               ),
             if (_selectedTab.toLowerCase() == 'speaking')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: GlassContainer(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.mic, color: DesignSystem.hardPhaseGradient.colors.first, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Pathfinder Tip: It's time for the panel pressure. Focus on idiomatic naturalness and deep abstract reasoning.",
-                          style: DesignSystem.bodyStyle(buildContext: context, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _InteractivePathfinderTip(
+                tip: "It's time for the panel pressure. Focus on idiomatic naturalness and deep abstract reasoning.",
+                icon: LucideIcons.mic,
+                color: DesignSystem.hardPhaseGradient.colors.first,
               ),
           ],
-          ...videos.asMap().entries.map((entry) {
+          ...(missions.isNotEmpty ? missions : videos).asMap().entries.expand((entry) {
             int index = entry.key;
-            var video = entry.value;
-            // Unlocks if it's the first video or the previous video is completed
-            bool isLocked = index > 0 && !(videos[index - 1].isCompleted);
-            bool isPracticeCompleted = false;
-            final skillKey = _selectedTab.toLowerCase();
-            final learningMode = pathState.value!.learningMode;
-            if (learningMode is Map) {
-              final skillLm = learningMode[skillKey];
-              List<dynamic> questions = [];
-              if (skillLm is List) {
-                questions = skillLm;
-              } else if (skillLm is Map && skillLm['questions'] is List) {
-                questions = skillLm['questions'];
+            var item = entry.value;
+            
+            bool isLocked;
+            bool isFullyCompleted;
+            
+            if (item is Mission) {
+              isLocked = index > 0 && !(missions[index - 1].isCompleted);
+              isFullyCompleted = item.isCompleted;
+            } else {
+              isLocked = index > 0 && !(videos[index - 1].isCompleted);
+              bool isPracticeCompleted = false;
+              final skillKey = _selectedTab.toLowerCase();
+              final learningMode = pathState.value!.learningMode;
+              if (learningMode is Map) {
+                final skillLm = learningMode[skillKey];
+                List<dynamic> questions = [];
+                if (skillLm is List) {
+                  questions = skillLm;
+                } else if (skillLm is Map && skillLm['questions'] is List) {
+                  questions = skillLm['questions'];
+                }
+                for (var q in questions) {
+                   if (q is Map && (q['isCompleted'] == true || q['is_completed'] == true)) {
+                     isPracticeCompleted = true;
+                     break;
+                   }
+                }
               }
-              for (var q in questions) {
-                 if (q is Map && (q['isCompleted'] == true || q['is_completed'] == true)) {
-                   isPracticeCompleted = true;
-                   break;
-                 }
-              }
+              isFullyCompleted = (item as PathVideo).isCompleted && 
+                  pathState.value!.skills[skillKey]!.isNoteCompleted && 
+                  isPracticeCompleted;
             }
             
-            bool isFullyCompleted = video.isCompleted && 
-                pathState.value!.skills[skillKey]!.isNoteCompleted && 
-                isPracticeCompleted;
+            MissionStatus status = isLocked ? MissionStatus.locked : (isFullyCompleted ? MissionStatus.completed : MissionStatus.active);
 
-            MissionStatus status = isLocked
-                ? MissionStatus.locked
-                : (isFullyCompleted
-                      ? MissionStatus.completed
-                      : MissionStatus.active);
+            String missionTitle = item is Mission ? item.title : "Module 0${index + 1}";
+            String missionPhase = item is Mission ? "PHASE ${index + 1}" : "MASTERY PHASE ${index + 1}";
 
-            String missionTitle = "Instructional Module 0${index + 1}";
-            String missionPhase = "MASTERY PHASE ${index + 1}";
-            
-            if (pathState.value?.proficiencyLevel?.toLowerCase() == 'easy') {
-              if (skillKey == 'reading') {
-                const readingEasyTitles = [
-                  "The Bird's Eye View",
-                  "Skimming vs. Scanning",
-                  "The Power of Paraphrasing",
-                  "Conquering the MCQ",
-                  "Review & Reinforce",
-                ];
-                const readingEasyPhases = [
-                  "Phase 1: The Decoding Phase",
-                  "Phase 2: The Navigation Phase",
-                  "Phase 3: The Synonym Phase",
-                  "Phase 4: The Tactical Phase",
-                  "Phase 5: Final Review",
-                ];
-                if (index < readingEasyTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${readingEasyTitles[index]}";
-                  missionPhase = readingEasyPhases[index];
-                }
-              } else if (skillKey == 'listening') {
-                const listeningEasyTitles = [
-                  "Precision Hearing",
-                  "Situational Tracking",
-                  "The Echo Trap",
-                ];
-                const listeningEasyPhases = [
-                  "Phase 1: Spellings & Numbers",
-                  "Phase 2: Context & Location",
-                  "Phase 3: Mastering Distractors",
-                ];
-                if (index < listeningEasyTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${listeningEasyTitles[index]}";
-                  missionPhase = listeningEasyPhases[index];
-                }
-              } else if (skillKey == 'writing') {
-                const writingEasyTitles = [
-                  "The Grammar Engine",
-                  "Sentence Architecture",
-                  "Describing Trends",
-                  "The 4-Paragraph Blueprint",
-                  "Idea Generation",
-                ];
-                const writingEasyPhases = [
-                  "Phase 1: Foundation & Tenses",
-                  "Phase 2: Compound & Complex",
-                  "Phase 3: Task 1 Vocabulary",
-                  "Phase 4: Essay Structure",
-                  "Phase 5: Brainstorming Basics",
-                ];
-                if (index < writingEasyTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${writingEasyTitles[index]}";
-                  missionPhase = writingEasyPhases[index];
-                }
-              } else if (skillKey == 'speaking') {
-                const speakingEasyTitles = [
-                  "The Icebreaker",
-                  "Clear Comms",
-                  "The Storyteller",
-                  "Opinion Logic",
-                ];
-                const speakingEasyPhases = [
-                  "Phase 1: Part 1 Topics",
-                  "Phase 2: Pronunciation & Fillers",
-                  "Phase 3: The Cue Card",
-                  "Phase 4: Abstract Opinions",
-                ];
-                if (index < speakingEasyTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${speakingEasyTitles[index]}";
-                  missionPhase = speakingEasyPhases[index];
-                }
-              }
-            } else if (pathState.value?.proficiencyLevel?.toLowerCase() == 'medium') {
-              if (skillKey == 'reading') {
-                const readingMediumTitles = [
-                  "The Logic Trap",
-                  "The Macro View",
-                  "Deep Inference",
-                  "Data Synthesis",
-                ];
-                const readingMediumPhases = [
-                  "Phase 1: True/False/Not Given",
-                  "Phase 2: Matching Headings",
-                  "Phase 3: Section 3 MCQs",
-                  "Phase 4: Summary Completion",
-                ];
-                if (index < readingMediumTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${readingMediumTitles[index]}";
-                  missionPhase = readingMediumPhases[index];
-                }
-              } else if (skillKey == 'listening') {
-                const listeningMediumTitles = [
-                  "Multi-Speaker Flow",
-                  "Spatial Navigation",
-                  "The Academic Lecture",
-                ];
-                const listeningMediumPhases = [
-                  "Phase 1: Group Discussions",
-                  "Phase 2: Maps & Diagrams",
-                  "Phase 3: Note-Taking Speed",
-                ];
-                if (index < listeningMediumTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${listeningMediumTitles[index]}";
-                  missionPhase = listeningMediumPhases[index];
-                }
-              } else if (skillKey == 'writing') {
-                const writingMediumTitles = [
-                  "Data Comparison",
-                  "Cohesion Logic",
-                  "The Dual Argument",
-                  "Lexical Range",
-                  "The Critical Review",
-                ];
-                const writingMediumPhases = [
-                  "Phase 1: Analyzing 2+ Charts",
-                  "Phase 2: Advanced Cohesion",
-                  "Phase 3: Both Views Essay",
-                  "Phase 4: Academic Collocations",
-                  "Phase 5: Top B2 Mistakes",
-                ];
-                if (index < writingMediumTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${writingMediumTitles[index]}";
-                  missionPhase = writingMediumPhases[index];
-                }
-              } else if (skillKey == 'speaking') {
-                const speakingMediumTitles = [
-                  "The Natural Flow",
-                  "Abstract Reasoning",
-                  "Grammatical Range",
-                  "The Stress Test",
-                ];
-                const speakingMediumPhases = [
-                  "Phase 1: Part 2 Memory",
-                  "Phase 2: Deep Logic & Speculation",
-                  "Phase 3: Advanced Structures",
-                  "Phase 4: Fast Follow-ups",
-                ];
-                if (index < speakingMediumTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${speakingMediumTitles[index]}";
-                  missionPhase = speakingMediumPhases[index];
-                }
-              }
-            } else if (pathState.value?.proficiencyLevel?.toLowerCase() == 'hard') {
-              if (skillKey == 'reading') {
-                const readingHardTitles = [
-                  "The Abstract Layer",
-                  "Cognitive Speed",
-                  "Scientific Synthesis",
-                ];
-                const readingHardPhases = [
-                  "Phase 1: Abstract Meaning",
-                  "Phase 2: Vertical Reading",
-                  "Phase 3: Technical Terminology",
-                ];
-                if (index < readingHardTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${readingHardTitles[index]}";
-                  missionPhase = readingHardPhases[index];
-                }
-              } else if (skillKey == 'listening') {
-                const listeningHardTitles = [
-                  "The Global Ear",
-                  "Lecture Logic",
-                ];
-                const listeningHardPhases = [
-                  "Phase 1: Diverse Accents",
-                  "Phase 2: 10-Minute Endurance",
-                ];
-                if (index < listeningHardTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${listeningHardTitles[index]}";
-                  missionPhase = listeningHardPhases[index];
-                }
-              } else if (skillKey == 'writing') {
-                const writingHardTitles = [
-                  "Lexical Precision",
-                  "The Deep Argument",
-                  "Complex Data Sets",
-                  "The Final Polish",
-                ];
-                const writingHardPhases = [
-                  "Phase 1: The Perfect Word",
-                  "Phase 2: Philosophical Logic",
-                  "Phase 3: 3+ Charts & Processes",
-                  "Phase 4: Invisible Errors",
-                ];
-                if (index < writingHardTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${writingHardTitles[index]}";
-                  missionPhase = writingHardPhases[index];
-                }
-              } else if (skillKey == 'speaking') {
-                const speakingHardTitles = [
-                  "The Native Vibe",
-                  "The Philosopher",
-                  "The Panel Pressure",
-                ];
-                const speakingHardPhases = [
-                  "Phase 1: Idioms & Phrasal Verbs",
-                  "Phase 2: High-Level Debate",
-                  "Phase 3: Mock Panel Interview",
-                ];
-                if (index < speakingHardTitles.length) {
-                  missionTitle = "Mission 0${index + 1}: ${speakingHardTitles[index]}";
-                  missionPhase = speakingHardPhases[index];
-                }
-              }
-            }
-
-
-            return _buildMissionCard(
-              context,
-              video: video,
-              missionNumber: "0${index + 1}",
-              title: missionTitle,
-              phase: missionPhase,
-              status: status,
-              unlockCondition: isLocked ? "Complete Module 0${index}" : null,
-              onTap: status != MissionStatus.locked
-                  ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MissionDetailScreen(
-                            video: video,
-                            index: index,
-                            phase: "MASTERY PHASE ${index + 1}",
-                            section: _selectedTab,
-                            sectionData: pathState.value!.skills[_selectedTab.toLowerCase()]!,
-                            learningMode: pathState.value!.learningMode,
-                          ),
-                        ),
-                      );
-                    }
-                  : null,
+            final animation = CurvedAnimation(
+              parent: _staggerController,
+              curve: Interval(
+                (index * 0.1).clamp(0.0, 1.0),
+                ((index * 0.1) + 0.5).clamp(0.0, 1.0),
+                curve: Curves.easeOutBack,
+              ),
             );
+
+            return [
+              AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: 0.8 + (animation.value * 0.2),
+                    child: Opacity(
+                      opacity: animation.value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: _buildMissionCard(
+                  context,
+                  video: item is Mission ? item.videos.first : item as PathVideo,
+                  missionNumber: "${index + 1}",
+                  title: missionTitle,
+                  phase: missionPhase,
+                  status: status,
+                  path: pathState.value!,
+                  mission: item is Mission ? item : null,
+                  unlockCondition: isLocked ? "Complete Phase ${index}" : null,
+                  onTap: status != MissionStatus.locked
+                      ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MissionDetailScreen(
+                                video: item is Mission ? item.videos.first : item as PathVideo,
+                                index: index,
+                                phase: missionPhase,
+                                section: _selectedTab,
+                                sectionData: sectionData!,
+                                learningMode: pathState.value!.learningMode,
+                                mission: item is Mission ? item : null,
+                              ),
+                            ),
+                          );
+                        }
+                      : null,
+                ),
+              )
+            ];
           }).toList(),
           const SizedBox(height: 120),
         ],
@@ -881,13 +573,17 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
     required String title,
     required String phase,
     required MissionStatus status,
+    required FormattedLearningPath path,
     String? unlockCondition,
     VoidCallback? onTap,
+    Mission? mission,
   }) {
     bool isLocked = status == MissionStatus.locked;
     bool isActive = status == MissionStatus.active;
     bool isCompleted = status == MissionStatus.completed;
     final primaryColor = DesignSystem.primary(context);
+    final emeraldColor = const Color(0xFF10B981);
+    final cardColor = isActive ? emeraldColor : primaryColor;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -895,10 +591,22 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
         onTap: isLocked ? null : onTap,
         child: Opacity(
           opacity: isLocked ? 0.6 : 1,
-          child: GlassContainer(
-            padding: const EdgeInsets.all(0), // Handled by inner column
-            child: Column(
-              children: [
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: isActive ? [
+                BoxShadow(
+                  color: emeraldColor.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                )
+              ] : [],
+            ),
+            child: GlassContainer(
+              padding: const EdgeInsets.all(0),
+              borderColor: isActive ? emeraldColor.withValues(alpha: 0.5) : null,
+              child: Column(
+                children: [
                 if (isActive)
                   Align(
                     alignment: Alignment.topRight,
@@ -908,7 +616,9 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: primaryColor,
+                        gradient: LinearGradient(
+                          colors: [emeraldColor, emeraldColor.withValues(alpha: 0.8)],
+                        ),
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(15),
                         ),
@@ -935,7 +645,9 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: primaryColor,
+                        gradient: LinearGradient(
+                          colors: [emeraldColor, emeraldColor.withValues(alpha: 0.8)],
+                        ),
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(15),
                         ),
@@ -969,7 +681,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                                       ? DesignSystem.labelText(
                                           context,
                                         ).withValues(alpha: 0.5)
-                                      : primaryColor,
+                                      : cardColor,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 1,
                                 ),
@@ -1013,7 +725,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                           if (isCompleted)
                             Icon(
                               LucideIcons.checkCircle2,
-                              color: primaryColor,
+                              color: emeraldColor,
                               size: 24,
                             ),
                         ],
@@ -1037,21 +749,25 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
                               context,
                               LucideIcons.playCircle,
                               "VIDEO",
+                              isActive ? emeraldColor : DesignSystem.primary(context),
                             ),
                             _buildResourceAction(
                               context,
                               LucideIcons.fileText,
                               "PDF",
+                              isActive ? emeraldColor : DesignSystem.primary(context),
                             ),
                             _buildResourceAction(
                               context,
                               LucideIcons.edit3,
                               "PRACTICE",
+                              isActive ? emeraldColor : DesignSystem.primary(context),
                             ),
                             _buildResourceAction(
                               context,
                               LucideIcons.trophy,
                               "TEST",
+                              isActive ? emeraldColor : DesignSystem.primary(context),
                             ),
                           ],
                         ),
@@ -1064,13 +780,14 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildResourceAction(
     BuildContext context,
     IconData icon,
     String label,
+    Color color,
   ) {
     return Column(
       children: [
@@ -1080,7 +797,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
             color: DesignSystem.surface(context),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: DesignSystem.primary(context), size: 20),
+          child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(height: 8),
         Text(
@@ -1090,6 +807,7 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
       ],
     );
   }
+
 
   // --- PATHFINDER FLOATING BUBBLE ---
   Widget _buildPathfinderBubble(BuildContext context, FormattedLearningPath path) {
@@ -1103,47 +821,11 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
       insight = gap;
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: primaryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: primaryColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Icon(LucideIcons.sparkles, color: primaryColor, size: 18),
-              const SizedBox(width: 12),
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: DesignSystem.bodyStyle(
-                      buildContext: context,
-                      fontSize: 12,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: "Pathfinder: ",
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextSpan(
-                        text: insight,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return _InteractivePathfinderTip(
+      tip: insight,
+      icon: LucideIcons.sparkles,
+      color: primaryColor,
+      isCompact: true,
     );
   }
 
@@ -1154,7 +836,126 @@ class _MasteryHubScreenState extends ConsumerState<MasteryHubScreen> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        boxShadow: [BoxShadow(color: color, blurRadius: 100, spreadRadius: 50)],
+      ),
+    );
+  }
+}
+
+class _InteractivePathfinderTip extends StatefulWidget {
+  final String tip;
+  final IconData icon;
+  final Color color;
+  final bool isCompact;
+
+  const _InteractivePathfinderTip({
+    required this.tip,
+    required this.icon,
+    required this.color,
+    this.isCompact = false,
+  });
+
+  @override
+  State<_InteractivePathfinderTip> createState() => _InteractivePathfinderTipState();
+}
+
+class _InteractivePathfinderTipState extends State<_InteractivePathfinderTip> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: widget.isCompact 
+          ? const EdgeInsets.fromLTRB(16, 0, 16, 16) 
+          : const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      child: Align(
+        alignment: Alignment.bottomLeft,
+        child: GestureDetector(
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.fastOutSlowIn,
+            padding: EdgeInsets.all(_isExpanded ? 16 : (widget.isCompact ? 8 : 12)),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.85,
+            ),
+            decoration: BoxDecoration(
+              color: _isExpanded 
+                  ? (Theme.of(context).brightness == Brightness.dark 
+                      ? const Color(0xFF1E293B) 
+                      : Colors.white)
+                  : widget.color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(_isExpanded ? 24 : (widget.isCompact ? 12 : 20)),
+              border: Border.all(
+                color: _isExpanded ? widget.color.withValues(alpha: 0.5) : widget.color.withValues(alpha: 0.3),
+                width: _isExpanded ? 1.5 : 1,
+              ),
+              boxShadow: _isExpanded ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: _isExpanded ? 0.3 : 0.0),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ] : [],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: widget.color.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(widget.icon, color: widget.color, size: 16),
+                    ),
+                    if (!_isExpanded && !widget.isCompact) ...[
+                      const SizedBox(width: 10),
+                      Text(
+                        "Pathfinder Insights ✨",
+                        style: GoogleFonts.plusJakartaSans(
+                          color: widget.color,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(LucideIcons.chevronDown, color: widget.color.withValues(alpha: 0.5), size: 14),
+                    ] else if (_isExpanded) ...[
+                      const SizedBox(width: 10),
+                      Text(
+                        "Pathfinder Tip",
+                        style: GoogleFonts.plusJakartaSans(
+                          color: widget.color,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (_isExpanded) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.tip,
+                    style: DesignSystem.bodyStyle(buildContext: context, fontSize: widget.isCompact ? 12 : 13)
+                        .copyWith(
+                          height: 1.5,
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? Colors.white.withValues(alpha: 0.9) 
+                              : Colors.black87,
+                        ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
