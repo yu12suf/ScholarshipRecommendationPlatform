@@ -188,19 +188,11 @@ export default function CommunityPage() {
     }
   }, []);
 
-useEffect(() => {
-  fetchGroups();
-}, [fetchGroups]);
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
 
-// Clear messages when group changes
-useEffect(() => {
-  if (selectedGroup?.id) {
-    setMessages([]);
-    setGroupMembers([]);
-  }
-}, [selectedGroup?.id]);
-
-// Fetch messages when group selected
+  // Fetch messages when group selected
   const fetchMessages = useCallback(async () => {
     // Check if user is logged in before fetching
     if (typeof window !== 'undefined' && !localStorage.getItem('accessToken')) {
@@ -236,7 +228,7 @@ useEffect(() => {
       }
       
       // Verify all messages belong to the current group
-      msgs = msgs.filter((m: any) => m.groupId === currentGroupId || m.group_id === currentGroupId);
+      msgs = msgs.filter((m: any) => m.group_id === currentGroupId);
       
       console.log('Messages data:', msgs);
       setMessages(msgs);
@@ -280,8 +272,6 @@ useEffect(() => {
         console.log('Group members:', groupData.members);
         console.log('DEBUG groupData.isAdmin:', groupData.isAdmin, 'groupData.isMember:', groupData.isMember);
         setGroupMembers(groupData.members || []);
-        
-        // Update both selectedGroup AND the groups lists
         setSelectedGroup(prev => prev ? { 
           ...prev, 
           isAdmin: groupData.isAdmin, 
@@ -289,10 +279,6 @@ useEffect(() => {
           addMembersPermission: groupData.addMembersPermission,
           memberCount: groupData.memberCount
         } : null);
-        
-        // Also update the groups in myGroups and allGroups
-        setMyGroups(prev => prev.map(g => g.id === currentGroupId ? { ...g, memberCount: groupData.memberCount } : g));
-        setAllGroups(prev => prev.map(g => g.id === currentGroupId ? { ...g, memberCount: groupData.memberCount } : g));
       }
     } catch (error: any) {
       console.error('Error fetching group details:', error?.message || error);
@@ -571,9 +557,12 @@ useEffect(() => {
     setAddingMember(true);
     try {
       await communityApi.addMember(selectedGroup.id, { userId, role: 'member' });
-      // Refresh both group details and member list - this will update all lists with correct count
       await fetchGroupDetails();
       setAvailableUsers(prev => prev.filter(u => u.id !== userId));
+      // Update member count in both group lists
+      const newCount = selectedGroup.memberCount + 1;
+      setMyGroups(prev => prev.map(g => g.id === selectedGroup.id ? { ...g, memberCount: newCount } : g));
+      setAllGroups(prev => prev.map(g => g.id === selectedGroup.id ? { ...g, memberCount: newCount } : g));
       // Refresh the list
       await loadAvailableUsers();
       showToast('Member added successfully!', 'success');
@@ -619,10 +608,11 @@ useEffect(() => {
     
     try {
       await communityApi.removeMember(selectedGroup.id, userId);
-      // Refresh group details - this will update all lists with correct count
       await fetchGroupDetails();
-      // Refresh available users list
-      await loadAvailableUsers();
+      // Update member count in both group lists
+      const newCount = Math.max(0, selectedGroup.memberCount - 1);
+      setMyGroups(prev => prev.map(g => g.id === selectedGroup.id ? { ...g, memberCount: newCount } : g));
+      setAllGroups(prev => prev.map(g => g.id === selectedGroup.id ? { ...g, memberCount: newCount } : g));
       showToast('Member removed successfully!', 'success');
     } catch (error: any) {
       console.error('Error removing member:', error);
