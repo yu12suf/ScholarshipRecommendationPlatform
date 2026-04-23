@@ -28,6 +28,7 @@ class LearningPathNotifier extends AsyncNotifier<FormattedLearningPath?> {
 
   Future<void> markProgress({
     int? videoId,
+    int? pdfId,
     required String section,
     bool isCompleted = true,
     bool isNote = false,
@@ -37,6 +38,7 @@ class LearningPathNotifier extends AsyncNotifier<FormattedLearningPath?> {
     state = await AsyncValue.guard(() async {
       await _api.markComplete(
         videoId: videoId,
+        pdfId: pdfId,
         section: section,
         isCompleted: isCompleted,
         isNote: isNote,
@@ -51,6 +53,10 @@ class LearningPathNotifier extends AsyncNotifier<FormattedLearningPath?> {
 
   Future<void> completeResource(int resourceId, String section) async {
     await markProgress(videoId: resourceId, section: section, isCompleted: true);
+  }
+
+  Future<void> completePdf(int pdfId, String section) async {
+    await markProgress(pdfId: pdfId, section: section, isCompleted: true);
   }
 }
 

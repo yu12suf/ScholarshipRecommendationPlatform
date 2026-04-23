@@ -33,6 +33,7 @@ class LearningPathApiService {
   /// `POST /api/learning-path/track` (authenticated).
   Future<LearningPathProgressEntry> markComplete({
     int? videoId,
+    int? pdfId,
     required String section,
     bool isCompleted = true,
     bool isNote = false,
@@ -43,6 +44,7 @@ class LearningPathApiService {
       auth: true,
       body: {
         if (videoId != null) 'videoId': videoId,
+        if (pdfId != null) 'pdfId': pdfId,
         'section': section,
         'isCompleted': isCompleted,
         'isNote': isNote,

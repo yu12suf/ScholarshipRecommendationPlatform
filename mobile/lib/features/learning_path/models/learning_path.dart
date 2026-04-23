@@ -3,6 +3,8 @@ import 'package:mobile/models/json_utils.dart';
 class PathVideo {
   const PathVideo({
     required this.id,
+    this.title,
+    this.description,
     required this.videoLink,
     required this.thumbnailLink,
     required this.level,
@@ -12,6 +14,8 @@ class PathVideo {
   });
 
   final int id;
+  final String? title;
+  final String? description;
   final String videoLink;
   final String thumbnailLink;
   final String level;
@@ -24,6 +28,8 @@ class PathVideo {
     if (id == null) throw FormatException('Video missing id: $json');
     return PathVideo(
       id: id,
+      title: readValue<String>(json, const ['title']),
+      description: readValue<String>(json, const ['description']),
       videoLink: readValue<String>(json, const ['videolink', 'video_link']) ?? '',
       thumbnailLink:
           readValue<String>(json, const ['thubnail', 'thumbnail_link']) ?? '',
@@ -39,6 +45,7 @@ class PathPdf {
   const PathPdf({
     required this.id,
     required this.title,
+    this.description,
     required this.pdfLink,
     required this.level,
     required this.type,
@@ -48,6 +55,7 @@ class PathPdf {
 
   final int id;
   final String title;
+  final String? description;
   final String pdfLink;
   final String level;
   final String type;
@@ -60,6 +68,7 @@ class PathPdf {
     return PathPdf(
       id: id,
       title: readValue<String>(json, const ['title']) ?? '',
+      description: readValue<String>(json, const ['description']),
       pdfLink: readValue<String>(json, const ['pdfLink', 'pdf_link']) ?? '',
       level: readValue<String>(json, const ['level']) ?? 'easy',
       type: readValue<String>(json, const ['type']) ?? 'Reading',
@@ -73,12 +82,14 @@ class Mission {
   final String title;
   final String objective;
   final List<PathVideo> videos;
+  final List<PathPdf> pdfs;
   final bool isCompleted;
 
   Mission({
     required this.title,
     required this.objective,
     required this.videos,
+    required this.pdfs,
     this.isCompleted = false,
   });
 
@@ -87,6 +98,7 @@ class Mission {
       title: json['title'] ?? '',
       objective: json['objective'] ?? '',
       videos: (json['videos'] as List?)?.map((v) => PathVideo.fromJson(v)).toList() ?? [],
+      pdfs: (json['pdfs'] as List?)?.map((p) => PathPdf.fromJson(p)).toList() ?? [],
       isCompleted: json['isCompleted'] ?? false,
     );
   }
