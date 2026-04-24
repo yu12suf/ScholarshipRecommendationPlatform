@@ -1,0 +1,146 @@
+[
+  {
+    "mission": 1,
+    "title": "Decoding Foundations",
+    "level": "Easy",
+    "topic": "The Great Library of Alexandria",
+    "passage": "The Great Library of Alexandria was one of the largest and most significant libraries of the ancient world. It was dedicated to the Muses, the nine goddesses of the arts. It flourished under the patronage of the Ptolemaic dynasty.",
+    "practiceDrill": {
+      "type": "R_MCQ",
+      "questions": [
+        {
+          "q": "Who was the library dedicated to?",
+          "options": ["A. The Ptolemies", "B. The nine Muses", "C. Ancient Scientists", "D. Alexander the Great"],
+          "answer": "B"
+        }
+      ]
+    },
+    "unitTest": {
+      "type": "R_FILL",
+      "questions": [
+        {
+          "q": "The library was built during the _______ dynasty.",
+          "answer": "Ptolemaic"
+        }
+      ]
+    }
+  },
+  {
+    "mission": 2,
+    "title": "Speed Scanning",
+    "level": "Easy",
+    "topic": "Coffee Production in Ethiopia",
+    "passage": "Coffee production in Ethiopia is a longstanding tradition. Ethiopia is where Coffea arabica, the coffee plant, originates. The plant is now grown in various parts of the world; however, Ethiopia itself accounts for around 3% of the global coffee market.",
+    "practiceDrill": {
+      "type": "R_TFNG",
+      "questions": [
+        {
+          "q": "Coffea arabica was first discovered in Brazil.",
+          "answer": "FALSE"
+        },
+        {
+          "q": "Ethiopia produces more than half of the world's coffee.",
+          "answer": "FALSE"
+        }
+      ]
+    },
+    "unitTest": {
+      "type": "R_MATCH",
+      "questions": [
+        {
+          "q": "Match the percentage '3%' to the correct fact.",
+          "answer": "Ethiopia's global market share."
+        }
+      ]
+    }
+  },
+  {
+    "mission": 3,
+    "title": "Synonym Synthesis",
+    "level": "Medium",
+    "topic": "Renewable Energy Transition",
+    "passage": "The global shift toward renewable energy sources is accelerating at an unprecedented pace. Solar photovoltaic (PV) systems and wind turbines are now the primary drivers of this transition, significantly reducing reliance on fossil fuels. In 2023, renewable sources accounted for over 30% of global electricity generation, marking a historic milestone. However, the intermittent nature of solar and wind power presents substantial grid integration challenges. Consequently, large-scale battery storage solutions and smart grid technologies are becoming indispensable for maintaining a stable and reliable energy supply during peak demand periods.",
+    "practiceDrill": {
+      "type": "R_FILL",
+      "questions": [
+        {
+          "q": "Solar PV systems and wind turbines are helping to reduce the world's dependence on _______.",
+          "answer": "fossil fuels"
+        },
+        {
+          "q": "To manage the inconsistent supply of wind and solar power, ________ technologies are being utilized.",
+          "answer": "smart grid"
+        }
+      ]
+    },
+    "unitTest": {
+      "type": "R_HEAD",
+      "questions": [
+        {
+          "q": "Choose the correct heading for this paragraph.",
+          "options": ["A. The Dangers of Fossil Fuels", "B. The Rise of Renewables and Grid Challenges", "C. The History of Solar Power"],
+          "answer": "B"
+        }
+      ]
+    }
+  },
+  {
+    "mission": 4,
+    "title": "Main Idea Mastery",
+    "level": "Medium",
+    "topic": "Urbanization in Africa",
+    "passage": "Sub-Saharan Africa is experiencing the most rapid rate of urbanization globally. By 2050, it is projected that the region's urban population will triple, reaching over 1.3 billion people. This demographic shift is primarily driven by rural-to-urban migration as individuals seek better economic opportunities and improved living standards. While urbanization fosters economic growth and innovation, it simultaneously strains existing infrastructure. Many burgeoning megacities face severe housing shortages, inadequate sanitation facilities, and rampant traffic congestion, necessitating urgent and sustainable urban planning strategies.",
+    "practiceDrill": {
+      "type": "R_HEAD",
+      "questions": [
+        {
+          "q": "Which heading best summarizes the passage?",
+          "options": ["A. Rural Migration Trends", "B. The Economic Boom in Africa", "C. Rapid Urbanization: Causes and Consequences"],
+          "answer": "C"
+        }
+      ]
+    },
+    "unitTest": {
+      "type": "R_DIAG",
+      "questions": [
+        {
+          "q": "Label the diagram showing the primary cause of African urbanization.",
+          "options": ["Rural-to-urban migration", "Economic growth", "Infrastructure strain"],
+          "answer": "Rural-to-urban migration"
+        }
+      ]
+    }
+  },
+  {
+    "mission": 5,
+    "title": "Advanced Inference",
+    "level": "Hard",
+    "topic": "The History of Artificial Intelligence",
+    "passage": "The genesis of Artificial Intelligence (AI) can be traced back to the seminal Dartmouth Workshop of 1956, where the term was officially coined by John McCarthy. Early pioneers exuded boundless optimism, prognosticating that machines possessing human-equivalent intelligence would be actualized within a generation. However, this initial fervor was subsequently dampened by the 'AI Winter' of the 1970s and 80s—a period characterized by a precipitous decline in funding and academic interest due to unfulfilled expectations and computational limitations. It was not until the advent of sophisticated machine learning algorithms and the exponential proliferation of big data in the 21st century that AI experienced a veritable renaissance, transcending theoretical paradigms to become a ubiquitous component of contemporary technology.",
+    "practiceDrill": {
+      "type": "R_MATCH",
+      "questions": [
+        {
+          "q": "Match the 'AI Winter' to its corresponding description.",
+          "options": ["A. The coining of the term AI", "B. A period of reduced funding and interest", "C. The modern renaissance of machine learning"],
+          "answer": "B"
+        },
+        {
+          "q": "Match 'John McCarthy' to his achievement.",
+          "options": ["A. Coined the term Artificial Intelligence", "B. Created the first machine learning algorithm", "C. Ended the AI Winter"],
+          "answer": "A"
+        }
+      ]
+    },
+    "unitTest": {
+      "type": "R_MCQ",
+      "questions": [
+        {
+          "q": "What primarily catalyzed the modern renaissance of AI?",
+          "options": ["A. The Dartmouth Workshop", "B. A sudden increase in government funding", "C. Machine learning algorithms and big data", "D. The end of the 1970s"],
+          "answer": "C"
+        }
+      ]
+    }
+  }
+]

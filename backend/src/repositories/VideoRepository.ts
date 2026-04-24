@@ -30,8 +30,8 @@ export class VideoRepository {
     static async findByLevelAndType(level: string, type: string, limit: number = 2): Promise<Video[]> {
         return Video.findAll({
             where: {
-                level,
-                type
+                level: { [Op.iLike]: level },
+                type: { [Op.iLike]: type }
             },
             limit
         });
@@ -44,9 +44,9 @@ export class VideoRepository {
         for (const type of types) {
             result[type.toLowerCase()] = await Video.findAll({
                 where: {
-                    level,
-                    type: type as any,
-                    examType: examType as any
+                    level: { [Op.iLike]: level },
+                    type: { [Op.iLike]: type as any },
+                    examType: { [Op.iLike]: examType as any }
                 },
                 order: [['id', 'ASC']]
             });

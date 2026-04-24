@@ -260,18 +260,25 @@ export class LearningPathService {
         
         if (missionVideos.length > 0 || missionPdfs.length > 0) {
           const isPracticeCompleted = updatedLearningMode[skill]?.questions?.some((q: any) => q.isCompleted) || 
-                                      (Array.isArray(updatedLearningMode[skill]) && updatedLearningMode[skill].some((q: any) => q.isCompleted));
+                                      (Array.isArray(updatedLearningMode[skill]) && updatedLearningMode[skill].some((q: any) => q.isCompleted)) ||
+                                      (updatedLearningMode[skill] && (updatedLearningMode[skill].prompt || updatedLearningMode[skill].question) && updatedLearningMode[skill].isCompleted);
                                       
+          const normalizedSkill = skill.charAt(0).toUpperCase() + skill.slice(1).toLowerCase();
+          const unitTestEntry = allProgress.find(p => p.section === normalizedSkill && p.isUnitTest && p.missionIndex === i);
+          const isUnitTestCompleted = unitTestEntry ? unitTestEntry.isCompleted : false;
+
           const isMissionCompleted = (missionVideos.length > 0 ? missionVideos.every(v => v.isCompleted) : true) && 
                                      (missionPdfs.length > 0 ? missionPdfs.every(p => p.isCompleted) : true) &&
-                                     isPracticeCompleted;
+                                     isPracticeCompleted &&
+                                     isUnitTestCompleted;
           
           missions.push({
             title: missionInfo.title,
             objective: missionInfo.objective,
             videos: missionVideos,
             pdfs: missionPdfs,
-            isCompleted: !!isMissionCompleted
+            isCompleted: !!isMissionCompleted,
+            isUnitTestCompleted: !!isUnitTestCompleted
           });
         }
       }
@@ -285,8 +292,42 @@ export class LearningPathService {
       };
     }
 
-    const progressPercentage =
-      totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
+    // --- Weighted Overall Progress Calculation ---
+    let totalSkillProgressSum = 0;
+    for (const skill of skills) {
+      const skillData = result[skill];
+      const missions = skillData.missions;
+      if (missions && missions.length > 0) {
+        let skillWeightedSum = 0;
+        for (const mission of missions) {
+          // Video: 40% | PDF: 20% | Practice: 40%
+          const videoRatio = mission.videos.length > 0 
+            ? mission.videos.filter((v: any) => v.isCompleted).length / mission.videos.length 
+            : 1.0; 
+          
+          const pdfRatio = mission.pdfs.length > 0 
+            ? mission.pdfs.filter((p: any) => p.isCompleted).length / mission.pdfs.length 
+            : 1.0;
+
+          // Practice calculation
+          const skillLm = updatedLearningMode[skill];
+          let practiceRatio = 0;
+          if (Array.isArray(skillLm)) {
+            practiceRatio = skillLm.length > 0 ? skillLm.filter((q: any) => q.isCompleted).length / skillLm.length : 0;
+          } else if (skillLm && skillLm.questions) {
+            practiceRatio = skillLm.questions.length > 0 ? skillLm.questions.filter((q: any) => q.isCompleted).length / skillLm.questions.length : 0;
+          } else if (skillLm && (skillLm.prompt || skillLm.question)) {
+            practiceRatio = skillLm.isCompleted ? 1 : 0;
+          }
+
+          const missionProgress = (videoRatio * 0.4) + (pdfRatio * 0.2) + (practiceRatio * 0.4);
+          skillWeightedSum += (missionProgress / missions.length);
+        }
+        totalSkillProgressSum += (skillWeightedSum / skills.length);
+      }
+    }
+
+    const progressPercentage = Math.round(totalSkillProgressSum * 100);
     
     // Update the record in the database
     if (path.currentProgressPercentage !== progressPercentage) {
@@ -354,19 +395,26 @@ export class LearningPathService {
    * Generates a mini unit test for a specific skill and level.
    */
   static async generateUnitTest(skill: string, level: string, examType: string = 'IELTS') {
+    const isReading = skill.toLowerCase().includes('reading');
+    const isListening = skill.toLowerCase().includes('listening');
+
     const prompt = `
       Role: Senior ${examType} Examiner
       Task: Generate a high-stakes Unit Test for the ${skill} section.
       Difficulty: ${level}
       
       Requirement: 
-      - Provide 5 multiple-choice questions.
+      ${isReading ? "- Provide a 400-500 word academic Reading Passage." : ""}
+      ${isListening ? "- Provide a detailed Listening Script (conversation or lecture) for the audio section." : ""}
+      - Provide 5 multiple-choice questions based on the ${isReading ? "passage" : (isListening ? "script" : "task")}.
       - Each question must have 4 options and 1 correct answer.
       - Include a brief explanation for the correct answer.
       
       Return ONLY a valid JSON object in this schema:
       {
         "skill": "${skill}",
+        ${isReading ? '"passage": "string",' : ""}
+        ${isListening ? '"script": "string",' : ""}
         "questions": [
           {
             "question": "string",
@@ -383,9 +431,80 @@ export class LearningPathService {
   }
 
   /**
+   * Dynamically generates a full mission content (Practice Drill & Unit Test) using AI,
+   * with sequentially varying question types based on the missionIndex.
+   */
+  static async generateMissionContent(skill: string, level: string, topic: string, missionIndex: number = 0) {
+    const isReading = skill.toLowerCase().includes('reading');
+    const isListening = skill.toLowerCase().includes('listening');
+    const isWriting = skill.toLowerCase().includes('writing');
+    const isSpeaking = skill.toLowerCase().includes('speaking');
+    
+    // Standard IELTS Question Types Ordered by Mission Sequence
+    const readingTypes = ['R_MCQ', 'R_TFNG', 'R_HEAD', 'R_MATCH', 'R_FILL', 'R_DIAG'];
+    const listeningTypes = ['L_MCQ', 'L_MATCH', 'L_FORM', 'L_MAP', 'L_FLOW'];
+    const writingTypes = ['W_FIX', 'W_MERGE', 'W_VOCAB', 'W_STRUCTURE', 'W_IDEA'];
+    const speakingTypes = ['S_PART1', 'S_PART2', 'S_PART3', 'S_MIXED'];
+    
+    let types = readingTypes;
+    if (isListening) types = listeningTypes;
+    if (isWriting) types = writingTypes;
+    if (isSpeaking) types = speakingTypes;
+    
+    // Map the mission index to the specific question type, cycling back if index exceeds array length
+    const safeIndex = Math.max(0, missionIndex) % types.length;
+    const type1 = types[safeIndex];
+    
+    // Unit Test gets a slightly different type to mix it up, usually the next one in the sequence
+    const nextIndex = (safeIndex + 1) % types.length;
+    const type2 = types[nextIndex];
+
+    const prompt = `
+      Role: Senior IELTS/TOEFL Content Architect
+      Task: Generate a dynamic, highly accurate Mission for the ${skill} section.
+      Difficulty: ${level}
+      Topic/Theme: ${topic || "Academic Subject"}
+      
+      Requirements: 
+      ${isReading ? "- Provide a 300-400 word academic Reading Passage." : ""}
+      ${isListening ? "- Provide a detailed Listening Script (conversation or lecture). Add a distractor (speaker corrects themselves) to trick the student." : ""}
+      ${isWriting ? "- Provide a short writing prompt or scenario (e.g., a paragraph with deliberate errors, or a Task 1 graph description)." : ""}
+      ${isSpeaking ? "- Provide a Speaking Examiner prompt (e.g., questions about hometown, a Cue Card, or abstract discussion questions)." : ""}
+      - The Practice Drill must use the ${type1} question type and contain 2 questions.
+      - The Unit Test must use the ${type2} question type and contain 3 questions.
+      - For each question, provide the correct answer and a 'feedbackTip' explaining why it's correct or explaining the trap.
+      
+      Return ONLY a valid JSON object in this schema:
+      {
+        "title": "Dynamic Mission: ${topic}",
+        "level": "${level}",
+        ${isReading ? '"passage": "string",' : ""}
+        ${isListening ? '"script": "string", "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",' : ""}
+        ${isWriting ? '"writingPrompt": "string",' : ""}
+        ${isSpeaking ? '"speakingPrompt": "string",' : ""}
+        "practiceDrill": {
+          "type": "${type1}",
+          "questions": [
+            { "q": "Question text", "options": ["A", "B", "C"], "answer": "correct string/option", "distractor": "optional string to trick them", "feedbackTip": "AI generated explanation" }
+          ]
+        },
+        "unitTest": {
+          "type": "${type2}",
+          "questions": [
+            { "q": "Question text", "options": ["A", "B"], "answer": "correct string/option", "feedbackTip": "AI generated explanation" }
+          ]
+        }
+      }
+    `;
+
+    const response = await AIService.generateJSON(prompt);
+    return response;
+  }
+
+  /**
    * Evaluates unit test results and marks module as mastered if successful.
    */
-  static async evaluateUnitTest(studentId: number, skill: string, responses: any[]) {
+  static async evaluateUnitTest(studentId: number, skill: string, responses: any[], missionIndex: number) {
     // Logic: Simple score calculation or AI evaluation
     // For Unit Tests (MCQs), we can just check indices
     let correctCount = 0;
@@ -401,8 +520,9 @@ export class LearningPathService {
       await LearningPathProgress.findOrCreate({
         where: {
           studentId,
-          section: skill.charAt(0).toUpperCase() + skill.slice(1).toLowerCase(),
-          isNote: false, // Using a specific flag or just completion
+          section: skill.charAt(0).toUpperCase() + skill.slice(1).toLowerCase() as any,
+          isUnitTest: true,
+          missionIndex: missionIndex
         },
         defaults: {
           isCompleted: true,

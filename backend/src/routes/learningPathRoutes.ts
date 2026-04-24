@@ -10,5 +10,6 @@ router.post("/complete-section", authenticate, LearningPathController.markSectio
 router.post("/speaking/evaluate", authenticate, LearningPathController.evaluateSpeaking);
 router.post("/unit-test/generate", authenticate, LearningPathController.generateUnitTest);
 router.post("/unit-test/submit", authenticate, LearningPathController.submitUnitTest);
+router.post("/mission/generate-dynamic", authenticate, LearningPathController.generateDynamicMission);
 
 export default router;

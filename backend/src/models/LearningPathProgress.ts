@@ -65,6 +65,21 @@ export class LearningPathProgress extends Model {
     declare isNote: boolean;
 
     @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'is_unit_test'
+    })
+    declare isUnitTest: boolean;
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        field: 'mission_index'
+    })
+    declare missionIndex: number;
+
+    @Column({
         type: DataType.STRING(20),
         allowNull: false,
     })

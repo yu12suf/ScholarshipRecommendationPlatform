@@ -1,0 +1,89 @@
+[
+  {
+    "mission": 1,
+    "title": "Precision Hearing",
+    "level": "Easy",
+    "topic": "Gym Registration",
+    "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    "script": "My name is Sarah Johnston, that's J-O-H-N-S-T-O-N. I'd like to join from the 12th of October.",
+    "practiceDrill": {
+      "type": "L_FORM",
+      "questions": [
+        {
+          "q": "Sarah _________",
+          "answer": "Johnston"
+        },
+        {
+          "q": "_________ October",
+          "answer": "12th"
+        }
+      ]
+    },
+    "unitTest": {
+      "type": "L_MCQ",
+      "questions": [
+        {
+          "q": "What type of membership does Sarah want?",
+          "options": ["A. Monthly", "B. Yearly", "C. Trial"],
+          "answer": "A"
+        }
+      ]
+    }
+  },
+  {
+    "mission": 2,
+    "title": "Context Tracking",
+    "level": "Easy",
+    "topic": "Museum Layout",
+    "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    "script": "Welcome! The gift shop is straight ahead, but the dinosaur exhibit is to your left, just past the cafe.",
+    "practiceDrill": {
+      "type": "L_MCQ",
+      "questions": [
+        {
+          "q": "Where is the dinosaur exhibit?",
+          "options": ["A. Straight ahead", "B. To the right", "C. Left of the entrance"],
+          "answer": "C"
+        }
+      ]
+    },
+    "unitTest": {
+      "type": "L_MAP",
+      "questions": [
+        {
+          "q": "Label 'A' on the map.",
+          "options": ["Gift Shop", "Cafe", "Dinosaur exhibit"],
+          "answer": "Gift Shop"
+        }
+      ]
+    }
+  },
+  {
+    "mission": 3,
+    "title": "The Echo Trap",
+    "level": "Easy",
+    "topic": "Booking a Train Ticket",
+    "audioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    "script": "Hello, I'd like to book a ticket for the train to London. I want the 5:00 train... no, wait, actually make that the 5:30. Traffic will be bad today.",
+    "practiceDrill": {
+      "type": "L_FLOW",
+      "questions": [
+        {
+          "q": "Step 1: Choose destination -> Step 2: Select time: _________",
+          "answer": "5:30",
+          "distractor": "5:00",
+          "feedbackTip": "Pathfinder Tip: Did you hear the words 'wait' or 'actually'? IELTS speakers often change their mind to test if you are really paying attention!"
+        }
+      ]
+    },
+    "unitTest": {
+      "type": "L_FORM",
+      "questions": [
+        {
+          "q": "Destination: _________",
+          "answer": "London"
+        }
+      ]
+    }
+  }
+]

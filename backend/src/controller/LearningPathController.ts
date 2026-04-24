@@ -230,12 +230,38 @@ export class LearningPathController {
     }
 
     /**
+     * Dynamically generates a full mission (Practice & Unit Test) using AI.
+     */
+    static async generateDynamicMission(req: Request, res: Response) {
+        try {
+            const { skill, level, topic, missionIndex } = req.body;
+            
+            if (!skill || !level || !topic) {
+                return res.status(400).json({ success: false, error: "Missing skill, level, or topic" });
+            }
+
+            const parsedIndex = missionIndex !== undefined ? parseInt(missionIndex, 10) : 0;
+            const missionData = await LearningPathService.generateMissionContent(skill, level, topic, parsedIndex);
+            
+            return res.status(200).json({
+                success: true,
+                data: missionData
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    /**
      * Submits a unit test for evaluation.
      */
     static async submitUnitTest(req: Request, res: Response) {
         try {
             const userId = req.user?.id;
-            const { skill, responses } = req.body;
+            const { skill, responses, missionIndex } = req.body;
 
             if (!userId) {
                 return res.status(401).json({ success: false, error: "Unauthorized" });
@@ -246,7 +272,7 @@ export class LearningPathController {
                 return res.status(404).json({ success: false, error: "Student profile not found" });
             }
 
-            const result = await LearningPathService.evaluateUnitTest(student.id, skill, responses);
+            const result = await LearningPathService.evaluateUnitTest(student.id, skill, responses, missionIndex);
             
             return res.status(200).json({
                 success: true,

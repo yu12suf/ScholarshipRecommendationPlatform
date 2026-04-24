@@ -550,7 +550,7 @@ export class AssessmentService {
     
     const responseText = await chain.invoke(
       [systemInstruction, new HumanMessage({ content: textPrompt })],
-      { response_format: { type: "json_object" } }
+      { response_format: { type: "json_object" } } as any
     );
 
     const sanitized = this.sanitizeJSONString(responseText);
@@ -578,9 +578,11 @@ export class AssessmentService {
       
       Blueprint (Grading Key): {blueprint}
       Student Response: {response}
+      DETERMINISTIC SCORE CALCULATION: {deterministicScore}
       
       Instructions:
-      1. Assign a score (0-9 for IELTS, 0-30 for TOEFL).
+      1. Assign a score (0-9 for IELTS, 0-30 for TOEFL). 
+         {skill === 'reading' || skill === 'listening' ? 'CRITICAL: Use the DETERMINISTIC SCORE provided above as the primary score for this section.' : 'Evaluate the response qualitatively to assign a score.'}
       2. Provide detailed feedback (min 200 chars).
       3. Generate "Learning Mode" content:
          - For Reading: 3 practice questions with answers/explanations.
@@ -598,10 +600,41 @@ export class AssessmentService {
       CRITICAL: Return ONLY valid JSON. NO preamble, NO markdown blocks (\`\`\`json), and NO extra text.
     `);
 
+    // --- Deterministic MCQ Scoring for Objective Sections ---
+    let deterministicScore: number | null = null;
+    let totalQuestions = 0;
+    let correctCount = 0;
+
+    if (skill === "reading" || skill === "listening") {
+      const questions = skillBlueprint?.questions;
+      if (Array.isArray(questions) && questions.length > 0) {
+        totalQuestions = questions.length;
+        questions.forEach((q: any) => {
+          const studentAns = skillResponse[q.id];
+          const correctAns = q.correct_answer;
+          if (studentAns && correctAns && 
+              studentAns.toString().toLowerCase().trim() === correctAns.toString().toLowerCase().trim()) {
+            correctCount++;
+          }
+        });
+        
+        const maxScore = (blueprint.data?.exam_summary?.type === "TOEFL") ? 30 : 9;
+        deterministicScore = (correctCount / totalQuestions) * maxScore;
+        // Round to nearest 0.5 for IELTS
+        if (maxScore === 9) {
+          deterministicScore = Math.round(deterministicScore * 2) / 2;
+        } else {
+          deterministicScore = Math.round(deterministicScore);
+        }
+      }
+    }
+
     const textPrompt = await promptTemplate.format({
       skill,
       blueprint: JSON.stringify(skillBlueprint),
       response: JSON.stringify(skillResponse),
+      deterministicScore: deterministicScore !== null ? deterministicScore.toString() : "N/A",
+      "skill === 'reading' || skill === 'listening' ? 'CRITICAL: Use the DETERMINISTIC SCORE provided above as the primary score for this section.' : 'Evaluate the response qualitatively to assign a score.'": undefined
     });
 
     const messagesContent: any[] = [{ type: "text", text: textPrompt }];
@@ -707,16 +740,16 @@ export class AssessmentService {
         }},
         "feedback_report": "A long-form professional encouraging strategy (300+ words).",
         "learning_mode": {{
-           "reading": [{{ "question": "", "options": ["", "", "", ""], "correct_answer": 0, "explanation": "" }}],
-           "listening": [...],
-           "writing": [{{ "prompt": "", "sample_answer": "", "explanation": "" }}],
-           "speaking": [{{ "prompt": "", "tips": "", "sample_response": "" }}]
+           "reading": {{ "passage": "string", "questions": [{{ "question": "", "options": ["", "", "", ""], "correct_answer": 0, "explanation": "" }}] }},
+           "listening": {{ "script": "string", "questions": [{{ "question": "", "options": ["", "", "", ""], "correct_answer": 0, "explanation": "" }}] }},
+           "writing": {{ "prompt": "string", "sample_answer": "string", "explanation": "string" }},
+           "speaking": {{ "prompt": "string", "tips": "string", "sample_response": "string" }}
         }},
         "adaptive_learning_tags": ["list", "of", "skill-based", "tags"]
       }}
       
       Rules:
-      1. Provide 3-5 high-quality practice questions for Reading/Listening.
+      1. Provide a comprehensive academic passage for Reading and a full script for Listening, along with 3-5 high-quality practice questions.
       2. Provide 1-2 high-quality prompts for Writing/Speaking.
       3. Ensure "proficiency_profile" is punchy and suitable for a mobile UI bubble.
       4. NO MARKDOWN (no \`\`\`json blocks).

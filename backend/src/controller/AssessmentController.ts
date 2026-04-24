@@ -11,10 +11,10 @@ export class AssessmentController {
       const difficulty =
         typeof req.body?.difficulty === "string"
           ? req.body.difficulty.trim()
-          : "";
+          : "medium";
 
-      if (!examType || !difficulty) {
-        res.status(400).json({ error: "examType and difficulty are required" });
+      if (!examType) {
+        res.status(400).json({ error: "examType is required" });
         return;
       }
 
@@ -186,6 +186,24 @@ export class AssessmentController {
       res.json({
         status: "success",
         data: progress,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async reset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const student = await StudentRepository.findByUserId(req.user!.id);
+      if (!student) {
+        res.status(404).json({ error: "Student profile not found" });
+        return;
+      }
+
+      await AssessmentService.resetAssessment(student.id as number);
+      res.json({
+        status: "success",
+        message: "Assessment and learning path reset successfully.",
       });
     } catch (error) {
       next(error);

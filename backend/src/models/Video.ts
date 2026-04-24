@@ -64,6 +64,13 @@ export class Video extends Model {
         defaultValue: 'IELTS'
     })
     declare examType: 'IELTS' | 'TOEFL';
+  
+    @Column({
+      type: DataType.STRING(20),
+      allowNull: true,
+      defaultValue: '10:00'
+    })
+    declare duration: string;
 
     @Column({
         type: DataType.STRING(10),

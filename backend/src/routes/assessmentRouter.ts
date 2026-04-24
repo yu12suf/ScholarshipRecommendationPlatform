@@ -13,5 +13,6 @@ assessmentRouter.post("/submit", AssessmentController.submit);
 assessmentRouter.post("/submit-section", AssessmentController.submitSection);
 assessmentRouter.get("/result/:test_id", AssessmentController.getResult);
 assessmentRouter.get("/progress", AssessmentController.getProgress);
+assessmentRouter.post("/reset", AssessmentController.reset);
 
 export default assessmentRouter;
