@@ -25,7 +25,7 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
     final watchlistAsync = ref.watch(scholarshipWatchlistProvider);
 
     return Scaffold(
-      backgroundColor: DesignSystem.background,
+      backgroundColor: DesignSystem.themeBackground(context),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -36,14 +36,14 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
             child: GlassContainer(
               padding: const EdgeInsets.all(10),
               borderRadius: 50,
-              child: const Icon(LucideIcons.arrowLeft, color: Colors.white, size: 20),
+              child: Icon(LucideIcons.arrowLeft, color: DesignSystem.mainText(context), size: 20),
             ),
           ),
         ),
         title: Text(
           "Tracked Applications",
           style: GoogleFonts.plusJakartaSans(
-            color: Colors.white,
+            color: DesignSystem.mainText(context),
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -89,7 +89,7 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
                 return Center(
                   child: Text(
                     message,
-                    style: GoogleFonts.inter(color: Colors.white54),
+                    style: GoogleFonts.inter(color: DesignSystem.labelText(context)),
                   ),
                 );
               }
@@ -141,7 +141,7 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
         statusText = 'Accepted';
         break;
       default:
-        statusColor = Colors.white54;
+        statusColor = DesignSystem.labelText(context);
         statusText = 'Saved';
     }
 
@@ -186,9 +186,9 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: DesignSystem.surface(context),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                        border: Border.all(color: DesignSystem.surfaceMediumColor(context)),
                       ),
                       child: const Icon(LucideIcons.edit2, color: Color(0xFF10B981), size: 14),
                     ),
@@ -199,7 +199,7 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
               Text(
                 item.scholarship?.title ?? "Unknown Scholarship",
                 style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
+                  color: DesignSystem.mainText(context),
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
                 ),
@@ -207,7 +207,7 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
               const SizedBox(height: 5),
               Text(
                 item.scholarship?.country ?? "International",
-                style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
+                style: GoogleFonts.inter(color: DesignSystem.labelText(context), fontSize: 12),
               ),
               const SizedBox(height: 15),
               if (item.manualDeadline != null)
@@ -245,7 +245,7 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
               children: [
               Text(
                 "Update Status",
-                style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                style: GoogleFonts.plusJakartaSans(color: DesignSystem.mainText(ctx), fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Flexible(
@@ -293,14 +293,14 @@ class TrackedScholarshipsScreen extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         decoration: BoxDecoration(
-          color: isSelected ? DesignSystem.primary(context).withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
+          color: isSelected ? DesignSystem.primary(context).withValues(alpha: 0.1) : DesignSystem.surface(context),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: isSelected ? DesignSystem.primary(context) : Colors.transparent),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: GoogleFonts.inter(color: isSelected ? DesignSystem.primary(context) : Colors.white, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+            Text(label, style: GoogleFonts.inter(color: isSelected ? DesignSystem.primary(context) : DesignSystem.mainText(context), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
             if (isSelected) Icon(LucideIcons.check, color: DesignSystem.primary(context), size: 16),
           ],
         ),

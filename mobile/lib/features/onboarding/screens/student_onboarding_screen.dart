@@ -134,7 +134,7 @@ class _StudentOnboardingScreenState
     }
 
     return Scaffold(
-      backgroundColor: DesignSystem.background,
+      backgroundColor: DesignSystem.themeBackground(context),
       body: Stack(
         children: [
           // Background Glows
@@ -209,7 +209,7 @@ class _StudentOnboardingScreenState
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: DesignSystem.background,
+        color: DesignSystem.themeBackground(context),
         border: Border(top: BorderSide(color: DesignSystem.glassBorder(context))),
       ),
       child: Row(
@@ -268,7 +268,7 @@ class _StudentOnboardingScreenState
               const SizedBox(height: 8),
               Text(
                 "Help us set up your profile",
-                style: DesignSystem.bodyStyle(color: Colors.white54),
+                style: DesignSystem.bodyStyle(buildContext: context),
               ),
               const SizedBox(height: 32),
     
@@ -329,8 +329,8 @@ class _StudentOnboardingScreenState
                         colorScheme: ColorScheme.dark(
                           primary: DesignSystem.primary(context),
                           onPrimary: Colors.white,
-                          surface: DesignSystem.background,
-                          onSurface: Colors.white,
+                          surface: DesignSystem.themeBackground(context),
+                          onSurface: DesignSystem.mainText(context),
                         ),
                       ),
                       child: child!,
@@ -425,7 +425,7 @@ class _StudentOnboardingScreenState
             const SizedBox(height: 8),
             Text(
               "Your educational background",
-              style: DesignSystem.bodyStyle(color: Colors.white54),
+              style: DesignSystem.bodyStyle(buildContext: context),
             ),
             const SizedBox(height: 32),
 
@@ -598,7 +598,7 @@ class _StudentOnboardingScreenState
 
             if (showResearchFields) ...[
               const SizedBox(height: 16),
-              const Divider(color: Colors.white10),
+              Divider(color: DesignSystem.surfaceMediumColor(context)),
               const SizedBox(height: 16),
               _buildFieldLabel("Research Area"),
               CustomTextField(
@@ -658,7 +658,7 @@ class _StudentOnboardingScreenState
             const SizedBox(height: 8),
             Text(
               "Where and how you want to study",
-              style: DesignSystem.bodyStyle(color: Colors.white54),
+              style: DesignSystem.bodyStyle(buildContext: context),
             ),
             const SizedBox(height: 32),
 
@@ -711,7 +711,7 @@ class _StudentOnboardingScreenState
                         label: Text(
                           c,
                           style: DesignSystem.labelStyle(
-                            color: Colors.white,
+                            color: DesignSystem.mainText(context),
                             fontSize: 11,
                           ),
                         ),
@@ -747,7 +747,7 @@ class _StudentOnboardingScreenState
                         label: Text(
                           uni,
                           style: DesignSystem.labelStyle(
-                            color: Colors.white,
+                            color: DesignSystem.mainText(context),
                             fontSize: 11,
                           ),
                         ),
@@ -804,7 +804,7 @@ class _StudentOnboardingScreenState
             const SizedBox(height: 8),
             Text(
               "Final details and documentation",
-              style: DesignSystem.bodyStyle(color: Colors.white54),
+              style: DesignSystem.bodyStyle(buildContext: context),
             ),
             const SizedBox(height: 32),
 

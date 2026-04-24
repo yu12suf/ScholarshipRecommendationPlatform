@@ -69,7 +69,7 @@ class _MatchingAnalysisOverlayState extends State<MatchingAnalysisOverlay>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DesignSystem.background,
+      backgroundColor: DesignSystem.themeBackground(context),
       body: Stack(
         children: [
           // Background Glows
@@ -128,7 +128,7 @@ class _MatchingAnalysisOverlayState extends State<MatchingAnalysisOverlay>
                       Container(
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
-                          color: DesignSystem.background,
+                          color: DesignSystem.themeBackground(context),
                           shape: BoxShape.circle,
                           border: Border.all(color: DesignSystem.glassBorder(context)),
                           boxShadow: [

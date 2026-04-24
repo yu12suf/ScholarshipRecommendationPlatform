@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/core/providers/navigation_provider.dart';
 
 import 'package:mobile/features/learning_path/screens/mastery_hub_screen.dart';
+import 'package:mobile/features/mentors/screens/mentors_hub_screen.dart';
 
 class MainLayoutScreen extends ConsumerStatefulWidget {
   const MainLayoutScreen({super.key});
@@ -24,9 +25,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     const DashboardScreen(),
     const DiscoverScreen(),
     const MasteryHubScreen(),
-    const Center(
-      child: Text('Mentors', style: TextStyle(color: Colors.white)),
-    ),
+    const MentorsHubScreen(),
     const InterviewScreen(),
   ];
 
@@ -48,7 +47,6 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
   }
 
   Widget _buildBottomNav(int currentIndex) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Positioned(
       bottom: 0,
       left: 0,
@@ -59,7 +57,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
           child: Container(
             height: 64, // Compact professional height
             decoration: BoxDecoration(
-              color: (isDark ? const Color(0xFF0F172A) : Colors.white).withValues(alpha: 0.95),
+              color: DesignSystem.themeBackground(context).withValues(alpha: 0.95),
               border: Border(
                 top: BorderSide(
                   color: DesignSystem.surface(context).withValues(alpha: 0.1),
@@ -69,11 +67,11 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
             ),
             child: Row(
               children: [
-                Expanded(child: _buildNavItem(LucideIcons.home, "Home", 0, currentIndex)),
-                Expanded(child: _buildNavItem(LucideIcons.compass, "Discover", 1, currentIndex)),
-                Expanded(child: _buildNavItem(LucideIcons.trendingUp, "Pathway", 2, currentIndex)),
-                Expanded(child: _buildNavItem(LucideIcons.graduationCap, "Mentors", 3, currentIndex)),
-                Expanded(child: _buildNavItem(LucideIcons.mic, "Interview", 4, currentIndex)),
+                Expanded(child: _buildNavItem(LucideIcons.home, Icons.home_rounded, "Home", 0, currentIndex)),
+                Expanded(child: _buildNavItem(LucideIcons.compass, Icons.explore_rounded, "Discover", 1, currentIndex)),
+                Expanded(child: _buildNavItem(LucideIcons.graduationCap, Icons.school_rounded, "Learn", 2, currentIndex)),
+                Expanded(child: _buildNavItem(LucideIcons.users, Icons.groups_rounded, "Mentors", 3, currentIndex)),
+                Expanded(child: _buildNavItem(LucideIcons.mic, Icons.mic_rounded, "Interview", 4, currentIndex)),
               ],
             ),
           ),
@@ -82,7 +80,7 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index, int currentIndex) {
+  Widget _buildNavItem(IconData inactiveIcon, IconData activeIcon, String label, int index, int currentIndex) {
     bool isActive = currentIndex == index;
     final primaryColor = DesignSystem.primary(context);
     final color = isActive ? primaryColor : DesignSystem.labelText(context);
@@ -93,10 +91,19 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 22,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: EdgeInsets.symmetric(horizontal: isActive ? 16 : 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: isActive ? primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: AnimatedCrossFade(
+              firstChild: Icon(inactiveIcon, color: color, size: 22),
+              secondChild: Icon(activeIcon, color: color, size: 22),
+              crossFadeState: isActive ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 200),
+            ),
           ),
           const SizedBox(height: 4),
           Text(
