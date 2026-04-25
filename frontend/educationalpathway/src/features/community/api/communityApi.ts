@@ -31,6 +31,7 @@ export interface CommunityMember {
     id: number;
     name: string;
     email: string;
+    avatarUrl?: string;
   };
 }
 
@@ -42,6 +43,7 @@ export interface CommunityMessage {
     id: number;
     name: string;
     email: string;
+    avatarUrl?: string;
   };
   content: string;
   messageType: 'text' | 'image' | 'file' | 'link';
@@ -57,6 +59,7 @@ export interface CommunityMessage {
       id: number;
       name: string;
       email: string;
+      avatarUrl?: string;
     };
   };
   reactionsCount: number;
@@ -98,6 +101,7 @@ export interface CommunityUser {
   id: number;
   name: string;
   email: string;
+  avatarUrl?: string;
 }
 
 export const communityApi = {
@@ -113,6 +117,21 @@ export const communityApi = {
   leaveGroup: (id: number) => api.post(`/community/groups/${id}/leave`),
   searchGroups: (query: string) => api.get<{ groups: CommunityGroup[] }>(`/community/groups/search?q=${encodeURIComponent(query)}`),
 
+  // Admin - Groups
+  adminGetAllGroups: () => api.get<{ groups: CommunityGroup[] }>('/community/admin/groups'),
+  adminToggleGroupActive: (id: number, isActive: boolean) => api.patch<{ group: CommunityGroup }>(`/community/groups/${id}/activate`, { isActive }),
+
+  // Admin - Members
+  adminGetAllMembers: (groupId?: number) => {
+    const url = groupId ? `/community/admin/members?groupId=${groupId}` : '/community/admin/members';
+    return api.get<{ members: any[] }>(url);
+  },
+  adminBanUserFromGroup: (groupId: number, userId: number) => api.delete(`/community/admin/groups/${groupId}/ban/${userId}`),
+  adminUnbanUserFromGroup: (groupId: number, userId: number) => api.delete(`/community/admin/groups/${groupId}/unban/${userId}`),
+
+  // Admin - Stats
+  adminGetStats: () => api.get<{ stats: any }>('/community/admin/stats'),
+
   // Users to add (search non-members)
   getGroupUsers: (groupId: number, query?: string) => 
     api.get<{ users: CommunityUser[] }>(`/community/groups/${groupId}/users?q=${encodeURIComponent(query || '')}`),
@@ -124,7 +143,7 @@ export const communityApi = {
     api.delete(`/community/groups/${groupId}/members/${userId}`),
   updateMemberRole: (groupId: number, userId: number, role: string) => 
     api.put(`/community/groups/${groupId}/members/${userId}`, { role }),
-  
+
   // Invite links
   getInviteLink: (groupId: number) => 
     api.get<{ inviteLink: string }>(`/community/groups/${groupId}/invite`),

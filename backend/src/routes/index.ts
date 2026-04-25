@@ -11,6 +11,7 @@ import chatRouter from "./chatRoutes.js";
 import visaRoutes from "./visaRoutes.js";
 import writingLabRouter from "./writingLabRoutes.js";
 import paymentRouter from "./paymentRoutes.js";
+import communityRouter from "./communityRoutes.js";
 
 export default {
   userRouter,
@@ -26,4 +27,5 @@ export default {
   visaRoutes,
   writingLabRouter,
   paymentRouter,
+  communityRouter,
 };

@@ -17,7 +17,8 @@ import {
   X,
   ShieldCheck,
   ClipboardList,
-  Wallet
+  Wallet,
+  UsersRound,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -32,6 +33,7 @@ export function CounselorSidebar() {
   const menuItems = [
     { name: 'Dashboard', href: '/dashboard/counselor', icon: LayoutDashboard },
     { name: 'My Students', href: '/dashboard/students', icon: Users },
+    { name: 'Community', href: '/dashboard/community', icon: UsersRound },
     { name: 'Schedule Explorer', href: '/dashboard/calendar', icon: Calendar },
     { name: 'Active Sessions', href: '/dashboard/counselor/bookings', icon: CalendarCheck },
     { name: 'Messages', href: '/dashboard/counselor/chat', icon: MessageSquare },

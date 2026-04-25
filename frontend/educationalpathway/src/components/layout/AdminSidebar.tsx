@@ -14,7 +14,8 @@ import {
   Home,
   PanelLeftClose,
   PanelLeftOpen,
-  LogOut
+  LogOut,
+  UsersRound,
 } from 'lucide-react';
 
 import { useState } from 'react';
@@ -31,6 +32,7 @@ export function AdminSidebar() {
     { name: 'Home', href: '/dashboard/admin', icon: Home },
     { name: 'Students', href: '/dashboard/admin/students', icon: GraduationCap },
     { name: 'Counselors', href: '/dashboard/admin/counselors', icon: ShieldCheck },
+    { name: 'Groups Management', href: '/dashboard/admin/groups', icon: UsersRound },
     { name: 'Platform Stats', href: '/dashboard/analytics', icon: Activity },
     { name: 'System Logs', href: '/dashboard/logs', icon: Zap },
     { name: 'Security Center', href: '/dashboard/security', icon: Shield },

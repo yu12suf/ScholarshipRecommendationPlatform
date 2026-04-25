@@ -8,9 +8,10 @@ function cn(...inputs: ClassValue[]) {
 
 interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  children?: React.ReactNode;
 }
 
-export const Avatar = ({ className, size = 'md', ...props }: AvatarProps) => {
+export const Avatar = ({ className, size = 'md', children, ...props }: AvatarProps) => {
   const sizes = {
     sm: 'h-8 w-8',
     md: 'h-10 w-10',
@@ -26,12 +27,14 @@ export const Avatar = ({ className, size = 'md', ...props }: AvatarProps) => {
         className
       )}
       {...props}
-    />
+    >
+      {children}
+    </div>
   );
 };
 
 export const AvatarImage = ({ className, src, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => {
-  if (!src) return <AvatarFallback />;
+  if (!src) return null;
   
   return (
     <img

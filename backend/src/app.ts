@@ -84,6 +84,7 @@ app.use("/api/learning-path", routes.learningPathRouter);
 app.use("/api/chat", routes.chatRouter);
 app.use("/api/writing-lab", routes.writingLabRouter);
 app.use("/api/payments", routes.paymentRouter);
+app.use("/api/community", routes.communityRouter);
 app.use("/api/debug", debugRoutes);
 // Health Check
 app.get("/health", (req, res) => {

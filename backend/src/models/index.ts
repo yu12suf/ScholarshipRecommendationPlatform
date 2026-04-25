@@ -26,3 +26,7 @@ export * from "./VisaGuideline.js";
 export * from "./VisaMockInterview.js";
 export * from "./Pdf.js";
 export * from "./CounselorPayout.js";
+export * from "./CommunityGroup.js";
+export * from "./CommunityMember.js";
+export * from "./CommunityMessage.js";
+export * from "./MessageReaction.js";
