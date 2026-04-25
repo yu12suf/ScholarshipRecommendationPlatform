@@ -18,6 +18,7 @@ import {
   MessageSquare,
   HelpCircle,
   Clock,
+  UsersRound,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -37,6 +38,7 @@ export function StudentSidebar() {
       icon: GraduationCap,
     },
     { name: "Counselors", href: "/dashboard/counselors", icon: Users },
+    { name: "Community", href: "/dashboard/community", icon: UsersRound },
     { name: "My Sessions", href: "/dashboard/student/bookings", icon: Clock },
     { name: "Messages", href: "/dashboard/student/chat", icon: MessageSquare },
     { name: "Assessment", href: "/dashboard/assessment", icon: ClipboardList },

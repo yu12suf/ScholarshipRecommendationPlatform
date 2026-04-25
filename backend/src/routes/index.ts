@@ -12,6 +12,7 @@ import visaRoutes from "./visaRoutes.js";
 import writingLabRouter from "./writingLabRoutes.js";
 import speakingLabRouter from "./speakingLabRoutes.js";
 import paymentRouter from "./paymentRoutes.js";
+import communityRouter from "./communityRoutes.js";
 
 export default {
   userRouter,
@@ -28,4 +29,5 @@ export default {
   writingLabRouter,
   speakingLabRouter,
   paymentRouter,
+  communityRouter,
 };

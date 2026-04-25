@@ -6,14 +6,11 @@ import { ChatService } from "./ChatService.js";
 
 export class SocketService {
     private static io: SocketIOServer;
-    private static userSockets = new Map<number, string>(); // userId -> socketId
+    private static userSockets = new Map<number, string>();
 
     static initialize(server: HTTPServer) {
         this.io = new SocketIOServer(server, {
-            cors: {
-                origin: "*", // Adjust in production
-                methods: ["GET", "POST"]
-            }
+            cors: { origin: "*", methods: ["GET", "POST"] }
         });
 
         this.io.use((socket, next) => {
@@ -22,7 +19,10 @@ export class SocketService {
 
             try {
                 const decoded = jwt.verify(token, configs.JWT_SECRET!) as any;
-                (socket as any).userId = decoded.id;
+                const userId = decoded.id;
+                (socket as any).userId = userId;
+                this.userSockets.set(userId, socket.id);
+                socket.join(`user_${userId}`);
                 next();
             } catch (err) {
                 next(new Error("Authentication error"));
@@ -32,40 +32,31 @@ export class SocketService {
         this.io.on("connection", (socket) => {
             const userId = (socket as any).userId;
             console.log(`[Socket] User connected: ${userId} (${socket.id})`);
-            this.userSockets.set(userId, socket.id);
 
             socket.on("join_conversation", (conversationId: number) => {
                 socket.join(`conversation_${conversationId}`);
-                console.log(`[Socket] User ${userId} joined conversation ${conversationId}`);
             });
 
-            socket.on("send_message", async (data: { conversationId: number; receiverId: number; content: string }) => {
+            socket.on("join_community_group", (groupId: number) => {
+                socket.join(`group_${groupId}`);
+            });
+
+            socket.on("leave_community_group", (groupId: number) => {
+                socket.leave(`group_${groupId}`);
+            });
+
+            socket.on("community_message", async (data) => {
                 try {
-                    const message = await ChatService.sendMessage(data.conversationId, userId, data.content);
-                    
-                    // Broadcast to the conversation room
-                    this.io.to(`conversation_${data.conversationId}`).emit("receive_message", message);
-                    
-                    // Also notify the receiver specifically if they are not in the room? 
-                    // Room handle it mostly, but for "new message" alerts:
-                    const receiverSocketId = this.userSockets.get(data.receiverId);
-                    if (receiverSocketId) {
-                        this.io.to(receiverSocketId).emit("new_message_alert", {
-                            conversationId: data.conversationId,
-                            senderName: (message as any).sender.name,
-                            content: data.content
-                        });
-                    }
-                } catch (err) {
-                    console.error("[Socket] send_message error:", err);
+                    const { CommunityService } = await import("./CommunityService.js");
+                    const message = await CommunityService.sendMessage(data.groupId, userId, data);
+                    this.io.to(`group_${data.groupId}`).emit("new_community_message", { message });
+                } catch (err: any) {
+                    socket.emit("error", { message: err.message });
                 }
             });
 
-            socket.on("typing", (data: { conversationId: number; isTyping: boolean }) => {
-                socket.to(`conversation_${data.conversationId}`).emit("user_typing", {
-                    userId,
-                    isTyping: data.isTyping
-                });
+            socket.on("typing", (data: { groupId: number; isTyping: boolean }) => {
+                socket.to(`group_${data.groupId}`).emit("user_typing", { userId, isTyping: data.isTyping });
             });
 
             socket.on("disconnect", () => {
@@ -74,10 +65,11 @@ export class SocketService {
             });
         });
 
+        (global as any).socketIOInstance = this.io;
         return this.io;
     }
 
-    static getIO() {
+    static getIO(): SocketIOServer {
         if (!this.io) throw new Error("Socket.io not initialized");
         return this.io;
     }

@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/providers/auth-context';
 import { communityApi, CommunityGroup, CommunityMessage, CommunityMember, CommunityUser } from './api/communityApi';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar';
 import { 
   MessageCircle, 
   Plus, 
@@ -58,24 +60,39 @@ interface GroupFormData {
 
 export default function CommunityPage() {
   const { user } = useAuth();
-  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // Local dark mode state for Community page only
   const [isDarkMode, setIsDarkMode] = useState(true);
-  
+
   // Toggle night mode - local to community page only
   const toggleNightMode = () => {
     setIsDarkMode(!isDarkMode);
   };
-  
+
   const [myGroups, setMyGroups] = useState<CommunityGroup[]>([]);
   const [allGroups, setAllGroups] = useState<CommunityGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<CommunityGroup | null>(null);
   const selectedGroupRef = useRef<number | null>(null);
-  
+
   // Keep ref in sync with state
   useEffect(() => {
     selectedGroupRef.current = selectedGroup?.id || null;
   }, [selectedGroup?.id]);
+
+  // Auto-select group from URL query param
+  useEffect(() => {
+    const groupId = searchParams.get('group');
+    if (groupId) {
+      const gid = parseInt(groupId, 10);
+      const group = allGroups.find(g => g.id === gid);
+      if (group) {
+        setSelectedGroup(group);
+      }
+    }
+  }, [searchParams, allGroups]);
+
   const [messages, setMessages] = useState<CommunityMessage[]>([]);
   const [groupMembers, setGroupMembers] = useState<CommunityMember[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -92,17 +109,17 @@ export default function CommunityPage() {
     privacy: 'public',
     addMembersPermission: 'admin'
   });
-  
+
   // Add member modal
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [availableUsers, setAvailableUsers] = useState<CommunityUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
-  
+
   // Invite link
   const [inviteLink, setInviteLink] = useState('');
-  
+
   // Group info modal
   const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
   
@@ -154,7 +171,7 @@ export default function CommunityPage() {
           const searchedGroups = res?.data?.groups || res?.groups || [];
           setAllGroups(searchedGroups);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error('Error searching groups:', error);
         });
     }, 300); // 300ms delay like Telegram
@@ -228,10 +245,11 @@ export default function CommunityPage() {
       }
       
       // Verify all messages belong to the current group
-      msgs = msgs.filter((m: any) => m.group_id === currentGroupId);
+      msgs = msgs.filter((m: any) => m.groupId === currentGroupId);
       
-      console.log('Messages data:', msgs);
-      setMessages(msgs);
+       console.log('Messages data:', msgs);
+       // Store messages oldest-first for natural chat flow
+       setMessages([...msgs].reverse());
     } catch (error: any) {
       // Silently handle auth errors - user may have logged out
       if (error?.response?.status === 401) {
@@ -432,7 +450,7 @@ export default function CommunityPage() {
       const res = await communityApi.createGroup(formData);
       const newGroup = (res as any)?.data?.group || (res as any)?.group;
       if (newGroup) {
-        const groupWithMember = { ...newGroup, isMember: true, isAdmin: true };
+        const groupWithMember = { ...newGroup, isMember: true, isAdmin: true, memberCount: 1 };
         setMyGroups(prev => [groupWithMember, ...prev]);
         setAllGroups(prev => [groupWithMember, ...prev]);
         setSelectedGroup(groupWithMember);
@@ -446,43 +464,69 @@ export default function CommunityPage() {
     }
   };
 
-  // Join group
-  const handleJoinGroup = async (group: CommunityGroup) => {
-    try {
-      await communityApi.joinGroup(group.id);
-      await fetchGroups();
-      // Refresh the group details to get updated member status
-      const details = await communityApi.getGroupDetails(group.id);
-      const joinedGroup = (details as any)?.data?.group || (details as any)?.group;
-      if (joinedGroup) {
-        setSelectedGroup({
-          ...joinedGroup,
-          isMember: true,
-          isAdmin: joinedGroup.isAdmin,
-          addMembersPermission: joinedGroup.addMembersPermission
-        });
-      }
-      showToast('You have joined the group!', 'success');
-    } catch (error: any) {
-      console.error('Error joining group:', error?.response?.data || error?.message || error);
-      showToast(error?.response?.data?.error || 'Failed to join group', 'error');
-    }
-  };
+    // Join group
+    const handleJoinGroup = async (group: CommunityGroup) => {
+      try {
+        const res = await communityApi.joinGroup(group.id);
+        const result = (res as any)?.data || res;
+        const memberCount = typeof result.memberCount === 'number' ? result.memberCount : (group.memberCount || 0) + 1;
 
-  // Leave group
-  const handleLeaveGroup = async (groupId: number) => {
-    try {
-      await communityApi.leaveGroup(groupId);
-      setMyGroups(prev => prev.filter(g => g.id !== groupId));
-      setAllGroups(prev => prev.map(g => g.id === groupId ? { ...g, isMember: false } : g));
-      setSelectedGroup(null);
-      setShowMembersPanel(false);
-      showToast('You have left the group', 'success');
-    } catch (error: any) {
-      console.error('Error leaving group:', error?.response?.data || error?.message || error);
-      showToast(error?.response?.data?.error || 'Failed to leave group', 'error');
-    }
-  };
+        // Update myGroups: add the group if not already there
+        setMyGroups(prev => {
+          if (!prev.some(g => g.id === group.id)) {
+            return [...prev, { ...group, isMember: true, memberCount }];
+          }
+          return prev.map(g => g.id === group.id ? { ...g, isMember: true, memberCount } : g);
+        });
+
+        // Update allGroups: mark as member and update count
+        setAllGroups(prev => prev.map(g => 
+          g.id === group.id 
+            ? { ...g, isMember: true, memberCount }
+            : g
+        ));
+
+        // If this was the selected group, update that too
+        if (selectedGroup?.id === group.id) {
+          setSelectedGroup(prev => prev ? { ...prev, isMember: true, memberCount } : null);
+        }
+
+        showToast('You have joined the group!', 'success');
+      } catch (error: any) {
+        console.error('Error joining group:', error?.response?.data || error?.message || error);
+        showToast(error?.response?.data?.error || 'Failed to join group', 'error');
+      }
+    };
+
+    // Leave group
+    const handleLeaveGroup = async (groupId: number) => {
+      try {
+        const res = await communityApi.leaveGroup(groupId);
+        const result = (res as any)?.data || res;
+        const memberCount = typeof result.memberCount === 'number' ? result.memberCount : Math.max(0, (selectedGroup?.memberCount || 0) - 1);
+
+        // Remove from myGroups
+        setMyGroups(prev => prev.filter(g => g.id !== groupId));
+
+        // Update allGroups: update memberCount and isMember=false
+        setAllGroups(prev => prev.map(g => 
+          g.id === groupId 
+            ? { ...g, isMember: false, memberCount }
+            : g
+        ));
+
+        // If leaving the selected group, deselect it and close members panel
+        if (selectedGroup?.id === groupId) {
+          setSelectedGroup(null);
+          setShowMembersPanel(false);
+        }
+
+        showToast('You have left the group', 'success');
+      } catch (error: any) {
+        console.error('Error leaving group:', error?.response?.data || error?.message || error);
+        showToast(error?.response?.data?.error || 'Failed to leave group', 'error');
+      }
+    };
 
   // React to message
   const handleReact = async (messageId: number, emoji: string) => {
@@ -560,7 +604,7 @@ export default function CommunityPage() {
       await fetchGroupDetails();
       setAvailableUsers(prev => prev.filter(u => u.id !== userId));
       // Update member count in both group lists
-      const newCount = selectedGroup.memberCount + 1;
+      const newCount = (selectedGroup.memberCount || 0) + 1;
       setMyGroups(prev => prev.map(g => g.id === selectedGroup.id ? { ...g, memberCount: newCount } : g));
       setAllGroups(prev => prev.map(g => g.id === selectedGroup.id ? { ...g, memberCount: newCount } : g));
       // Refresh the list
@@ -610,7 +654,7 @@ export default function CommunityPage() {
       await communityApi.removeMember(selectedGroup.id, userId);
       await fetchGroupDetails();
       // Update member count in both group lists
-      const newCount = Math.max(0, selectedGroup.memberCount - 1);
+      const newCount = Math.max(0, (selectedGroup.memberCount || 0) - 1);
       setMyGroups(prev => prev.map(g => g.id === selectedGroup.id ? { ...g, memberCount: newCount } : g));
       setAllGroups(prev => prev.map(g => g.id === selectedGroup.id ? { ...g, memberCount: newCount } : g));
       showToast('Member removed successfully!', 'success');
@@ -824,7 +868,7 @@ export default function CommunityPage() {
                         const searchedGroups = res?.data?.groups || res?.groups || [];
                         setAllGroups(searchedGroups);
                       })
-                      .catch((error) => {
+                      .catch((error: unknown) => {
                         console.error('Error searching groups:', error);
                       });
                   }
@@ -832,16 +876,18 @@ export default function CommunityPage() {
               }}
               className={`h-9 w-48 md:w-64 pl-9 text-sm ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
             />
-          </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            size="sm"
-            className="bg-emerald-500 hover:bg-emerald-600"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            New Group
-          </Button>
-        </div>
+           </div>
+           {user?.role === 'admin' && (
+             <Button
+               onClick={() => setShowCreateModal(true)}
+               size="sm"
+               className="bg-emerald-500 hover:bg-emerald-600"
+             >
+               <Plus className="h-4 w-4 mr-1" />
+               New Group
+             </Button>
+           )}
+         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
@@ -976,16 +1022,17 @@ export default function CommunityPage() {
                   >
                     <Users className="h-5 w-5" />
                   </Button>
-                  {selectedGroup.isMember && !selectedGroup.isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleLeaveGroup(selectedGroup.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  )}
+                   {selectedGroup.isMember && (
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => handleLeaveGroup(selectedGroup.id)}
+                       className="text-red-400 hover:text-red-300"
+                       title="Leave group"
+                     >
+                       <LogOut className="h-4 w-4" />
+                     </Button>
+                   )}
                 </div>
               </div>
 
@@ -1002,9 +1049,10 @@ export default function CommunityPage() {
                     </div>
 {msgs.map(msg => (
                       <div key={msg.id} className={`flex gap-3 mb-4 min-w-0 ${(msg.senderId ? Number(msg.senderId) : Number(msg.sender?.id)) === user?.id ? 'flex-row-reverse' : ''}`}>
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-gray-300 text-gray-700'}`}>
-                          {msg.sender?.name?.charAt(0) || '?'}
-                        </div>
+                         <Avatar className="h-8 w-8 shrink-0">
+                           <AvatarImage src={msg.sender?.avatarUrl} alt={msg.sender?.name || 'User'} />
+                           <AvatarFallback>{msg.sender?.name?.trim().charAt(0) || msg.sender?.email?.charAt(0) || '?'}</AvatarFallback>
+                         </Avatar>
                       <div className={`min-w-0 max-w-[70%] w-full ${(msg.senderId ? Number(msg.senderId) : Number(msg.sender?.id)) === user?.id ? 'items-end' : 'items-start'}`}>
                           <div className="flex items-center gap-2 mb-1">
                             <span className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-gray-700'}`}>{msg.sender?.name}</span>
@@ -1444,9 +1492,10 @@ export default function CommunityPage() {
                 ) : (
                   groupMembers.map(member => (
                     <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800 mb-2">
-                      <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white shrink-0">
-                        {member.user?.name?.charAt(0) || '?'}
-                      </div>
+                       <Avatar className="h-8 w-8 shrink-0">
+                         <AvatarImage src={member.user?.avatarUrl} alt={member.user?.name || 'User'} />
+                         <AvatarFallback>{member.user?.name?.trim().charAt(0) || member.user?.email?.charAt(0) || '?'}</AvatarFallback>
+                       </Avatar>
                       <div className="flex-1 overflow-hidden">
                         <p className="text-sm font-medium text-white truncate">{member.user?.name}</p>
                         <p className="text-xs text-slate-500">{member.role}</p>
@@ -1621,16 +1670,17 @@ export default function CommunityPage() {
                       ? 'No users match your search' 
                       : 'No users available to add'}
                   </p>
-                ) : (
-                  availableUsers.map(user => (
-                    <div 
-                      key={user.id} 
-                      className="flex items-center justify-between p-2 bg-slate-800 rounded-lg mb-1.5"
-                    >
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="h-7 w-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0">
-                          {user.name?.charAt(0) || '?'}
-                        </div>
+                 ) : (
+                   availableUsers.map(user => (
+                     <div 
+                       key={user.id} 
+                       className="flex items-center justify-between p-2 bg-slate-800 rounded-lg mb-1.5"
+                     >
+                       <div className="flex items-center gap-2 min-w-0 flex-1">
+                         <Avatar className="h-7 w-7 shrink-0">
+                           <AvatarImage src={user.avatarUrl} alt={user.name || 'User'} />
+                           <AvatarFallback>{user.name?.charAt(0) || '?'}</AvatarFallback>
+                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-medium text-white truncate">{user.name}</p>
                           <p className="text-[10px] text-slate-400 truncate">{user.email}</p>

@@ -28,7 +28,11 @@ import {
   VisaMockInterview,
   Pdf,
   CounselorPayout,
-  CounselorWalletTransaction,
+  // New models from your community feature
+  CommunityGroup,
+  CommunityMember,
+  CommunityMessage,
+  MessageReaction,
 } from "../models/index.js";
 import configs from "./configs.js";
 
@@ -41,19 +45,17 @@ const dbOptions: SequelizeOptions = {
   // Keep SQL logs off by default; enable only when DB_LOGGING=true.
   logging: configs.DB_LOGGING ? console.log : false,
   pool: {
-    max: 10,    
-    min: 0,       
-    acquire: 30000,// Maximum time (ms) to try getting a connection before throwing error
-    idle: 10000    // Maximum time (ms) a connection can be idle before being released
+    max: 10,
+    min: 0,
+    acquire: 30000, // Maximum time (ms) to try getting a connection before throwing error
+    idle: 10000,    // Maximum time (ms) a connection can be idle before being released
   },
-
   // dialectOptions: {
   //   ssl: {
   //     require: true,
   //     rejectUnauthorized: false,
   //   },
   // },
-    
 };
 const globalForSequelize = global as unknown as { sequelize: Sequelize };
 export const sequelize = new Sequelize({
@@ -89,8 +91,12 @@ export const sequelize = new Sequelize({
     VisaMockInterview,
     Pdf,
     CounselorPayout,
-    CounselorWalletTransaction,
-  ], // Add all models here
+    // Community models (from your feature)
+    CommunityGroup,
+    CommunityMember,
+    CommunityMessage,
+    MessageReaction,
+  ],
 } as SequelizeOptions);
 
 export let hasVectorExtension = false;
@@ -113,8 +119,8 @@ export const connectSequelize = async () => {
     }
 
     // Sync models with database (creates tables if missing)
-    // Note: alter: true was disabled as it was hanging in the current environment.
-    await sequelize.sync();
+    // Note: In production, migrations are preferred.
+    await sequelize.sync({ alter: true });
     console.log("Database models synchronized");
   } catch (error) {
     console.error("Sequelize connection error:", error);
