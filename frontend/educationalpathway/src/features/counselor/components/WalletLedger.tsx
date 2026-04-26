@@ -87,20 +87,30 @@ export const WalletLedger = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-medium text-foreground">{tx.reference}</span>
-                                                <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">{tx.note}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-medium text-foreground">{tx.reference}</span>
+                                                    {tx.payoutStatus && (
+                                                        <Badge 
+                                                            variant={tx.payoutStatus === 'approved' ? 'success' : 'secondary'} 
+                                                            className="text-[8px] h-4 px-1.5 uppercase tracking-tighter"
+                                                        >
+                                                            {tx.payoutStatus}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground truncate max-w-[200px] mt-0.5">{tx.note}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`text-sm font-black ${
-                                                tx.amount > 0 ? 'text-emerald-500' : 'text-amber-500'
+                                                Number(tx.amount) > 0 ? 'text-emerald-500' : 'text-amber-500'
                                             }`}>
-                                                {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()} ETB
+                                                {Number(tx.amount) > 0 ? '+' : ''}{Number(tx.amount).toLocaleString()} ETB
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="text-sm font-bold text-slate-500">
-                                                {tx.balanceAfter.toLocaleString()} ETB
+                                                {Number(tx.balanceAfter).toLocaleString()} ETB
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">

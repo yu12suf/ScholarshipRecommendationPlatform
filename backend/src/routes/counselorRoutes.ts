@@ -25,6 +25,7 @@ const router = Router();
 
 router.get('/ping', (_req, res) => res.status(200).send('pong'));
 router.get('/directory', validate(counselorDirectoryValidation), CounselorController.publicDirectory);
+router.get('/banks', CounselorController.getBanks);
 
 router.use(authenticate);
 
@@ -50,6 +51,7 @@ router.patch('/admin/:id/verification', authorize(UserRole.ADMIN), validate(idPa
 router.patch('/admin/:id/visibility', authorize(UserRole.ADMIN), validate(idParamValidation), validate(adminVisibilityValidation), CounselorController.adminUpdateVisibility);
 router.patch('/admin/payouts/:id/status', authorize(UserRole.ADMIN), validate(idParamValidation), CounselorController.adminUpdatePayoutStatus);
 router.get('/admin/payouts', authorize(UserRole.ADMIN), CounselorController.listPayouts);
+router.get('/admin/chapa-transactions', authorize(UserRole.ADMIN), CounselorController.getChapaMerchantTransactions);
 router.post('/admin/:id/payout', authorize(UserRole.ADMIN), validate(idParamValidation), CounselorController.adminPayout);
 
 router.get('/me', authorize(UserRole.COUNSELOR), CounselorController.getMyProfile);

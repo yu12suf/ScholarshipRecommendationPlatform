@@ -325,9 +325,31 @@ export class CounselorController {
 
   static async adminPayout(req: Request, res: Response, next: NextFunction) {
     try {
-      const amount = Number(req.body.amount);
-      const data = await CounselorService.processPayout(Number(req.params.id), amount);
-      res.status(200).json({ success: true, message: "Payout processed successfully", data });
+      // If the admin uses this legacy button, we treat it as an immediate approval of a manual payout.
+      // But it's better to tell them to use the approval workflow.
+      res.status(400).json({ 
+        success: false, 
+        message: "Please use the 'Approve & Pay' workflow in the Pending Payouts section." 
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getBanks(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getChapaBanks();
+      res.status(200).json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getChapaMerchantTransactions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await CounselorService.getChapaMerchantTransactions();
+      
+      res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);
     }

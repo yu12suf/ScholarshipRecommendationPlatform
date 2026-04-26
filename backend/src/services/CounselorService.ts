@@ -70,7 +70,7 @@ const httpError = (statusCode: number, message: string) =>
 export class CounselorService {
   static async applyAsCounselor(userId: number, dto: CreateCounselorDto, files?: any): Promise<CounselorResponse> {
     const existingCounselor = await CounselorRepository.findByUserId(userId);
-    
+
     // If already exists and already onboarded, prevent re-application
     if (existingCounselor && existingCounselor.isOnboarded) {
       throw httpError(409, "User already has a counselor profile");
@@ -125,33 +125,33 @@ export class CounselorService {
       // Create new profile
       counselor = await CounselorRepository.create({
         userId,
-      bio: dto.bio || "",
-      areasOfExpertise: dto.areasOfExpertise ? (typeof dto.areasOfExpertise === 'string' ? dto.areasOfExpertise : JSON.stringify(dto.areasOfExpertise)) : (dto.specializations?.join(", ") || ""),
-      hourlyRate: Number(dto.hourlyRate) || 0,
-      yearsOfExperience: Number(dto.yearsOfExperience) || 0,
-      verificationStatus: "pending",
-      isActive: true,
-      isOnboarded: dto.isOnboarded || false,
-      idCardUrl: idCardUrl || null,
-      selfieUrl: selfieUrl || null,
-      phoneNumber: dto.phoneNumber || null,
-      countryOfResidence: dto.countryOfResidence || null,
-      city: dto.city || null,
-      specializedCountries: dto.specializedCountries ? (typeof dto.specializedCountries === 'string' ? dto.specializedCountries : JSON.stringify(dto.specializedCountries)) : null,
-      currentPosition: dto.currentPosition || null,
-      organization: dto.organization || null,
-      highestEducationLevel: dto.highestEducationLevel || null,
-      universityName: dto.universityName || null,
-      studyCountry: dto.studyCountry || null,
-      languages: dto.languages ? (typeof dto.languages === 'string' ? dto.languages : JSON.stringify(dto.languages)) : null,
-      fieldsOfStudy: dto.fieldsOfStudy ? (typeof dto.fieldsOfStudy === 'string' ? dto.fieldsOfStudy : JSON.stringify(dto.fieldsOfStudy)) : null,
-      weeklySchedule: dto.weeklySchedule || null,
-      sessionDuration: dto.sessionDuration || 60,
-      consultationModes: dto.consultationModes ? (typeof dto.consultationModes === 'string' ? dto.consultationModes : JSON.stringify(dto.consultationModes)) : null,
-      profileImageUrl: profileImageUrl || null,
-      cvUrl: cvUrl || null,
-      certificateUrls: certificateUrls || null,
-      extractedData: JSON.stringify(this.mergeMetadata(null, dto)),
+        bio: dto.bio || "",
+        areasOfExpertise: dto.areasOfExpertise ? (typeof dto.areasOfExpertise === 'string' ? dto.areasOfExpertise : JSON.stringify(dto.areasOfExpertise)) : (dto.specializations?.join(", ") || ""),
+        hourlyRate: Number(dto.hourlyRate) || 0,
+        yearsOfExperience: Number(dto.yearsOfExperience) || 0,
+        verificationStatus: "pending",
+        isActive: true,
+        isOnboarded: dto.isOnboarded || false,
+        idCardUrl: idCardUrl || null,
+        selfieUrl: selfieUrl || null,
+        phoneNumber: dto.phoneNumber || null,
+        countryOfResidence: dto.countryOfResidence || null,
+        city: dto.city || null,
+        specializedCountries: dto.specializedCountries ? (typeof dto.specializedCountries === 'string' ? dto.specializedCountries : JSON.stringify(dto.specializedCountries)) : null,
+        currentPosition: dto.currentPosition || null,
+        organization: dto.organization || null,
+        highestEducationLevel: dto.highestEducationLevel || null,
+        universityName: dto.universityName || null,
+        studyCountry: dto.studyCountry || null,
+        languages: dto.languages ? (typeof dto.languages === 'string' ? dto.languages : JSON.stringify(dto.languages)) : null,
+        fieldsOfStudy: dto.fieldsOfStudy ? (typeof dto.fieldsOfStudy === 'string' ? dto.fieldsOfStudy : JSON.stringify(dto.fieldsOfStudy)) : null,
+        weeklySchedule: dto.weeklySchedule || null,
+        sessionDuration: dto.sessionDuration || 60,
+        consultationModes: dto.consultationModes ? (typeof dto.consultationModes === 'string' ? dto.consultationModes : JSON.stringify(dto.consultationModes)) : null,
+        profileImageUrl: profileImageUrl || null,
+        cvUrl: cvUrl || null,
+        certificateUrls: certificateUrls || null,
+        extractedData: JSON.stringify(this.mergeMetadata(null, dto)),
       });
     }
 
@@ -264,7 +264,7 @@ export class CounselorService {
       if (!userObj && c.userId) {
         userObj = await User.findByPk(c.userId);
       }
-      
+
       const base = await this.formatCounselorResponse(c, userObj || null);
       const availableSlots = slotsByCounselor.get(c.id) || [];
       return {
@@ -307,47 +307,47 @@ export class CounselorService {
     });
 
     const results = await Promise.all(candidates.map(async (counselor) => {
-        const metadata = this.parseMetadata(counselor.extractedData);
-        const matchReasons: string[] = [];
-        let recommendationScore = Number(counselor.rating || 0);
+      const metadata = this.parseMetadata(counselor.extractedData);
+      const matchReasons: string[] = [];
+      let recommendationScore = Number(counselor.rating || 0);
 
-        const expertiseText = (counselor.areasOfExpertise || "").toLowerCase();
-        if (expertiseText && this.hasTokenOverlap(expertiseText, studentProfileSignal)) {
-          recommendationScore += 2;
-          matchReasons.push("Expertise aligns with your academic focus");
-        }
+      const expertiseText = (counselor.areasOfExpertise || "").toLowerCase();
+      if (expertiseText && this.hasTokenOverlap(expertiseText, studentProfileSignal)) {
+        recommendationScore += 2;
+        matchReasons.push("Expertise aligns with your academic focus");
+      }
 
-        // Check target study countries
-        const counselorCountries = [
-            counselor.studyCountry, 
-            counselor.specializedCountries, 
-            counselor.countryOfResidence
-        ].join(" ").toLowerCase();
-        
-        const studentCountries = (student.countryInterest || "").toLowerCase();
-        
-        if (studentCountries && counselorCountries && this.hasTokenOverlap(counselorCountries, studentCountries)) {
-            recommendationScore += 5;
-            matchReasons.push(`Direct experience in your target country`);
-        }
+      // Check target study countries
+      const counselorCountries = [
+        counselor.studyCountry,
+        counselor.specializedCountries,
+        counselor.countryOfResidence
+      ].join(" ").toLowerCase();
 
-        // Check target universe/institution
-        const uniName = (counselor.universityName || metadata.currentUniversity || "").toLowerCase();
-        if (uniName && uniName.length > 3 && studentProfileSignal.includes(uniName)) {
-          recommendationScore += 4;
-          matchReasons.push("Attended your prospective university");
-        }
+      const studentCountries = (student.countryInterest || "").toLowerCase();
 
-        // Check degree level alignment
-        const degLevel = (counselor.highestEducationLevel || metadata.currentDegreeLevel || "").toLowerCase();
-        if (degLevel && studentProfileSignal.includes(degLevel)) {
-          recommendationScore += 1;
-          matchReasons.push("Education level alignment");
-        }
+      if (studentCountries && counselorCountries && this.hasTokenOverlap(counselorCountries, studentCountries)) {
+        recommendationScore += 5;
+        matchReasons.push(`Direct experience in your target country`);
+      }
 
-        const base = await this.formatCounselorResponse(counselor, (counselor as any).user || null);
-        return { ...base, recommendationScore, matchReasons };
-      }));
+      // Check target universe/institution
+      const uniName = (counselor.universityName || metadata.currentUniversity || "").toLowerCase();
+      if (uniName && uniName.length > 3 && studentProfileSignal.includes(uniName)) {
+        recommendationScore += 4;
+        matchReasons.push("Attended your prospective university");
+      }
+
+      // Check degree level alignment
+      const degLevel = (counselor.highestEducationLevel || metadata.currentDegreeLevel || "").toLowerCase();
+      if (degLevel && studentProfileSignal.includes(degLevel)) {
+        recommendationScore += 1;
+        matchReasons.push("Education level alignment");
+      }
+
+      const base = await this.formatCounselorResponse(counselor, (counselor as any).user || null);
+      return { ...base, recommendationScore, matchReasons };
+    }));
 
     return results
       .sort((a, b) => b.recommendationScore - a.recommendationScore)
@@ -357,7 +357,7 @@ export class CounselorService {
   static async getReviews(counselorId: number): Promise<ReviewsSummaryResponse> {
     const reviews = await CounselorReviewRepository.findAllByCounselor(counselorId);
     const stats = await CounselorReviewRepository.getStatistics(counselorId);
-    
+
     console.log(`[CounselorService.getReviews] Found ${reviews.length} reviews for counselor ${counselorId}`);
     if (reviews.length > 0) {
       const sampleReview = reviews[0];
@@ -371,7 +371,7 @@ export class CounselorService {
       reviews: await Promise.all(reviews.map(async (review) => {
         // ALWAYS fetch manually to bypass any Sequelize include bugs completely
         let studentName = "Verified Student";
-        
+
         try {
           if (review.studentId) {
             const student = await Student.findByPk(review.studentId);
@@ -464,7 +464,7 @@ export class CounselorService {
     // 1. Update Counselor profile with the new weekly schedule
     const counselor = await CounselorRepository.findById(counselorId);
     if (!counselor) throw httpError(404, "Counselor not found");
-    
+
     await counselor.update({ weeklySchedule: JSON.stringify(slots) });
 
     // 2. Generate individual slot records for the next 4 weeks
@@ -488,14 +488,14 @@ export class CounselorService {
         const currentDay = now.getDay();
         let diff = targetDay - currentDay;
         if (diff < 0) diff += 7; // Ensure we move forward
-        
+
         date.setDate(now.getDate() + diff + (week * 7));
-        
+
         const startTime = new Date(date);
         startTime.setHours(startH as number, startM, 0, 0);
-        
+
         const endTime = new Date(date);
-        endTime.setHours(endH as number , endM, 0, 0);
+        endTime.setHours(endH as number, endM, 0, 0);
 
         // Skip if this time has already passed
         if (startTime < now) continue;
@@ -660,7 +660,7 @@ export class CounselorService {
 
   static async confirmBooking(tx_ref: string): Promise<{ success: boolean; status: string; message: string; booking?: any }> {
     const payment = await Payment.findOne({ where: { tx_ref } });
-    
+
     if (!payment) {
       console.error(`[ConfirmBooking] Payment record not found for tx_ref: ${tx_ref}`);
       return { success: false, status: 'not_found', message: "Payment record not found." };
@@ -674,21 +674,21 @@ export class CounselorService {
     try {
       console.log(`[ConfirmBooking] Verifying with Chapa for tx_ref: ${tx_ref}`);
       const chapaVerify = await PaymentService.verifyPayment(tx_ref);
-      
+
       // Chapa's response structure: { status: "success", message: "...", data: { status: "success", ... } }
       const apiSuccess = chapaVerify.status === 'success';
       const transactionStatus = chapaVerify.data?.status;
 
       console.log(`[ConfirmBooking] Chapa response for ${tx_ref}: API Status: ${chapaVerify.status}, Transaction Status: ${transactionStatus}`);
-      
+
       if (apiSuccess && transactionStatus === 'success') {
         await payment.update({ status: 'success', escrowStatus: 'held' });
-        
+
         const booking = await Booking.findByPk(payment.bookingId || 0);
         if (booking) {
           if (booking.status === 'pending') {
             const slot = await AvailabilitySlot.findByPk(booking.slotId);
-            
+
             // Fetch user emails for student and counselor so calendar invites/emails are sent to both.
             const attendees: Array<{ email: string; name?: string }> = [];
             let studentEmail: string | null = null;
@@ -786,7 +786,7 @@ export class CounselorService {
               } catch (emailError) {
                 console.error("[ConfirmBooking] Failed to send direct invite emails:", emailError);
               }
-              
+
               // Funds remain held in escrow until student milestone confirmation.
               const counselor = await CounselorRepository.findById(booking.counselorId);
               if (counselor) {
@@ -810,7 +810,7 @@ export class CounselorService {
           }
           return { success: true, status: 'success', message: "Payment verified, but booking was already processed.", booking };
         }
-        
+
         return { success: true, status: 'success', message: "Payment verified, but booking record not found." };
       } else if (apiSuccess && transactionStatus === 'pending') {
         return { success: false, status: 'pending', message: "Payment is still pending. Please wait or refresh." };
@@ -825,7 +825,7 @@ export class CounselorService {
           }
           return { success: false, status: 'failed', message: "Payment was declined by Chapa." };
         }
-        
+
         return { success: false, status: 'unknown', message: `Payment verification incomplete. Status: ${transactionStatus || 'unknown'}` };
       }
     } catch (error: any) {
@@ -949,10 +949,10 @@ export class CounselorService {
       email: (student as any).user?.email || "Unknown",
       learningPath: learningPath
         ? {
-            id: learningPath.id,
-            currentProgress: progressPercent,
-            targetLevel: null,
-          }
+          id: learningPath.id,
+          currentProgress: progressPercent,
+          targetLevel: null,
+        }
         : null,
       recentAssessments: recentAssessments.map((assessment) => ({
         id: assessment.id,
@@ -1106,11 +1106,11 @@ export class CounselorService {
         );
       }
 
-      await booking.update({ 
-        status: "completed", 
-        completedAt: booking.completedAt || new Date() 
+      await booking.update({
+        status: "completed",
+        completedAt: booking.completedAt || new Date()
       }, { transaction: t });
-      
+
       await payment.update({ escrowStatus: "released" }, { transaction: t });
 
       const refreshed = await BookingRepository.findByIdWithAssociations(booking.id, true, t);
@@ -1158,23 +1158,23 @@ export class CounselorService {
 
   static async adminList(): Promise<CounselorResponse[]> {
     const counselors = await Counselor.findAll({
-      include: [{ 
-        model: User, 
-        as: "user", 
-        attributes: ["id", "name", "email"] 
+      include: [{
+        model: User,
+        as: "user",
+        attributes: ["id", "name", "email"]
       }],
     });
 
     return await Promise.all(counselors.map(async (c) => {
       const plain = c.get({ plain: true });
       let u = plain.user || plain.User || (c as any).user || (c as any).User || null;
-      
+
       // ABSOLUTE FALLBACK: If join failed for some reason, look up manually
       if (!u) {
         console.warn(`[adminList] Join failure for Counselor ${c.id}, attempting direct lookup for User ${c.userId}`);
         u = await User.findByPk(c.userId, { attributes: ["id", "name", "email"] });
       }
-      
+
       return await this.formatCounselorResponse(c, u);
     }));
   }
@@ -1312,7 +1312,7 @@ export class CounselorService {
 
   private static async formatCounselorResponse(counselor: Counselor, user: User | null): Promise<CounselorResponse> {
     const metadata = this.parseMetadata(counselor.extractedData);
-    
+
     let stats = null;
     try {
       stats = await CounselorReviewRepository.getStatistics(counselor.id);
@@ -1332,7 +1332,7 @@ export class CounselorService {
       verificationStatus: counselor.verificationStatus,
       isActive: counselor.isActive,
       rating: (stats && stats.totalReviews > 0) ? stats.averageRating : Number(counselor.rating || 0),
-      ratingPercentage: (stats && stats.totalReviews > 0) 
+      ratingPercentage: (stats && stats.totalReviews > 0)
         ? Number(((stats.averageRating / 5) * 100).toFixed(2))
         : Number(((Number(counselor.rating || 0) / 5) * 100).toFixed(2)),
       totalReviews: stats ? stats.totalReviews : 0,
@@ -1365,6 +1365,8 @@ export class CounselorService {
       profileImageUrl: counselor.profileImageUrl,
       cvUrl: counselor.cvUrl,
       certificateUrls: counselor.certificateUrls,
+      pendingBalance: counselor.pendingBalance,
+      totalEarned: counselor.totalEarned,
       createdAt: counselor.createdAt,
       updatedAt: counselor.updatedAt,
     };
@@ -1506,42 +1508,12 @@ export class CounselorService {
     }, delayMs);
   }
 
-  static async processPayout(counselorId: number, amount: number): Promise<any> {
-    const counselor = await CounselorRepository.findById(counselorId);
-    if (!counselor) throw httpError(404, "Counselor not found");
-    if (amount <= 0 || Number(counselor.pendingBalance) < amount) {
-        throw httpError(400, "Invalid payout amount or insufficient pending balance");
-    }
+  static async getChapaMerchantTransactions() {
+    return PaymentService.getTransactions();
+  }
 
-    const transactionReference = `payout-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
-
-    // Here you would optimally integrate with Chapa Transfer API or similar to actually move the funds.
-    // For now, we logically approve it in our system.
-
-    const payout = await CounselorPayout.create({
-        counselorId: counselor.id,
-        amount,
-        transactionReference,
-        status: 'paid'
-    });
-
-    const updatedBalance = Number(counselor.pendingBalance) - amount;
-    await counselor.update({
-      pendingBalance: updatedBalance
-    });
-
-    await CounselorWalletTransaction.create({
-      counselorId: counselor.id,
-      bookingId: null,
-      paymentId: null,
-      entryType: 'withdrawal',
-      amount,
-      balanceAfter: updatedBalance,
-      reference: transactionReference,
-      note: 'Counselor withdrawal approved by admin',
-    });
-
-    return payout;
+  static async getChapaBanks() {
+    return PaymentService.getBanks();
   }
 
   static async getPublicProfileByUserId(userId: number): Promise<any> {
@@ -1619,9 +1591,23 @@ export class CounselorService {
   }
 
   static async getMyWalletLedger(counselorId: number): Promise<any[]> {
-    return CounselorWalletTransaction.findAll({
+    const transactions = await CounselorWalletTransaction.findAll({
       where: { counselorId },
       order: [['createdAt', 'DESC']],
+    });
+
+    // Optionally: You could enrich these with payout status by matching references
+    const payoutRefs = transactions.filter(t => t.entryType === 'withdrawal').map(t => t.reference);
+    const payouts = await CounselorPayout.findAll({ where: { transactionReference: payoutRefs } });
+    const payoutMap = new Map(payouts.map(p => [p.transactionReference, p]));
+
+    return transactions.map(t => {
+      const data = t.toJSON();
+      if (t.entryType === 'withdrawal' && payoutMap.has(t.reference)) {
+        data.payoutStatus = payoutMap.get(t.reference)?.status;
+        data.payoutMethod = payoutMap.get(t.reference)?.payoutMethod;
+      }
+      return data;
     });
   }
 
@@ -1629,33 +1615,39 @@ export class CounselorService {
     const counselor = await CounselorRepository.findByUserId(userId);
     if (!counselor) throw httpError(404, "Counselor profile not found");
 
-    if (Number(counselor.pendingBalance || 0) < dto.amount) {
-      throw httpError(400, "Insufficient pending balance for payout");
-    }
-
-    if (dto.amount < 100) {
+    const amount = Number(dto.amount);
+    if (isNaN(amount) || amount < 100) {
       throw httpError(400, "Minimum payout amount is 100 ETB");
     }
 
+    const currentBalance = Number(counselor.pendingBalance || 0);
+    if (currentBalance < amount) {
+      throw httpError(400, "Insufficient pending balance for payout");
+    }
+
     return await sequelize.transaction(async (t) => {
-      // Create payout entry
+      // 1. DEDUCT IMMEDIATELY (Locking)
+      const newBalance = Number((currentBalance - amount).toFixed(2));
+      await counselor.update({ pendingBalance: newBalance }, { transaction: t });
+
+      // 2. Create payout entry
       const payout = await CounselorPayout.create({
         counselorId: counselor.id,
-        amount: dto.amount,
+        amount: amount,
         status: 'pending',
         payoutMethod: dto.payoutMethod,
         payoutDetails: dto.payoutDetails,
         transactionReference: `REQ-${counselor.id}-${Date.now()}`,
       }, { transaction: t });
 
-      // Create ledger entry (debit - on-hold)
+      // 3. Create ledger entry
       await CounselorWalletTransaction.create({
         counselorId: counselor.id,
         entryType: "withdrawal",
-        amount: -dto.amount,
-        balanceAfter: Number(counselor.pendingBalance || 0), // balance doesn't change yet, it's just a request
+        amount: -amount,
+        balanceAfter: newBalance,
         reference: payout.transactionReference,
-        note: `Payout request of ${dto.amount} ETB via ${dto.payoutMethod}`,
+        note: `Payout request initiated. Funds held pending admin approval.`,
       }, { transaction: t });
 
       return payout;
@@ -1666,7 +1658,7 @@ export class CounselorService {
     const payout = await CounselorPayout.findByPk(payoutId);
     if (!payout) throw httpError(404, "Payout request not found");
 
-    if (["completed", "rejected"].includes(payout.status)) {
+    if (["completed", "rejected", "failed", "approved"].includes(payout.status)) {
       throw httpError(400, "Cannot update status of a finalized payout");
     }
 
@@ -1674,39 +1666,76 @@ export class CounselorService {
     if (!counselor) throw httpError(404, "Counselor for this payout no longer exists");
 
     return await sequelize.transaction(async (t) => {
-      if (dto.status === 'completed') {
-        // DEDUCT from balance only when completed/approved
-        const currentBalance = Number(counselor.pendingBalance || 0);
-        if (currentBalance < payout.amount) {
-          throw httpError(400, "Counselor balance is now insufficient (concurrent changes suspected)");
+      if (dto.status === 'completed' || dto.status === 'approved') {
+        // 1. INITIATE CHAPA TRANSFER
+        try {
+          const transferReference = `${payout.transactionReference}-T${Date.now()}`;
+          // Clean account/phone number: remove whitespace and +251 prefix
+          let sanitizedAccountNumber = (payout.payoutDetails?.accountNumber || payout.payoutDetails?.phoneNumber || "").toString().replace(/\s/g, '');
+          if (sanitizedAccountNumber.startsWith('+251')) {
+            sanitizedAccountNumber = '0' + sanitizedAccountNumber.substring(4);
+          } else if (sanitizedAccountNumber.startsWith('251')) {
+            sanitizedAccountNumber = '0' + sanitizedAccountNumber.substring(3);
+          }
+
+          const chapaPayload = {
+            account_name: payout.payoutDetails?.accountHolderName || "Counselor Payout",
+            account_number: sanitizedAccountNumber,
+            amount: Number(payout.amount),
+            currency: "ETB",
+            beneficiary_name: payout.payoutDetails?.accountHolderName || "Counselor",
+            reference: transferReference,
+            // Use provided bankCode if valid (not empty or "000"), otherwise fallback to method-specific defaults
+            // 855 is the correct code for Telebirr as per live bank list
+            bank_code: (payout.payoutDetails?.bankCode && payout.payoutDetails.bankCode !== "000") 
+              ? payout.payoutDetails.bankCode 
+              : (payout.payoutMethod === 'telebirr' ? '855' : '001')
+          };
+
+          console.log(`[AdminPayout] Initiating Chapa transfer for Payout #${payout.id}`, JSON.stringify(chapaPayload, null, 2));
+          const chapaResult = await PaymentService.transferFunds(chapaPayload as any);
+          console.log(`[AdminPayout] Chapa transfer successful for Payout #${payout.id}. Result:`, JSON.stringify(chapaResult, null, 2));
+
+          // 2. SUCCESS: Finalize status (Balance already deducted on request)
+          await NotificationService.createNotification(
+            counselor.userId,
+            "Payout Processed",
+            `Your payout of ${payout.amount} ETB has been processed successfully via ${payout.payoutMethod}. Reference: ${chapaResult.data?.reference || transferReference}`,
+            "payout",
+            payout.id
+          );
+          
+          // Store the successful Chapa reference
+          payout.transactionReference = chapaResult.data?.reference || transferReference;
+        } catch (error: any) {
+          // Extract the most detailed message possible
+          const rawError = error.response?.data || error.message || error;
+          const detail = typeof rawError === 'object' ? JSON.stringify(rawError) : rawError;
+          
+          console.error(`[AdminPayout] Chapa Transfer Error for Payout #${payout.id}:`, rawError);
+          throw httpError(500, `Chapa Transfer Failed: ${detail}`);
         }
 
-        const newBalance = Number((currentBalance - payout.amount).toFixed(2));
+      } else if (dto.status === 'rejected') {
+        // 1. REFUND BALANCE
+        const currentBalance = Number(counselor.pendingBalance || 0);
+        const newBalance = Number((currentBalance + Number(payout.amount)).toFixed(2));
         await counselor.update({ pendingBalance: newBalance }, { transaction: t });
 
-        // Update ledger to show final deduction
+        // 2. Create Refund Ledger Entry
         await CounselorWalletTransaction.create({
           counselorId: counselor.id,
-          entryType: "withdrawal",
-          amount: -payout.amount,
+          entryType: "deposit",
+          amount: Number(payout.amount),
           balanceAfter: newBalance,
-          reference: dto.transactionReference || payout.transactionReference,
-          note: `Payout completed by admin. Reference: ${dto.transactionReference || 'N/A'}`,
+          reference: `REFUND-${payout.transactionReference}`,
+          note: `Payout request rejected. Funds returned to wallet. Reason: ${dto.adminNote || 'N/A'}`,
         }, { transaction: t });
 
         await NotificationService.createNotification(
           counselor.userId,
-          "Payout Completed",
-          `Your payout of ${payout.amount} ETB via ${payout.payoutMethod} has been processed successfully.`,
-          "payout",
-          payout.id
-        );
-      } else if (dto.status === 'rejected') {
-        // Just notify, no balance change needed as we didn't deduct yet
-        await NotificationService.createNotification(
-          counselor.userId,
           "Payout Rejected",
-          `Your payout request was rejected. Reason: ${dto.adminNote || 'No reason provided'}`,
+          `Your payout request was rejected and funds returned. Reason: ${dto.adminNote || 'No reason provided'}`,
           "payout",
           payout.id
         );

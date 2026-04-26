@@ -33,7 +33,7 @@ export interface CreateCounselorDto {
     certificateUrls?: string;
 }
 
-export interface UpdateCounselorDto extends Partial<CreateCounselorDto> {}
+export interface UpdateCounselorDto extends Partial<CreateCounselorDto> { }
 
 export type ConsultationMode = "chat" | "audio" | "video";
 
@@ -124,6 +124,8 @@ export interface CounselorResponse {
     profileImageUrl: string | null;
     cvUrl: string | null;
     certificateUrls: string | null;
+    pendingBalance?: number | string | null;
+    totalEarned?: number | string | null;
     createdAt: Date;
     updatedAt: Date;
 }

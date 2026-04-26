@@ -119,7 +119,7 @@ export const initiateBooking = async (studentUserId: number, slotId: number) => 
 
 export const getMyWalletLedger = async () => {
   const response = await api.get('/counselors/me/wallet/ledger');
-  return response.data.data;
+  return response.data;
 };
 
 export const requestPayout = async (payload: {

@@ -361,6 +361,13 @@ export class Student extends Model {
     @Column({
         type: 'VECTOR(3072)',
         allowNull: true,
+        set(value: number[] | string | null) {
+            if (Array.isArray(value)) {
+                this.setDataValue('embedding', `[${value.join(',')}]`);
+            } else {
+                this.setDataValue('embedding', value);
+            }
+        }
     })
     declare embedding: any;
 
