@@ -28,7 +28,11 @@ const CounselorCard = ({ counselor, onBook }: { counselor: any; onBook: (c: any)
               <h3 className="font-black text-xl text-foreground group-hover:text-primary transition-colors">
                 {counselor?.name || 'Anonymous Expert'}
               </h3>
-              {(counselor?.recommendationScore || 0) >= 8 && (
+              {counselor?.recommendationScore ? (
+                <div className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-full uppercase tracking-widest border border-primary/20">
+                  {Math.round(counselor.recommendationScore)}% Match
+                </div>
+              ) : (counselor?.recommendationScore || 0) >= 8 && (
                 <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full uppercase tracking-widest border border-emerald-500/20">
                   Top Match
                 </div>
@@ -96,26 +100,60 @@ const CounselorCard = ({ counselor, onBook }: { counselor: any; onBook: (c: any)
 export const CounselorSearch = () => {
   const [counselors, setCounselors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Booking Modal State
   const [selectedCounselor, setSelectedCounselor] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchCounselors = async () => {
-      setLoading(true);
-      try {
-        // Fetch all counselors from the directory
-        const data = await getCounselors();
-        setCounselors(data.rows || []);
-      } catch (error) {
-        console.error('Failed to fetch counselors:', error);
-        toast.error('Failed to load counselors');
-      } finally {
-        setLoading(false);
+  const fetchCounselors = async (search = '') => {
+    setLoading(true);
+    try {
+      // Fetch recommendations first if student and NO search query
+      let recommended: any[] = [];
+      if (!search) {
+        try {
+          recommended = await getRecommendedCounselors();
+        } catch (e) {
+          console.error('Failed to fetch recommendations', e);
+        }
       }
-    };
+
+      // Fetch counselors from the directory
+      const data = await getCounselors(search ? { search } : {});
+      const all = data.rows || [];
+
+      // Merge or prioritize recommended ones
+      let merged = [...recommended];
+      const recommendedIds = new Set(recommended.map(c => c.id));
+      
+      all.forEach((c: any) => {
+        if (!recommendedIds.has(c.id)) {
+          merged.push(c);
+        }
+      });
+
+      setCounselors(merged);
+    } catch (error) {
+      console.error('Failed to fetch counselors:', error);
+      toast.error('Failed to load counselors');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCounselors();
   }, []);
+
+  const handleSearch = () => {
+    fetchCounselors(searchQuery);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="space-y-12">
@@ -143,11 +181,15 @@ export const CounselorSearch = () => {
           <Input
             placeholder="Search by name, expertise, or university..."
             className="pl-9 h-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyPress}
           />
 
         </div>
 
         <Button
+          onClick={handleSearch}
           size="icon"
           className="h-10 w-10 primary-gradient text-primary-foreground cursor-pointer"
         >

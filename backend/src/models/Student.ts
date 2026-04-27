@@ -357,9 +357,8 @@ export class Student extends Model {
     })
     declare selfieUrl: string;
 
-    // Embedding fields for vector search (added from dev branch)
     @Column({
-        type: 'VECTOR(3072)',
+        type: 'VECTOR',
         allowNull: true,
         set(value: number[] | string | null) {
             if (Array.isArray(value)) {
@@ -370,6 +369,27 @@ export class Student extends Model {
         }
     })
     declare embedding: any;
+
+    @Column({
+        type: 'VECTOR',
+        allowNull: true,
+        field: 'counselor_embedding',
+        set(value: number[] | string | null) {
+            if (Array.isArray(value)) {
+                this.setDataValue('counselorEmbedding', `[${value.join(',')}]`);
+            } else {
+                this.setDataValue('counselorEmbedding', value);
+            }
+        }
+    })
+    declare counselorEmbedding: any;
+
+    @Column({
+        type: DataType.STRING(32),
+        allowNull: true,
+        field: 'counselor_profile_hash'
+    })
+    declare counselorProfileHash: string | null;
 
     @Column({
         type: DataType.STRING(32),

@@ -286,6 +286,26 @@ export class Counselor extends Model {
     })
     declare pendingBalance: number;
 
+    @Column({
+        type: 'VECTOR',
+        allowNull: true,
+        set(value: number[] | string | null) {
+            if (Array.isArray(value)) {
+                this.setDataValue('embedding', `[${value.join(',')}]`);
+            } else {
+                this.setDataValue('embedding', value);
+            }
+        }
+    })
+    declare embedding: any;
+
+    @Column({
+        type: DataType.STRING(32),
+        allowNull: true,
+        field: 'profile_hash'
+    })
+    declare profileHash: string | null;
+
     @CreatedAt
     @Column({
         type: DataType.DATE,

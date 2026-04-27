@@ -108,7 +108,7 @@ export class Scholarship extends Model {
     // Note: We use DataType.JSONB for maximum compatibility without pgvector extension.
     // If pgvector is installed, this can be changed to 'VECTOR(3072)' for optimized search.
     @Column({
-        type: 'VECTOR(3072)',
+        type: 'VECTOR',
         allowNull: true,
         set(value: number[] | string | null) {
             if (Array.isArray(value)) {

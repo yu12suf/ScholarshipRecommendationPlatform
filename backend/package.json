@@ -8,6 +8,7 @@
     "dev": "npx tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "seed:counselors": "tsx src/scripts/seedCounselorEmbeddings.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

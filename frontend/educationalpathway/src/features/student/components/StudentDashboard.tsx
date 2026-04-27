@@ -402,7 +402,7 @@ export const StudentDashboard = () => {
                       <p className="text-[10px] text-muted-foreground truncate">{counselor.areasOfExpertise || counselor.currentPosition}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary" className="text-[9px] font-bold py-0 h-4 bg-primary/10 text-primary border-none">
-                          {Math.round(counselor.recommendationScore)}% Match
+                          {Math.round(counselor.recommendationScore || 0)}% Match
                         </Badge>
                       </div>
                     </div>

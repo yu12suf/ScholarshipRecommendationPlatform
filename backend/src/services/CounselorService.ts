@@ -25,9 +25,10 @@ import { NotificationService } from "./NotificationService.js";
 import { PaymentService } from "./PaymentService.js";
 import { GoogleMeetService } from "./GoogleMeetService.js";
 import { EmailService } from "./EmailService.js";
+import { FileService } from "./FileService.js";
+import { VectorService } from "./VectorService.js";
 import crypto from "crypto";
 import configs from "../config/configs.js";
-import { FileService } from "./FileService.js";
 import {
   AdminVerificationDto,
   AdminVisibilityDto,
@@ -229,6 +230,7 @@ export class CounselorService {
     const page = query.page || 1;
     const limit = query.limit || 10;
     const { rows, count } = await CounselorRepository.findVerifiedDirectory({
+      search: query.search,
       ...(query.specialization ? { specialization: query.specialization } : {}),
       ...(query.language ? { language: query.language } : {}),
       ...(query.mode ? { mode: query.mode } : {}),
@@ -287,71 +289,64 @@ export class CounselorService {
     const student = await Student.findOne({ where: { userId } });
     if (!student) throw httpError(404, "Student profile not found");
 
+    // 1. Ensure student has a counselor-specific embedding
+    let vectorStr = student.counselorEmbedding;
+    try {
+      vectorStr = await VectorService.generateStudentForCounselorEmbedding(student);
+    } catch (err) {
+      console.error("[CounselorService] Error generating student counselor embedding:", err);
+    }
+
+    if (!vectorStr) {
+        console.log("[CounselorService] No vector available, falling back to basic directory list");
+        const { rows } = await CounselorRepository.findVerifiedDirectory({ page: 1, limit: 10 });
+        return rows.map(c => ({ ...c, recommendationScore: 0, matchReasons: ["Complete your profile for AI matching"] } as any));
+    }
+
+    // 2. Fetch vector matches
+    const candidates = await CounselorRepository.findRecommendedCounselors(student, vectorStr);
+
     const studentProfileSignal = [
-      typeof student.studyPreferences === 'object' ? JSON.stringify(student.studyPreferences) : student.studyPreferences,
-      typeof student.academicHistory === 'object' ? JSON.stringify(student.academicHistory) : student.academicHistory,
       student.countryInterest,
       student.academicStatus,
       student.fieldOfStudy,
       student.researchArea,
-      typeof student.extractedData === 'object' ? JSON.stringify(student.extractedData) : student.extractedData,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+    ].filter(Boolean).join(" ").toLowerCase();
 
-    const candidates = await Counselor.findAll({
-      where: { verificationStatus: "verified", isActive: true },
-      include: [{ model: User, as: "user", attributes: ["name", "email"] }],
-      order: [["rating", "DESC"]],
-    });
-
-    const results = await Promise.all(candidates.map(async (counselor) => {
-      const metadata = this.parseMetadata(counselor.extractedData);
+    // 3. Post-process to add match reasons (heuristic labels)
+    const results = await Promise.all(candidates.map(async (counselor: any) => {
       const matchReasons: string[] = [];
-      let recommendationScore = Number(counselor.rating || 0);
-
+      const vectorScore = parseFloat(counselor.match_score || "0");
+      
+      // Heuristic labels for UI "Reasons"
       const expertiseText = (counselor.areasOfExpertise || "").toLowerCase();
       if (expertiseText && this.hasTokenOverlap(expertiseText, studentProfileSignal)) {
-        recommendationScore += 2;
         matchReasons.push("Expertise aligns with your academic focus");
       }
 
-      // Check target study countries
       const counselorCountries = [
         counselor.studyCountry,
         counselor.specializedCountries,
         counselor.countryOfResidence
       ].join(" ").toLowerCase();
 
-      const studentCountries = (student.countryInterest || "").toLowerCase();
-
-      if (studentCountries && counselorCountries && this.hasTokenOverlap(counselorCountries, studentCountries)) {
-        recommendationScore += 5;
-        matchReasons.push(`Direct experience in your target country`);
+      if (student.countryInterest && counselorCountries.includes(student.countryInterest.toLowerCase())) {
+        matchReasons.push(`Expert in ${student.countryInterest} systems`);
       }
 
-      // Check target universe/institution
-      const uniName = (counselor.universityName || metadata.currentUniversity || "").toLowerCase();
-      if (uniName && uniName.length > 3 && studentProfileSignal.includes(uniName)) {
-        recommendationScore += 4;
-        matchReasons.push("Attended your prospective university");
+      if (matchReasons.length === 0) {
+          matchReasons.push("High academic and interest similarity");
       }
 
-      // Check degree level alignment
-      const degLevel = (counselor.highestEducationLevel || metadata.currentDegreeLevel || "").toLowerCase();
-      if (degLevel && studentProfileSignal.includes(degLevel)) {
-        recommendationScore += 1;
-        matchReasons.push("Education level alignment");
-      }
-
-      const base = await this.formatCounselorResponse(counselor, (counselor as any).user || null);
-      return { ...base, recommendationScore, matchReasons };
+      const base = await this.formatCounselorResponse(counselor, counselor.user || null);
+      return { 
+        ...base, 
+        recommendationScore: vectorScore, 
+        matchReasons 
+      };
     }));
 
-    return results
-      .sort((a, b) => b.recommendationScore - a.recommendationScore)
-      .slice(0, 10);
+    return results;
   }
 
   static async getReviews(counselorId: number): Promise<ReviewsSummaryResponse> {

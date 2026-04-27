@@ -1,4 +1,5 @@
 import { Student } from "../models/Student.js";
+import { Counselor } from "../models/Counselor.js";
 import { GeminiIngestionService } from "./GeminiIngestionService.js";
 import * as crypto from "crypto";
 import { TextCleaner } from "../utils/textcleaner.js";
@@ -56,5 +57,58 @@ export class VectorService {
         return GeminiIngestionService.generateEmbedding(
             context
         );
+    }
+
+    /**
+     * Symmetric Context for Counselor Matching: Offering
+     */
+    static async generateCounselorEmbedding(counselor: Counselor): Promise<void> {
+        const counselorContext = `
+            Focus: ${counselor.areasOfExpertise || ""}
+            Geography: ${[counselor.specializedCountries, counselor.studyCountry, counselor.countryOfResidence].filter(Boolean).join(", ")}
+            Academic_Level: ${counselor.highestEducationLevel || ""}
+            Field: ${counselor.fieldsOfStudy || ""}
+            Expertise_Details: ${counselor.bio || ""} ${counselor.yearsOfExperience ? `Years experience: ${counselor.yearsOfExperience}` : ""}
+        `.replace(/\s+/g, ' ').trim();
+
+        const currentHash = crypto.createHash("md5").update(counselorContext).digest("hex");
+
+        if (!counselor.embedding || counselor.profileHash !== currentHash) {
+            console.log(`[VectorService] Counselor Context for AI: "${counselorContext}"`);
+            const vector = await GeminiIngestionService.generateEmbedding(counselorContext);
+            
+            await counselor.update({
+                embedding: vector,
+                profileHash: currentHash
+            });
+        }
+    }
+
+    /**
+     * Symmetric Context for Counselor Matching: Request
+     */
+    static async generateStudentForCounselorEmbedding(student: Student): Promise<string> {
+        const studentContext = `
+            Focus: ${student.researchArea || student.studyPreferences || ""}
+            Geography: ${[student.countryInterest, student.preferredCountries].filter(Boolean).join(", ")}
+            Academic_Level: ${student.preferredDegreeLevel || ""}
+            Field: ${student.fieldOfStudy || ""}
+            Background_Details: ${student.workExperience || ""} ${student.academicHistory || ""}
+        `.replace(/\s+/g, ' ').trim();
+
+        const currentHash = crypto.createHash("md5").update(studentContext).digest("hex");
+
+        if (!student.counselorEmbedding || student.counselorProfileHash !== currentHash) {
+            console.log(`[VectorService] Student Context for Counselor Matching: "${studentContext}"`);
+            const vector = await GeminiIngestionService.generateEmbedding(studentContext);
+            
+            await student.update({
+                counselorEmbedding: vector,
+                counselorProfileHash: currentHash
+            });
+        }
+
+        // Return the vector string for use in matching queries
+        return student.counselorEmbedding;
     }
 }

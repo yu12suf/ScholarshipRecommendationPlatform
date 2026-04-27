@@ -178,13 +178,14 @@ export interface BookingResponse {
 }
 
 export interface CounselorDirectoryQuery {
-    specialization?: string;
-    language?: string;
-    mode?: ConsultationMode;
-    minRating?: number;
-    fromDate?: string;
-    toDate?: string;
-    availableOnly?: boolean;
+    search?: string | undefined;
+    specialization?: string | undefined;
+    language?: string | undefined;
+    mode?: ConsultationMode | undefined;
+    minRating?: number | undefined;
+    fromDate?: string | undefined;
+    toDate?: string | undefined;
+    availableOnly?: boolean | undefined;
     page?: number;
     limit?: number;
 }
