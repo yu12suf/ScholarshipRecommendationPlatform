@@ -71,7 +71,7 @@ class AssessmentApiService {
     required String testId,
     required String skill,
     required Map<String, dynamic> responses,
-    List<int>? audioBytes,
+    List<int>? audioBytes, Map<String, dynamic>? audioData,
   }) async {
     final fields = {
       'test_id': testId,
