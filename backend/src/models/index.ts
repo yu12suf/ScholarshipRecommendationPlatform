@@ -26,3 +26,4 @@ export * from "./VisaGuideline.js";
 export * from "./VisaMockInterview.js";
 export * from "./Pdf.js";
 export * from "./CounselorPayout.js";
+export * from "./CounselorWalletTransaction.js";

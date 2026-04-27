@@ -11,22 +11,18 @@ export class VectorService {
     static async generateStudentEmbedding(student: Student): Promise<void> {
         // We use a structured list. This makes the "meaning" denser.
         const studentContext = `
-            Nationality: ${student.nationality || ""}
-            Residence: ${student.countryOfResidence || ""}
-            Level: ${student.academicStatus || ""}
-            Seeking: ${student.degreeSeeking || ""}
-            PreferredLevels: ${student.preferredDegreeLevel || ""}
-            StudyMode: ${student.studyMode || ""}
-            Interests: ${student.studyPreferences || student.fieldOfStudy || ""}
-            Research: ${student.researchArea || ""} ${student.proposedResearchTopic || ""}
-            History: ${student.academicHistory || ""}
+            Location: ${student.countryOfResidence || ""}
+            Target_Location: ${student.countryInterest || student.preferredCountries || ""}
+            Level: ${student.academicStatus || student.preferredDegreeLevel || ""}
+            FieldOfStudy: ${student.studyPreferences || student.fieldOfStudy || ""}
             Experience: ${student.workExperience || ""}
-            Goal_Country: ${student.countryInterest || student.preferredCountries || ""}
+            Requirements: ${student.academicHistory || ""}
         `.replace(/\s+/g, ' ').trim();
 
         const currentHash = crypto.createHash("md5").update(studentContext).digest("hex");
 
         if (!student.embedding || student.profileHash !== currentHash) {
+            console.log(`[VectorService] Student Context for AI: "${studentContext}"`);
             console.log(`[VectorService] Refreshing dense embedding for student ${student.id}...`);
             
             // TASK_TYPE: RETRIEVAL_QUERY (Standard for Google Gemini Embeddings)
@@ -49,11 +45,10 @@ export class VectorService {
            const description = TextCleaner.prepare(scholarshipData.description);
     const requirements = TextCleaner.prepare(scholarshipData.requirements);
         const context = `
-            Title: ${scholarshipData.title}
-            Level: ${(scholarshipData.degree_levels || scholarshipData.degreeLevels || []).join(", ")}
             Location: ${scholarshipData.country || ""}
-            Type: ${scholarshipData.fundType || ""}
-            Description: ${description || ""}
+            Target_Location: ${scholarshipData.country || ""}
+            Level: ${(scholarshipData.degree_levels || scholarshipData.degreeLevels || []).join(", ")}
+            FieldOfStudy: ${description || ""}
             Requirements: ${requirements || ""}
         `.replace(/\s+/g, ' ').trim();
 

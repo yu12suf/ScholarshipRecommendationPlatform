@@ -60,12 +60,12 @@ export class Booking extends Model {
     declare paymentId: number | null;
 
     @Column({
-        type: DataType.STRING(20),
+        type: DataType.STRING(32),
         allowNull: false,
         defaultValue: 'pending',
         field: 'status'
     })
-    declare status: 'pending' | 'confirmed' | 'started' | 'completed' | 'cancelled' | 'disputed';
+    declare status: 'pending' | 'confirmed' | 'started' | 'awaiting_confirmation' | 'completed' | 'cancelled' | 'disputed';
 
     @Column({
         type: DataType.STRING(500),

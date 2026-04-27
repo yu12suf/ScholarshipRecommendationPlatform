@@ -72,6 +72,14 @@ export class Payment extends Model {
     })
     declare status: 'pending' | 'success' | 'failed';
 
+    @Column({
+        type: DataType.STRING(20),
+        allowNull: false,
+        defaultValue: 'pending',
+        field: 'escrow_status'
+    })
+    declare escrowStatus: 'pending' | 'held' | 'released' | 'refunded';
+
     @CreatedAt
     @Column({
         type: DataType.DATE,

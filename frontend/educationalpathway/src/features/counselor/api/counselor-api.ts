@@ -102,6 +102,11 @@ export const getRecommendedCounselors = async (): Promise<any[]> => {
   return response.data || [];
 };
 
+export const getCounselors = async (params?: any): Promise<{ rows: any[], count: number }> => {
+  const response = await api.get('/counselors/directory', { params });
+  return response.data;
+};
+
 export const createBooking = async (slotId: number) => {
   const response = await api.post('/counselors/bookings', { slotId });
   return response.data;
@@ -111,3 +116,23 @@ export const initiateBooking = async (studentUserId: number, slotId: number) => 
   const response = await api.post('/counselors/initiate-booking', { studentUserId, slotId });
   return response.data;
 };
+
+export const getMyWalletLedger = async () => {
+  const response = await api.get('/counselors/me/wallet/ledger');
+  return response.data;
+};
+
+export const requestPayout = async (payload: {
+  amount: number;
+  payoutMethod: 'bank_transfer' | 'fana' | 'telebirr';
+  payoutDetails: any;
+}) => {
+  const response = await api.post('/counselors/me/payouts/request', payload);
+  return response.data;
+};
+
+export const reviewAndConfirmBooking = async (bookingId: number, payload: { rating: number; comment?: string }) => {
+  const response = await api.post(`/counselors/bookings/${bookingId}/review-confirm`, payload);
+  return response.data;
+};
+

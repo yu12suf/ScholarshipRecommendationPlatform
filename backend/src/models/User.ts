@@ -16,6 +16,7 @@ import { RefreshToken } from "./RefreshToken.js";
 import { PasswordResetToken } from "./PasswordResetToken.js";
 import { Consultation } from "./Consultation.js";
 import { Counselor } from "./Counselor.js";
+import { Student } from "./Student.js";
 import { Notification } from "./Notification.js";
 import { UserRole } from "../types/userTypes.js";
 
@@ -119,6 +120,9 @@ export class User extends Model {
 
     @HasOne(() => Counselor, { onDelete: 'CASCADE' })
     counselor!: Counselor;
+
+    @HasOne(() => Student, { onDelete: 'CASCADE' })
+    student!: Student;
 
     @HasMany(() => Notification, { onDelete: 'CASCADE' })
     notifications!: Notification[];

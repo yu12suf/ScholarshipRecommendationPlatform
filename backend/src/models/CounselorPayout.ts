@@ -52,7 +52,28 @@ export class CounselorPayout extends Model {
         defaultValue: 'pending',
         field: 'status'
     })
-    declare status: 'pending' | 'paid';
+    declare status: 'pending' | 'approved' | 'rejected' | 'completed';
+
+    @Column({
+        type: DataType.STRING(50),
+        allowNull: false,
+        field: 'payout_method'
+    })
+    declare payoutMethod: string;
+
+    @Column({
+        type: DataType.JSONB,
+        allowNull: false,
+        field: 'payout_details'
+    })
+    declare payoutDetails: any;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: true,
+        field: 'admin_note'
+    })
+    declare adminNote: string;
 
     @CreatedAt
     @Column({

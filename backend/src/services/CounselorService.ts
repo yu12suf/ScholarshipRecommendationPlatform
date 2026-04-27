@@ -1,4 +1,5 @@
-import { Op } from "sequelize";
+import { Op, Transaction } from "sequelize";
+import { sequelize } from "../config/sequelize.js";
 import { Counselor } from "../models/Counselor.js";
 import { User } from "../models/User.js";
 import { Student } from "../models/Student.js";
@@ -13,6 +14,7 @@ import { Scholarship } from "../models/Scholarship.js";
 import { ScholarshipMilestone } from "../models/ScholarshipMilestone.js";
 import { UserRole } from "../types/userTypes.js";
 import { CounselorPayout } from "../models/CounselorPayout.js";
+import { CounselorWalletTransaction } from "../models/CounselorWalletTransaction.js";
 import { AvailabilitySlotRepository } from "../repositories/AvailabilitySlotRepository.js";
 import { BookingRepository } from "../repositories/BookingRepository.js";
 import { CounselorRepository } from "../repositories/CounselorRepository.js";
@@ -44,9 +46,12 @@ import {
   SendMessageDto,
   ShareDocumentDto,
   SlotResponse,
+  StudentReviewAndConfirmDto,
   StudentProgressResponse,
   UpdateCounselorDto,
   UpdateSlotDto,
+  CounselorPayoutRequestDto,
+  AdminPayoutActionDto,
 } from "../types/counselorTypes.js";
 
 type CounselorMetadata = {
@@ -65,7 +70,7 @@ const httpError = (statusCode: number, message: string) =>
 export class CounselorService {
   static async applyAsCounselor(userId: number, dto: CreateCounselorDto, files?: any): Promise<CounselorResponse> {
     const existingCounselor = await CounselorRepository.findByUserId(userId);
-    
+
     // If already exists and already onboarded, prevent re-application
     if (existingCounselor && existingCounselor.isOnboarded) {
       throw httpError(409, "User already has a counselor profile");
@@ -120,33 +125,33 @@ export class CounselorService {
       // Create new profile
       counselor = await CounselorRepository.create({
         userId,
-      bio: dto.bio || "",
-      areasOfExpertise: dto.areasOfExpertise ? (typeof dto.areasOfExpertise === 'string' ? dto.areasOfExpertise : JSON.stringify(dto.areasOfExpertise)) : (dto.specializations?.join(", ") || ""),
-      hourlyRate: Number(dto.hourlyRate) || 0,
-      yearsOfExperience: Number(dto.yearsOfExperience) || 0,
-      verificationStatus: "pending",
-      isActive: true,
-      isOnboarded: dto.isOnboarded || false,
-      idCardUrl: idCardUrl || null,
-      selfieUrl: selfieUrl || null,
-      phoneNumber: dto.phoneNumber || null,
-      countryOfResidence: dto.countryOfResidence || null,
-      city: dto.city || null,
-      specializedCountries: dto.specializedCountries ? (typeof dto.specializedCountries === 'string' ? dto.specializedCountries : JSON.stringify(dto.specializedCountries)) : null,
-      currentPosition: dto.currentPosition || null,
-      organization: dto.organization || null,
-      highestEducationLevel: dto.highestEducationLevel || null,
-      universityName: dto.universityName || null,
-      studyCountry: dto.studyCountry || null,
-      languages: dto.languages ? (typeof dto.languages === 'string' ? dto.languages : JSON.stringify(dto.languages)) : null,
-      fieldsOfStudy: dto.fieldsOfStudy ? (typeof dto.fieldsOfStudy === 'string' ? dto.fieldsOfStudy : JSON.stringify(dto.fieldsOfStudy)) : null,
-      weeklySchedule: dto.weeklySchedule || null,
-      sessionDuration: dto.sessionDuration || 60,
-      consultationModes: dto.consultationModes ? (typeof dto.consultationModes === 'string' ? dto.consultationModes : JSON.stringify(dto.consultationModes)) : null,
-      profileImageUrl: profileImageUrl || null,
-      cvUrl: cvUrl || null,
-      certificateUrls: certificateUrls || null,
-      extractedData: JSON.stringify(this.mergeMetadata(null, dto)),
+        bio: dto.bio || "",
+        areasOfExpertise: dto.areasOfExpertise ? (typeof dto.areasOfExpertise === 'string' ? dto.areasOfExpertise : JSON.stringify(dto.areasOfExpertise)) : (dto.specializations?.join(", ") || ""),
+        hourlyRate: Number(dto.hourlyRate) || 0,
+        yearsOfExperience: Number(dto.yearsOfExperience) || 0,
+        verificationStatus: "pending",
+        isActive: true,
+        isOnboarded: dto.isOnboarded || false,
+        idCardUrl: idCardUrl || null,
+        selfieUrl: selfieUrl || null,
+        phoneNumber: dto.phoneNumber || null,
+        countryOfResidence: dto.countryOfResidence || null,
+        city: dto.city || null,
+        specializedCountries: dto.specializedCountries ? (typeof dto.specializedCountries === 'string' ? dto.specializedCountries : JSON.stringify(dto.specializedCountries)) : null,
+        currentPosition: dto.currentPosition || null,
+        organization: dto.organization || null,
+        highestEducationLevel: dto.highestEducationLevel || null,
+        universityName: dto.universityName || null,
+        studyCountry: dto.studyCountry || null,
+        languages: dto.languages ? (typeof dto.languages === 'string' ? dto.languages : JSON.stringify(dto.languages)) : null,
+        fieldsOfStudy: dto.fieldsOfStudy ? (typeof dto.fieldsOfStudy === 'string' ? dto.fieldsOfStudy : JSON.stringify(dto.fieldsOfStudy)) : null,
+        weeklySchedule: dto.weeklySchedule || null,
+        sessionDuration: dto.sessionDuration || 60,
+        consultationModes: dto.consultationModes ? (typeof dto.consultationModes === 'string' ? dto.consultationModes : JSON.stringify(dto.consultationModes)) : null,
+        profileImageUrl: profileImageUrl || null,
+        cvUrl: cvUrl || null,
+        certificateUrls: certificateUrls || null,
+        extractedData: JSON.stringify(this.mergeMetadata(null, dto)),
       });
     }
 
@@ -155,7 +160,7 @@ export class CounselorService {
     }
 
     const user = await User.findByPk(userId);
-    return this.formatCounselorResponse(counselor, user);
+    return await this.formatCounselorResponse(counselor, user);
   }
 
   static async getMyProfile(userId: number): Promise<CounselorResponse> {
@@ -177,6 +182,9 @@ export class CounselorService {
         verificationStatus: "pending",
         isActive: true,
         rating: 0,
+        ratingPercentage: 0,
+        totalReviews: 0,
+        ratingDistribution: null,
         totalSessions: 0,
         qualifications: [],
         specializations: [],
@@ -209,7 +217,7 @@ export class CounselorService {
         updatedAt: new Date(),
       };
     }
-    return this.formatCounselorResponse(counselor, user);
+    return await this.formatCounselorResponse(counselor, user);
   }
 
   static async getPublicDirectory(query: CounselorDirectoryQuery): Promise<{
@@ -251,8 +259,13 @@ export class CounselorService {
         ? filteredRows.filter((item) => (slotsByCounselor.get(item.id) || []).length > 0)
         : filteredRows;
 
-    const payload = availabilityFilteredRows.map((c) => {
-      const base = this.formatCounselorResponse(c, (c as any).user || null);
+    const payload = await Promise.all(availabilityFilteredRows.map(async (c) => {
+      let userObj = (c as any).user;
+      if (!userObj && c.userId) {
+        userObj = await User.findByPk(c.userId);
+      }
+
+      const base = await this.formatCounselorResponse(c, userObj || null);
       const availableSlots = slotsByCounselor.get(c.id) || [];
       return {
         ...base,
@@ -260,7 +273,7 @@ export class CounselorService {
           base.availabilitySummary ||
           (availableSlots.length > 0 ? `${availableSlots.length} open slots` : null),
       };
-    });
+    }));
 
     return {
       rows: payload,
@@ -293,49 +306,50 @@ export class CounselorService {
       order: [["rating", "DESC"]],
     });
 
-    return candidates
-      .map((counselor) => {
-        const metadata = this.parseMetadata(counselor.extractedData);
-        const matchReasons: string[] = [];
-        let recommendationScore = Number(counselor.rating || 0);
+    const results = await Promise.all(candidates.map(async (counselor) => {
+      const metadata = this.parseMetadata(counselor.extractedData);
+      const matchReasons: string[] = [];
+      let recommendationScore = Number(counselor.rating || 0);
 
-        const expertiseText = (counselor.areasOfExpertise || "").toLowerCase();
-        if (expertiseText && this.hasTokenOverlap(expertiseText, studentProfileSignal)) {
-          recommendationScore += 2;
-          matchReasons.push("Expertise aligns with your academic focus");
-        }
+      const expertiseText = (counselor.areasOfExpertise || "").toLowerCase();
+      if (expertiseText && this.hasTokenOverlap(expertiseText, studentProfileSignal)) {
+        recommendationScore += 2;
+        matchReasons.push("Expertise aligns with your academic focus");
+      }
 
-        // Check target study countries
-        const counselorCountries = [
-            counselor.studyCountry, 
-            counselor.specializedCountries, 
-            counselor.countryOfResidence
-        ].join(" ").toLowerCase();
-        
-        const studentCountries = (student.countryInterest || "").toLowerCase();
-        
-        if (studentCountries && counselorCountries && this.hasTokenOverlap(counselorCountries, studentCountries)) {
-            recommendationScore += 5;
-            matchReasons.push(`Direct experience in your target country`);
-        }
+      // Check target study countries
+      const counselorCountries = [
+        counselor.studyCountry,
+        counselor.specializedCountries,
+        counselor.countryOfResidence
+      ].join(" ").toLowerCase();
 
-        // Check target universe/institution
-        const uniName = (counselor.universityName || metadata.currentUniversity || "").toLowerCase();
-        if (uniName && uniName.length > 3 && studentProfileSignal.includes(uniName)) {
-          recommendationScore += 4;
-          matchReasons.push("Attended your prospective university");
-        }
+      const studentCountries = (student.countryInterest || "").toLowerCase();
 
-        // Check degree level alignment
-        const degLevel = (counselor.highestEducationLevel || metadata.currentDegreeLevel || "").toLowerCase();
-        if (degLevel && studentProfileSignal.includes(degLevel)) {
-          recommendationScore += 1;
-          matchReasons.push("Education level alignment");
-        }
+      if (studentCountries && counselorCountries && this.hasTokenOverlap(counselorCountries, studentCountries)) {
+        recommendationScore += 5;
+        matchReasons.push(`Direct experience in your target country`);
+      }
 
-        const base = this.formatCounselorResponse(counselor, (counselor as any).user || null);
-        return { ...base, recommendationScore, matchReasons };
-      })
+      // Check target universe/institution
+      const uniName = (counselor.universityName || metadata.currentUniversity || "").toLowerCase();
+      if (uniName && uniName.length > 3 && studentProfileSignal.includes(uniName)) {
+        recommendationScore += 4;
+        matchReasons.push("Attended your prospective university");
+      }
+
+      // Check degree level alignment
+      const degLevel = (counselor.highestEducationLevel || metadata.currentDegreeLevel || "").toLowerCase();
+      if (degLevel && studentProfileSignal.includes(degLevel)) {
+        recommendationScore += 1;
+        matchReasons.push("Education level alignment");
+      }
+
+      const base = await this.formatCounselorResponse(counselor, (counselor as any).user || null);
+      return { ...base, recommendationScore, matchReasons };
+    }));
+
+    return results
       .sort((a, b) => b.recommendationScore - a.recommendationScore)
       .slice(0, 10);
   }
@@ -343,19 +357,45 @@ export class CounselorService {
   static async getReviews(counselorId: number): Promise<ReviewsSummaryResponse> {
     const reviews = await CounselorReviewRepository.findAllByCounselor(counselorId);
     const stats = await CounselorReviewRepository.getStatistics(counselorId);
+
+    console.log(`[CounselorService.getReviews] Found ${reviews.length} reviews for counselor ${counselorId}`);
+    if (reviews.length > 0) {
+      const sampleReview = reviews[0];
+      console.log(`[CounselorService.getReviews] Sample review data:\n`, JSON.stringify(sampleReview, null, 2));
+    }
+
     return {
       totalReviews: stats.totalReviews,
       averageRating: stats.averageRating,
       ratingDistribution: stats.ratingDistribution,
-      reviews: reviews.map((review) => ({
-        id: review.id,
-        bookingId: review.bookingId,
-        studentId: review.studentId,
-        counselorId: review.counselorId,
-        rating: review.rating,
-        comment: review.comment,
-        createdAt: review.createdAt,
-        studentName: (review as any).student?.user?.name || "Anonymous",
+      reviews: await Promise.all(reviews.map(async (review) => {
+        // ALWAYS fetch manually to bypass any Sequelize include bugs completely
+        let studentName = "Verified Student";
+
+        try {
+          if (review.studentId) {
+            const student = await Student.findByPk(review.studentId);
+            if (student && student.userId) {
+              const user = await User.findByPk(student.userId);
+              if (user && user.name) {
+                studentName = user.name;
+              }
+            }
+          }
+        } catch (err) {
+          console.error(`Error fetching student name for review ${review.id}:`, err);
+        }
+
+        return {
+          id: review.id,
+          bookingId: review.bookingId,
+          studentId: review.studentId,
+          counselorId: review.counselorId,
+          rating: review.rating,
+          comment: review.comment,
+          createdAt: review.createdAt,
+          studentName: studentName,
+        };
       })),
     };
   }
@@ -409,7 +449,7 @@ export class CounselorService {
     });
 
     const user = await User.findByPk(userId);
-    return this.formatCounselorResponse(counselor, user);
+    return await this.formatCounselorResponse(counselor, user);
   }
 
   static async deleteProfile(userId: number): Promise<void> {
@@ -424,7 +464,7 @@ export class CounselorService {
     // 1. Update Counselor profile with the new weekly schedule
     const counselor = await CounselorRepository.findById(counselorId);
     if (!counselor) throw httpError(404, "Counselor not found");
-    
+
     await counselor.update({ weeklySchedule: JSON.stringify(slots) });
 
     // 2. Generate individual slot records for the next 4 weeks
@@ -448,14 +488,14 @@ export class CounselorService {
         const currentDay = now.getDay();
         let diff = targetDay - currentDay;
         if (diff < 0) diff += 7; // Ensure we move forward
-        
+
         date.setDate(now.getDate() + diff + (week * 7));
-        
+
         const startTime = new Date(date);
         startTime.setHours(startH as number, startM, 0, 0);
-        
+
         const endTime = new Date(date);
-        endTime.setHours(endH as number , endM, 0, 0);
+        endTime.setHours(endH as number, endM, 0, 0);
 
         // Skip if this time has already passed
         if (startTime < now) continue;
@@ -620,7 +660,7 @@ export class CounselorService {
 
   static async confirmBooking(tx_ref: string): Promise<{ success: boolean; status: string; message: string; booking?: any }> {
     const payment = await Payment.findOne({ where: { tx_ref } });
-    
+
     if (!payment) {
       console.error(`[ConfirmBooking] Payment record not found for tx_ref: ${tx_ref}`);
       return { success: false, status: 'not_found', message: "Payment record not found." };
@@ -634,21 +674,21 @@ export class CounselorService {
     try {
       console.log(`[ConfirmBooking] Verifying with Chapa for tx_ref: ${tx_ref}`);
       const chapaVerify = await PaymentService.verifyPayment(tx_ref);
-      
+
       // Chapa's response structure: { status: "success", message: "...", data: { status: "success", ... } }
       const apiSuccess = chapaVerify.status === 'success';
       const transactionStatus = chapaVerify.data?.status;
 
       console.log(`[ConfirmBooking] Chapa response for ${tx_ref}: API Status: ${chapaVerify.status}, Transaction Status: ${transactionStatus}`);
-      
+
       if (apiSuccess && transactionStatus === 'success') {
-        await payment.update({ status: 'success' });
-        
+        await payment.update({ status: 'success', escrowStatus: 'held' });
+
         const booking = await Booking.findByPk(payment.bookingId || 0);
         if (booking) {
           if (booking.status === 'pending') {
             const slot = await AvailabilitySlot.findByPk(booking.slotId);
-            
+
             // Fetch user emails for student and counselor so calendar invites/emails are sent to both.
             const attendees: Array<{ email: string; name?: string }> = [];
             let studentEmail: string | null = null;
@@ -746,29 +786,22 @@ export class CounselorService {
               } catch (emailError) {
                 console.error("[ConfirmBooking] Failed to send direct invite emails:", emailError);
               }
-              
-              // Update counselor balance
+
+              // Funds remain held in escrow until student milestone confirmation.
               const counselor = await CounselorRepository.findById(booking.counselorId);
               if (counselor) {
-                const amount = Number(payment.amount);
-                await counselor.increment({
-                  totalEarned: amount,
-                  pendingBalance: amount
-                });
-
                 // Notify counselor about confirmed booking
                 try {
                   await NotificationService.createNotification(
                     counselor.userId,
                     "Booking Confirmed",
-                    `Payment received! Your session for ${slot.startTime.toLocaleString()} is confirmed.`,
+                    `Payment received and held in escrow. Your session for ${slot.startTime.toLocaleString()} is confirmed.`,
                     "booking",
                     booking.id
                   );
                 } catch (notifyError) {
                   console.error("[CounselorService] Failed to send confirmation notification:", notifyError);
                 }
-                console.log(`[ConfirmBooking] Updated counselor ${counselor.id} balance by ${amount}`);
               }
 
               this.queueSessionReminder(booking.id, slot.startTime);
@@ -777,7 +810,7 @@ export class CounselorService {
           }
           return { success: true, status: 'success', message: "Payment verified, but booking was already processed.", booking };
         }
-        
+
         return { success: true, status: 'success', message: "Payment verified, but booking record not found." };
       } else if (apiSuccess && transactionStatus === 'pending') {
         return { success: false, status: 'pending', message: "Payment is still pending. Please wait or refresh." };
@@ -792,7 +825,7 @@ export class CounselorService {
           }
           return { success: false, status: 'failed', message: "Payment was declined by Chapa." };
         }
-        
+
         return { success: false, status: 'unknown', message: `Payment verification incomplete. Status: ${transactionStatus || 'unknown'}` };
       }
     } catch (error: any) {
@@ -916,10 +949,10 @@ export class CounselorService {
       email: (student as any).user?.email || "Unknown",
       learningPath: learningPath
         ? {
-            id: learningPath.id,
-            currentProgress: progressPercent,
-            targetLevel: null,
-          }
+          id: learningPath.id,
+          currentProgress: progressPercent,
+          targetLevel: null,
+        }
         : null,
       recentAssessments: recentAssessments.map((assessment) => ({
         id: assessment.id,
@@ -983,22 +1016,12 @@ export class CounselorService {
     const booking = await BookingRepository.findByIdWithAssociations(bookingId);
     if (!booking || booking.counselorId !== counselorId) throw httpError(404, "Booking not found");
     if (dto.status === "started" && booking.status !== "confirmed") throw httpError(409, "Can only start a confirmed booking");
-    if (dto.status === "completed" && booking.status !== "started") throw httpError(409, "Can only complete a started booking");
+    if ((dto.status === "completed" || dto.status === "awaiting_confirmation") && booking.status !== "started") throw httpError(409, "Can only complete a started booking");
     if (dto.status === "cancelled" && booking.status === "completed") throw httpError(409, "Cannot cancel a completed booking");
 
     if (dto.status === "started") await booking.update({ status: "started", startedAt: new Date() });
-    if (dto.status === "completed") {
-      await booking.update({ status: "completed", completedAt: new Date() });
-      const counselor = await Counselor.findByPk(counselorId);
-      if (counselor) {
-        const sessionPrice = Number(counselor.hourlyRate || 500);
-        // Deduct 10% platform fee
-        const counselorCut = sessionPrice * 0.9;
-        await counselor.update({ 
-          totalSessions: (counselor.totalSessions || 0) + 1,
-          pendingBalance: (Number(counselor.pendingBalance) || 0) + counselorCut
-        });
-      }
+    if (dto.status === "completed" || dto.status === "awaiting_confirmation") {
+      await booking.update({ status: "awaiting_confirmation", completedAt: new Date() });
       await AvailabilitySlotRepository.update(booking.slotId, { status: "available", reservedStudentId: null, meetingLink: null });
     }
     if (dto.status === "cancelled") {
@@ -1009,6 +1032,90 @@ export class CounselorService {
       await booking.update({ status: "disputed" });
     }
     return this.formatBookingResponse(booking);
+  }
+
+  static async reviewAndConfirmBooking(studentUserId: number, bookingId: number, dto: StudentReviewAndConfirmDto): Promise<BookingResponse> {
+    const student = await Student.findOne({ where: { userId: studentUserId } });
+    if (!student) throw httpError(404, "Student profile not found");
+
+    const booking = await Booking.findByPk(bookingId);
+    if (!booking || booking.studentId !== student.id) {
+      throw httpError(404, "Booking not found");
+    }
+
+    if (booking.status !== "awaiting_confirmation") {
+      throw httpError(409, "This booking is not ready for student confirmation. It must be marked as completed by the counselor first.");
+    }
+
+    const payment = booking.paymentId ? await Payment.findByPk(booking.paymentId) : null;
+    if (!payment || payment.status !== "success") {
+      throw httpError(409, "Payment must be successful before confirming completion");
+    }
+
+    if (payment.escrowStatus !== "held") {
+      throw httpError(409, "Escrow is not in held state for this booking");
+    }
+
+    // Atomic transaction for fund release
+    return await sequelize.transaction(async (t) => {
+      const existingReview = await CounselorReviewRepository.findByBookingId(booking.id);
+      if (existingReview) {
+        throw httpError(409, "Review has already been submitted for this booking");
+      }
+
+      await CounselorReviewRepository.create({
+        bookingId: booking.id,
+        studentId: student.id,
+        counselorId: booking.counselorId,
+        rating: dto.rating,
+        ...(dto.comment !== undefined ? { comment: dto.comment } : {}),
+      }, { transaction: t });
+
+      const counselor = await Counselor.findByPk(booking.counselorId);
+      if (counselor) {
+        const grossAmount = Number(payment.amount || 0);
+        const counselorCut = Number((grossAmount * 0.9).toFixed(2));
+        const newPendingBalance = Number((Number(counselor.pendingBalance || 0) + counselorCut).toFixed(2));
+        const newTotalEarned = Number((Number(counselor.totalEarned || 0) + counselorCut).toFixed(2));
+
+        const reviewStats = await CounselorReviewRepository.getStatistics(counselor.id);
+        await counselor.update({
+          totalSessions: (counselor.totalSessions || 0) + 1,
+          pendingBalance: newPendingBalance,
+          totalEarned: newTotalEarned,
+          rating: reviewStats.averageRating,
+        }, { transaction: t });
+
+        await CounselorWalletTransaction.create({
+          counselorId: counselor.id,
+          bookingId: booking.id,
+          paymentId: payment.id,
+          entryType: "deposit",
+          amount: counselorCut,
+          balanceAfter: newPendingBalance,
+          reference: `escrow-release-${booking.id}-${Date.now()}`,
+          note: "Escrow release after student review confirmation",
+        }, { transaction: t });
+
+        await NotificationService.createNotification(
+          counselor.userId,
+          "Escrow Released",
+          `A student confirmed your completed session. ${counselorCut.toFixed(2)} ETB was added to your wallet.`,
+          "booking",
+          booking.id,
+        );
+      }
+
+      await booking.update({
+        status: "completed",
+        completedAt: booking.completedAt || new Date()
+      }, { transaction: t });
+
+      await payment.update({ escrowStatus: "released" }, { transaction: t });
+
+      const refreshed = await BookingRepository.findByIdWithAssociations(booking.id, true, t);
+      return this.formatBookingResponse(refreshed || booking);
+    });
   }
 
   static async joinSession(userId: number, role: UserRole, bookingId: number): Promise<{ meetingLink: string }> {
@@ -1046,29 +1153,29 @@ export class CounselorService {
     if (!counselor) throw httpError(404, "Counselor not found");
     await counselor.update({ verificationStatus: dto.verificationStatus });
     const user = await User.findByPk(counselor.userId);
-    return this.formatCounselorResponse(counselor, user);
+    return await this.formatCounselorResponse(counselor, user);
   }
 
   static async adminList(): Promise<CounselorResponse[]> {
     const counselors = await Counselor.findAll({
-      include: [{ 
-        model: User, 
-        as: "user", 
-        attributes: ["id", "name", "email"] 
+      include: [{
+        model: User,
+        as: "user",
+        attributes: ["id", "name", "email"]
       }],
     });
 
     return await Promise.all(counselors.map(async (c) => {
       const plain = c.get({ plain: true });
       let u = plain.user || plain.User || (c as any).user || (c as any).User || null;
-      
+
       // ABSOLUTE FALLBACK: If join failed for some reason, look up manually
       if (!u) {
         console.warn(`[adminList] Join failure for Counselor ${c.id}, attempting direct lookup for User ${c.userId}`);
         u = await User.findByPk(c.userId, { attributes: ["id", "name", "email"] });
       }
-      
-      return this.formatCounselorResponse(c, u);
+
+      return await this.formatCounselorResponse(c, u);
     }));
   }
 
@@ -1077,7 +1184,7 @@ export class CounselorService {
     if (!counselor) throw httpError(404, "Counselor not found");
     await counselor.update({ isActive: dto.isActive });
     const user = await User.findByPk(counselor.userId);
-    return this.formatCounselorResponse(counselor, user);
+    return await this.formatCounselorResponse(counselor, user);
   }
 
   static async sendMessage(senderUserId: number, senderRole: UserRole, dto: SendMessageDto): Promise<CounselorMessageResponse> {
@@ -1203,8 +1310,16 @@ export class CounselorService {
     };
   }
 
-  private static formatCounselorResponse(counselor: Counselor, user: User | null): CounselorResponse {
+  private static async formatCounselorResponse(counselor: Counselor, user: User | null): Promise<CounselorResponse> {
     const metadata = this.parseMetadata(counselor.extractedData);
+
+    let stats = null;
+    try {
+      stats = await CounselorReviewRepository.getStatistics(counselor.id);
+    } catch (error) {
+      console.error(`[formatCounselorResponse] Error fetching stats for counselor ${counselor.id}:`, error);
+    }
+
     return {
       id: counselor.id,
       userId: counselor.userId,
@@ -1216,7 +1331,12 @@ export class CounselorService {
       yearsOfExperience: counselor.yearsOfExperience,
       verificationStatus: counselor.verificationStatus,
       isActive: counselor.isActive,
-      rating: Number(counselor.rating || 0),
+      rating: (stats && stats.totalReviews > 0) ? stats.averageRating : Number(counselor.rating || 0),
+      ratingPercentage: (stats && stats.totalReviews > 0)
+        ? Number(((stats.averageRating / 5) * 100).toFixed(2))
+        : Number(((Number(counselor.rating || 0) / 5) * 100).toFixed(2)),
+      totalReviews: stats ? stats.totalReviews : 0,
+      ratingDistribution: stats ? stats.ratingDistribution : null,
       totalSessions: counselor.totalSessions || 0,
       qualifications: metadata.qualifications || [],
       specializations: metadata.specializations || [],
@@ -1245,6 +1365,8 @@ export class CounselorService {
       profileImageUrl: counselor.profileImageUrl,
       cvUrl: counselor.cvUrl,
       certificateUrls: counselor.certificateUrls,
+      pendingBalance: counselor.pendingBalance,
+      totalEarned: counselor.totalEarned,
       createdAt: counselor.createdAt,
       updatedAt: counselor.updatedAt,
     };
@@ -1281,6 +1403,12 @@ export class CounselorService {
       booking?.dataValues?.slot ||
       null;
 
+    const counselorUser =
+      (typeof counselor?.get === "function" ? counselor.get("user") : null) ||
+      counselor?.user ||
+      counselor?.dataValues?.user ||
+      null;
+
     const studentUser =
       (typeof student?.get === "function" ? student.get("user") : null) ||
       student?.user ||
@@ -1305,11 +1433,12 @@ export class CounselorService {
       } : null,
       counselor: counselor ? {
         id: counselor.id,
+        name: counselorUser?.name || "Academic Counselor",
         areasOfExpertise: counselor.areasOfExpertise,
-        user: counselor.user ? {
-          id: counselor.user.id,
-          name: counselor.user.name,
-          email: counselor.user.email,
+        user: counselorUser ? {
+          id: counselorUser.id,
+          name: counselorUser.name,
+          email: counselorUser.email,
           profileImageUrl: counselor.profileImageUrl
         } : null
       } : null,
@@ -1379,30 +1508,12 @@ export class CounselorService {
     }, delayMs);
   }
 
-  static async processPayout(counselorId: number, amount: number): Promise<any> {
-    const counselor = await CounselorRepository.findById(counselorId);
-    if (!counselor) throw httpError(404, "Counselor not found");
-    if (amount <= 0 || Number(counselor.pendingBalance) < amount) {
-        throw httpError(400, "Invalid payout amount or insufficient pending balance");
-    }
+  static async getChapaMerchantTransactions() {
+    return PaymentService.getTransactions();
+  }
 
-    const transactionReference = `payout-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
-
-    // Here you would optimally integrate with Chapa Transfer API or similar to actually move the funds.
-    // For now, we logically approve it in our system.
-
-    const payout = await CounselorPayout.create({
-        counselorId: counselor.id,
-        amount,
-        transactionReference,
-        status: 'paid'
-    });
-
-    await counselor.update({
-        pendingBalance: Number(counselor.pendingBalance) - amount
-    });
-
-    return payout;
+  static async getChapaBanks() {
+    return PaymentService.getBanks();
   }
 
   static async getPublicProfileByUserId(userId: number): Promise<any> {
@@ -1411,32 +1522,241 @@ export class CounselorService {
       throw httpError(404, "Counselor profile not found or inactive");
     }
     const user = await User.findByPk(userId);
-    return this.formatCounselorResponse(counselor, user);
+    return await this.formatCounselorResponse(counselor, user);
   }
 
-  static async getStudentBookings(userId: number): Promise<any[]> {
+  static async getStudentBookings(userId: number, role: UserRole = UserRole.STUDENT): Promise<any[]> {
+    const baseWhere = {
+      status: { [Op.in]: ['pending', 'confirmed', 'started', 'awaiting_confirmation', 'completed'] },
+    };
+
+    if (role === UserRole.COUNSELOR) {
+      const counselor = await CounselorRepository.findByUserId(userId);
+      if (!counselor) throw httpError(404, "Counselor profile not found");
+
+      const bookings = await Booking.findAll({
+        where: {
+          ...baseWhere,
+          counselorId: counselor.id,
+        },
+        include: [
+          {
+            association: 'student',
+            include: [{ association: 'user', attributes: ['id', 'name', 'email'] }],
+          },
+          {
+            association: 'counselor',
+            include: [{ association: 'user', attributes: ['id', 'name', 'email'] }],
+          },
+          {
+            association: 'slot',
+            required: false,
+          },
+        ],
+        order: [[{ model: AvailabilitySlot, as: 'slot' }, 'startTime', 'ASC']],
+      });
+
+      return bookings.map((b) => this.formatBookingResponse(b));
+    }
+
     const student = await Student.findOne({ where: { userId } });
     if (!student) throw httpError(404, "Student profile not found");
 
     const bookings = await Booking.findAll({
-      where: { studentId: student.id },
+      where: {
+        ...baseWhere,
+        studentId: student.id,
+      },
       include: [
-        { 
-          association: 'counselor', 
-          include: [{ association: 'user', attributes: ['id', 'name', 'email'] }] 
+        {
+          association: 'counselor',
+          include: [{ association: 'user', attributes: ['id', 'name', 'email'] }],
         },
-        { association: 'slot' }
+        {
+          association: 'slot',
+          required: false,
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [[{ model: AvailabilitySlot, as: 'slot' }, 'startTime', 'ASC']],
     });
 
-    return bookings.map(b => this.formatBookingResponse(b));
+    return bookings.map((b) => this.formatBookingResponse(b));
   }
 
   static async getMyPayouts(counselorId: number): Promise<any[]> {
     return CounselorPayout.findAll({
       where: { counselorId },
       order: [['createdAt', 'DESC']]
+    });
+  }
+
+  static async getMyWalletLedger(counselorId: number): Promise<any[]> {
+    const transactions = await CounselorWalletTransaction.findAll({
+      where: { counselorId },
+      order: [['createdAt', 'DESC']],
+    });
+
+    // Optionally: You could enrich these with payout status by matching references
+    const payoutRefs = transactions.filter(t => t.entryType === 'withdrawal').map(t => t.reference);
+    const payouts = await CounselorPayout.findAll({ where: { transactionReference: payoutRefs } });
+    const payoutMap = new Map(payouts.map(p => [p.transactionReference, p]));
+
+    return transactions.map(t => {
+      const data = t.toJSON();
+      if (t.entryType === 'withdrawal' && payoutMap.has(t.reference)) {
+        data.payoutStatus = payoutMap.get(t.reference)?.status;
+        data.payoutMethod = payoutMap.get(t.reference)?.payoutMethod;
+      }
+      return data;
+    });
+  }
+
+  static async requestPayout(userId: number, dto: CounselorPayoutRequestDto): Promise<CounselorPayout> {
+    const counselor = await CounselorRepository.findByUserId(userId);
+    if (!counselor) throw httpError(404, "Counselor profile not found");
+
+    const amount = Number(dto.amount);
+    if (isNaN(amount) || amount < 100) {
+      throw httpError(400, "Minimum payout amount is 100 ETB");
+    }
+
+    const currentBalance = Number(counselor.pendingBalance || 0);
+    if (currentBalance < amount) {
+      throw httpError(400, "Insufficient pending balance for payout");
+    }
+
+    return await sequelize.transaction(async (t) => {
+      // 1. DEDUCT IMMEDIATELY (Locking)
+      const newBalance = Number((currentBalance - amount).toFixed(2));
+      await counselor.update({ pendingBalance: newBalance }, { transaction: t });
+
+      // 2. Create payout entry
+      const payout = await CounselorPayout.create({
+        counselorId: counselor.id,
+        amount: amount,
+        status: 'pending',
+        payoutMethod: dto.payoutMethod,
+        payoutDetails: dto.payoutDetails,
+        transactionReference: `REQ-${counselor.id}-${Date.now()}`,
+      }, { transaction: t });
+
+      // 3. Create ledger entry
+      await CounselorWalletTransaction.create({
+        counselorId: counselor.id,
+        entryType: "withdrawal",
+        amount: -amount,
+        balanceAfter: newBalance,
+        reference: payout.transactionReference,
+        note: `Payout request initiated. Funds held pending admin approval.`,
+      }, { transaction: t });
+
+      return payout;
+    });
+  }
+
+  static async adminUpdatePayoutStatus(payoutId: number, dto: AdminPayoutActionDto): Promise<CounselorPayout> {
+    const payout = await CounselorPayout.findByPk(payoutId);
+    if (!payout) throw httpError(404, "Payout request not found");
+
+    if (["completed", "rejected", "failed", "approved"].includes(payout.status)) {
+      throw httpError(400, "Cannot update status of a finalized payout");
+    }
+
+    const counselor = await Counselor.findByPk(payout.counselorId);
+    if (!counselor) throw httpError(404, "Counselor for this payout no longer exists");
+
+    return await sequelize.transaction(async (t) => {
+      if (dto.status === 'completed' || dto.status === 'approved') {
+        // 1. INITIATE CHAPA TRANSFER
+        try {
+          const transferReference = `${payout.transactionReference}-T${Date.now()}`;
+          // Clean account/phone number: remove whitespace and +251 prefix
+          let sanitizedAccountNumber = (payout.payoutDetails?.accountNumber || payout.payoutDetails?.phoneNumber || "").toString().replace(/\s/g, '');
+          if (sanitizedAccountNumber.startsWith('+251')) {
+            sanitizedAccountNumber = '0' + sanitizedAccountNumber.substring(4);
+          } else if (sanitizedAccountNumber.startsWith('251')) {
+            sanitizedAccountNumber = '0' + sanitizedAccountNumber.substring(3);
+          }
+
+          const chapaPayload = {
+            account_name: payout.payoutDetails?.accountHolderName || "Counselor Payout",
+            account_number: sanitizedAccountNumber,
+            amount: Number(payout.amount),
+            currency: "ETB",
+            beneficiary_name: payout.payoutDetails?.accountHolderName || "Counselor",
+            reference: transferReference,
+            // Use provided bankCode if valid (not empty or "000"), otherwise fallback to method-specific defaults
+            // 855 is the correct code for Telebirr as per live bank list
+            bank_code: (payout.payoutDetails?.bankCode && payout.payoutDetails.bankCode !== "000") 
+              ? payout.payoutDetails.bankCode 
+              : (payout.payoutMethod === 'telebirr' ? '855' : '001')
+          };
+
+          console.log(`[AdminPayout] Initiating Chapa transfer for Payout #${payout.id}`, JSON.stringify(chapaPayload, null, 2));
+          const chapaResult = await PaymentService.transferFunds(chapaPayload as any);
+          console.log(`[AdminPayout] Chapa transfer successful for Payout #${payout.id}. Result:`, JSON.stringify(chapaResult, null, 2));
+
+          // 2. SUCCESS: Finalize status (Balance already deducted on request)
+          await NotificationService.createNotification(
+            counselor.userId,
+            "Payout Processed",
+            `Your payout of ${payout.amount} ETB has been processed successfully via ${payout.payoutMethod}. Reference: ${chapaResult.data?.reference || transferReference}`,
+            "payout",
+            payout.id
+          );
+          
+          // Store the successful Chapa reference
+          payout.transactionReference = chapaResult.data?.reference || transferReference;
+        } catch (error: any) {
+          // Extract the most detailed message possible
+          const rawError = error.response?.data || error.message || error;
+          const detail = typeof rawError === 'object' ? JSON.stringify(rawError) : rawError;
+          
+          console.error(`[AdminPayout] Chapa Transfer Error for Payout #${payout.id}:`, rawError);
+          throw httpError(500, `Chapa Transfer Failed: ${detail}`);
+        }
+
+      } else if (dto.status === 'rejected') {
+        // 1. REFUND BALANCE
+        const currentBalance = Number(counselor.pendingBalance || 0);
+        const newBalance = Number((currentBalance + Number(payout.amount)).toFixed(2));
+        await counselor.update({ pendingBalance: newBalance }, { transaction: t });
+
+        // 2. Create Refund Ledger Entry
+        await CounselorWalletTransaction.create({
+          counselorId: counselor.id,
+          entryType: "deposit",
+          amount: Number(payout.amount),
+          balanceAfter: newBalance,
+          reference: `REFUND-${payout.transactionReference}`,
+          note: `Payout request rejected. Funds returned to wallet. Reason: ${dto.adminNote || 'N/A'}`,
+        }, { transaction: t });
+
+        await NotificationService.createNotification(
+          counselor.userId,
+          "Payout Rejected",
+          `Your payout request was rejected and funds returned. Reason: ${dto.adminNote || 'No reason provided'}`,
+          "payout",
+          payout.id
+        );
+      }
+
+      await payout.update({
+        status: dto.status,
+        adminNote: dto.adminNote,
+        transactionReference: dto.transactionReference || payout.transactionReference,
+      }, { transaction: t });
+
+      return payout;
+    });
+  }
+
+  static async getPayouts(counselorId?: number): Promise<CounselorPayout[]> {
+    const where = counselorId ? { counselorId } : {};
+    return CounselorPayout.findAll({
+      where,
+      include: [{ model: Counselor, as: 'counselor', include: [{ association: 'user', attributes: ['name'] }] }],
+      order: [['createdAt', 'DESC']],
     });
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Scholarship, ScholarshipFilters } from "../types";
-import { getScholarships } from "../api/get-scholarships";
+import { getScholarships, exploreScholarships } from "../api/get-scholarships";
 import { getTrackedScholarships } from "../api/tracking";
 import { ScholarshipCard } from "./ScholarshipCard";
 import { Loader2, Search } from "lucide-react";
@@ -25,7 +25,9 @@ export const ScholarshipList = ({ filters, activeTab }: ScholarshipListProps) =>
 
       try {
         let data;
-        if (activeTab === 'matched') {
+        if (activeTab === 'explore') {
+          data = await exploreScholarships(filters);
+        } else if (activeTab === 'matched') {
           data = await getScholarships(filters);
         } else {
           // Fetch tracked scholarships from backend

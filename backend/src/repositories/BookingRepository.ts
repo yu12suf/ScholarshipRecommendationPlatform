@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { Booking } from '../models/Booking.js';
 import { Order } from 'sequelize';
 import { AvailabilitySlot } from '../models/AvailabilitySlot.js';
@@ -16,8 +16,9 @@ export class BookingRepository {
     /**
      * Find booking by ID with associations
      */
-    static async findByIdWithAssociations(id: number, includeSlot: boolean = true): Promise<Booking | null> {
+    static async findByIdWithAssociations(id: number, includeSlot: boolean = true, transaction?: Transaction): Promise<Booking | null> {
         return Booking.findByPk(id, {
+            ...(transaction ? { transaction } : {}),
             include: [
                 {
                     model: AvailabilitySlot,
@@ -83,7 +84,7 @@ export class BookingRepository {
         return Booking.findAll({
             where: {
                 counselorId,
-                status: { [Op.in]: ['pending', 'confirmed', 'started'] }
+                status: { [Op.in]: ['pending', 'confirmed', 'started', 'awaiting_confirmation'] }
             },
             include: includeAssociations ? [
                 {
@@ -91,12 +92,6 @@ export class BookingRepository {
                     as: 'slot',
                     // INNER JOIN ensures bookings without a real slot are excluded.
                     required: true,
-                    where: {
-                        [Op.or]: [
-                            { endTime: { [Op.gt]: now } },
-                            { startTime: { [Op.gt]: now } },
-                        ],
-                    },
                 },
                 {
                     model: Student,

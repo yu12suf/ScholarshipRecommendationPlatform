@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { ScholarshipDiscoveryService } from "../services/ScholarshipDiscoveryService.js";
 import { ScholarshipSourceRepository } from "../repositories/ScholarshipSourceRepository.js";
+import { ScholarshipRepository } from "../repositories/ScholarshipRepository.js";
 import { MatchingService } from "../services/MatchingService.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import { AppError } from "../errors/AppError.js";
-import { ResponseHelper } from "../utils/responseHelper.js";
 
 export class ScholarshipController {
     /**
@@ -14,7 +14,10 @@ export class ScholarshipController {
         // Run in background to avoid timeout
         ScholarshipDiscoveryService.discoverAll();
 
-        return ResponseHelper.success(res, null, "Scholarship discovery process started in the background.");
+        res.status(200).json({
+            status: "success",
+            message: "Scholarship discovery process started in the background."
+        });
     });
 
     /**
@@ -22,28 +25,36 @@ export class ScholarshipController {
      */
     static getSources = catchAsync(async (req: Request, res: Response) => {
         const sources = await ScholarshipSourceRepository.findAllActive();
-        return ResponseHelper.success(res, sources);
+        res.status(200).json({
+            status: "success",
+            data: sources
+        });
     });
 
     /**
      * Gets matched scholarships for the logged-in student.
      */
-    static getMatches = catchAsync(async (req: Request, res: Response) => {
-        if (!req.user || !req.user.id) {
-            throw new AppError("Unauthorized. User ID missing.", 401);
+    static async getMatches(req: Request, res: Response) {
+        try {
+            if (!req.user || !req.user.id) {
+                return res.status(401).json({ message: "Unauthorized. User ID missing." });
+            }
+
+            const matches = await MatchingService.getTopMatches(req.user.id);
+            res.status(200).json(matches);
+        } catch (error: any) {
+            console.error("Error fetching scholarship matches:", error.message);
+
+            if (error.message.includes("onboarded")) {
+                return res.status(403).json({ message: error.message });
+            }
+            if (error.message.includes("not found")) {
+                return res.status(404).json({ message: error.message });
+            }
+
+            res.status(500).json({ message: "Internal server error while matching scholarships." });
         }
-
-        // Support filters from query params
-        const filters = {
-            query: req.query.query as string,
-            country: req.query.country as string,
-            degreeLevel: req.query.degreeLevel as string || req.query.degree_level as string,
-            fundType: req.query.fundType as string || req.query.fund_type as string
-        };
-
-        const matches = await MatchingService.getTopMatches(req.user.id, filters);
-        return ResponseHelper.success(res, matches);
-    });
+    }
 
     /**
      * Gets a single scholarship with matching details.
@@ -55,23 +66,27 @@ export class ScholarshipController {
         if (!userId) throw new AppError("Unauthorized", 401);
 
         const scholarship = await MatchingService.getMatchById(userId, parseInt(id as string));
-        
+
         if (!scholarship) {
             throw new AppError("Scholarship not found", 404);
         }
 
-        return ResponseHelper.success(res, scholarship);
+        res.status(200).json({
+            status: "success",
+            data: scholarship
+        });
     });
 
     /**
-     * Gets recommended scholarships for the quick dashboard view.
+     * Lists scholarships with general filters (Explorer).
      */
-    static getRecommendations = catchAsync(async (req: Request, res: Response) => {
-        if (!req.user || !req.user.id) {
-            throw new AppError("Unauthorized", 401);
-        }
-
-        const recommendations = await MatchingService.getRecommendations(req.user.id);
-        return ResponseHelper.success(res, recommendations);
+    static list = catchAsync(async (req: Request, res: Response) => {
+        const filters = req.query;
+        const scholarships = await ScholarshipRepository.findAll(filters);
+        
+        res.status(200).json({
+            status: "success",
+            data: scholarships
+        });
     });
 }

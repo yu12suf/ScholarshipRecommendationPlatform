@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { CreateOptions, Op } from 'sequelize';
 import { CounselorReview } from '../models/CounselorReview.js';
 import { Order } from 'sequelize';
 import { Student } from '../models/Student.js';
@@ -80,14 +80,14 @@ export class CounselorReviewRepository {
         counselorId: number;
         rating: number;
         comment?: string;
-    }): Promise<CounselorReview> {
+    }, options?: CreateOptions): Promise<CounselorReview> {
         return CounselorReview.create({
             bookingId: data.bookingId,
             studentId: data.studentId,
             counselorId: data.counselorId,
             rating: data.rating,
             comment: data.comment || null
-        });
+        }, options);
     }
 
     /**

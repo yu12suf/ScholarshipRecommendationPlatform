@@ -19,12 +19,16 @@ import {
   AlertCircle,
   Loader2,
   Wallet,
-  Landmark
+  Landmark,
+  ArrowRight,
+  Star
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { StudentList } from './StudentList';
+import { WalletLedger } from './WalletLedger';
+import { CounselorReviews } from './CounselorReviews';
 import { motion } from 'framer-motion';
 import { 
   getCounselorDashboardOverview, 
@@ -32,6 +36,7 @@ import {
   getCounselorProfile 
 } from '@/features/counselor/api/counselor-api';
 import { useRouter } from 'next/navigation';
+import { WithdrawalModal } from './WithdrawalModal';
 
 export const CounselorDashboard = () => {
   const { user } = useAuth();
@@ -39,22 +44,24 @@ export const CounselorDashboard = () => {
   const [statsData, setStatsData] = useState<CounselorDashboardOverview | null>(null);
   const [counselorProfile, setCounselorProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const [stats, profile] = await Promise.all([
+        getCounselorDashboardOverview(),
+        getCounselorProfile()
+      ]);
+      setStatsData(stats);
+      setCounselorProfile(profile);
+    } catch (error) {
+      console.error('Failed to fetch counselor data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [stats, profile] = await Promise.all([
-          getCounselorDashboardOverview(),
-          getCounselorProfile()
-        ]);
-        setStatsData(stats);
-        setCounselorProfile(profile);
-      } catch (error) {
-        console.error('Failed to fetch counselor data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -75,6 +82,7 @@ export const CounselorDashboard = () => {
   // Handle Onboarding / Verification States
   if (counselorProfile?.verificationStatus === 'pending') {
     return (
+      
       <div className="min-h-[80vh] flex items-center justify-center p-6">
         <Card className="max-w-xl w-full border-border bg-card shadow-2xl overflow-hidden relative">
           <div className="absolute top-0 left-0 w-full h-1 primary-gradient animate-pulse" />
@@ -113,7 +121,7 @@ export const CounselorDashboard = () => {
     );
   }
 
-  if (counselorProfile.verificationStatus === 'rejected') {
+  if (counselorProfile?.verificationStatus === 'rejected') {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-6">
         <Card className="max-w-xl w-full border-border bg-card shadow-2xl">
@@ -139,8 +147,6 @@ export const CounselorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground space-y-8 pb-20 max-w-[1600px] mx-auto">
-      
-      {/* Dynamic Header & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
@@ -164,10 +170,27 @@ export const CounselorDashboard = () => {
           <div className="absolute top-0 right-0 -mt-24 -mr-24 w-80 h-80 bg-primary/5 rounded-full blur-[100px]" />
         </motion.div>
 
+        {/* Action Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="border-border bg-card shadow-sm group hover:border-primary/30 transition-all">
             <CardBody className="p-8 flex flex-col items-center justify-center text-center h-full space-y-4">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                 <TrendingUp className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <p className="text-small font-black uppercase tracking-tighter opacity-60">Success Rate</p>
+                <h3 className="text-4xl font-black text-foreground mt-1">
+                  {Math.round(Number(counselorProfile?.ratingPercentage || 0))}%
+                </h3>
+                <p className="text-[10px] text-muted-foreground mt-1 font-bold">Feedback Score</p>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="border-border bg-card shadow-sm group hover:border-primary/30 transition-all">
+            <CardBody className="p-8 flex flex-col items-center justify-center text-center h-full space-y-4">
+              <div className="h-16 w-16 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                <Users className="h-8 w-8 text-emerald-500" />
               </div>
               <div>
                 <p className="text-small font-black uppercase tracking-tighter opacity-60">Total Impact</p>
@@ -179,28 +202,50 @@ export const CounselorDashboard = () => {
             </CardBody>
           </Card>
         </div>
+      </div>
 
         {/* Earning & Payout Card Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-          <Card className="border-border bg-slate-900 text-white shadow-xl">
-            <CardBody className="p-6 md:p-8 flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4 text-emerald-400" />
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Total Earned</p>
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 w-full">
+          <Card className="border-border bg-slate-900 text-white shadow-xl overflow-hidden relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardBody className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-6 w-full md:w-auto">
+                <div className="h-14 w-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <Wallet size={32} />
                 </div>
-                <h3 className="text-3xl font-black">{Number(counselorProfile?.totalEarned || 0).toLocaleString()} <span className="text-sm text-slate-400">ETB</span></h3>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-400">Available Balance</p>
+                  </div>
+                  <h3 className="text-4xl font-black">{Number(counselorProfile?.pendingBalance || 0).toLocaleString()} <span className="text-sm text-slate-400">ETB</span></h3>
+                </div>
               </div>
-              <div className="text-right space-y-1">
-                <div className="flex items-center gap-2 justify-end">
-                  <Landmark className="h-4 w-4 text-amber-400" />
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Pending Payout</p>
+
+              <div className="flex items-center gap-4 w-full md:w-auto">
+                <div className="border-l border-slate-700 h-12 hidden md:block mx-4" />
+                <div className="flex-1 md:flex-none text-center md:text-right mr-6">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Lifetime Earnings</p>
+                  <p className="text-lg font-bold">{Number(counselorProfile?.totalEarned || 0).toLocaleString()} ETB</p>
                 </div>
-                <h3 className="text-3xl font-black text-amber-400">{Number(counselorProfile?.pendingBalance || 0).toLocaleString()} <span className="text-sm">ETB</span></h3>
+                <Button 
+                   onClick={() => setIsWithdrawalOpen(true)}
+                   className="h-12 px-8 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-500/20"
+                >
+                  Withdraw <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
             </CardBody>
           </Card>
         </div>
+
+        {isWithdrawalOpen && (
+          <WithdrawalModal 
+             isOpen={isWithdrawalOpen}
+             onClose={() => setIsWithdrawalOpen(false)}
+             availableBalance={Number(counselorProfile?.pendingBalance || 0)}
+             onSuccess={fetchData}
+          />
+        )}
 
         {/* Main Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -217,9 +262,26 @@ export const CounselorDashboard = () => {
             </Link>
           </div>
 
-          <Card className="border-border bg-card overflow-hidden shadow-sm">
-            <StudentList />
-          </Card>
+          <div className="space-y-6">
+            <Card className="border-border bg-card overflow-hidden shadow-sm">
+                <StudentList />
+            </Card>
+            
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-border pb-4">
+                <h2 className="h3">Student Feedback</h2>
+                <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                  <Star size={14} className="fill-amber-400 text-amber-400" />
+                  Average: {Number(counselorProfile?.rating || 0).toFixed(1)}
+                </div>
+              </div>
+              {counselorProfile?.id && (
+                <CounselorReviews counselorId={counselorProfile.id} />
+              )}
+            </div>
+
+            <WalletLedger />
+          </div>
         </div>
 
         {/* Sidebar: Insights & Short Term Goals */}

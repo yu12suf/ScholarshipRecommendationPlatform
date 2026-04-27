@@ -202,7 +202,18 @@ export const updateSlotValidation = [
 export const updateBookingStatusValidation = [
   body('status')
     .notEmpty().withMessage('Status is required')
-    .isIn(['started', 'completed', 'cancelled']).withMessage('Invalid status value')
+    .isIn(['started', 'completed', 'cancelled', 'awaiting_confirmation']).withMessage('Invalid status value')
+];
+
+export const studentReviewAndConfirmValidation = [
+  body('rating')
+    .notEmpty().withMessage('Rating is required')
+    .isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5')
+    .toInt(),
+  body('comment')
+    .optional()
+    .isString().withMessage('Comment must be text')
+    .isLength({ max: 2000 }).withMessage('Comment must not exceed 2000 characters')
 ];
 
 export const applyAsCounselorValidation = [

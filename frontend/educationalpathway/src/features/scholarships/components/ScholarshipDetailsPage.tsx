@@ -84,27 +84,55 @@ export default function ScholarshipDetailsPage() {
 
     const criteria: CriteriaMatch[] = [];
 
+    // Helper to extract values from stringified JSON or arrays
+    const extractValues = (val: any): string[] => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      if (typeof val === 'string') {
+        try {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {
+          // not json
+        }
+        return [val];
+      }
+      return [];
+    };
+
+    const normalize = (str: string) => str.toLowerCase().replace(/['"\[\]]/g, '').trim();
+
     // 1. Degree Level Match
-    const studentDegree = safeString(user.preferredDegreeLevel || user.degreeSeeking).toLowerCase();
-    const scholarshipDegrees = (scholarship.degreeLevels || []).map(d => d.toLowerCase());
-    const degreeMatch = scholarshipDegrees.length === 0 || scholarshipDegrees.some(d => studentDegree.includes(d) || d.includes(studentDegree));
+    const studentDegrees = [
+      ...extractValues(user.preferredDegreeLevel),
+      ...extractValues(user.degreeSeeking)
+    ].map(normalize);
+    
+    const scholarshipDegrees = (scholarship.degreeLevels || []).map(normalize);
+    const degreeMatch = scholarshipDegrees.length === 0 || scholarshipDegrees.some(d => 
+      studentDegrees.some(s => s.includes(d) || d.includes(s) || s.replace('s', '') === d.replace('s', ''))
+    );
     
     criteria.push({
       label: "Degree Level",
-      studentValue: safeString(user.preferredDegreeLevel) || "Any Level",
+      studentValue: safeString(extractValues(user.preferredDegreeLevel)) || safeString(user.degreeSeeking) || "Any Level",
       requiredValue: scholarship.degreeLevels?.join(", ") || "All Levels",
       isMatched: degreeMatch,
       icon: GraduationCap
     });
 
     // 2. Country Match
-    const studentCountries = safeString(user.preferredCountries).toLowerCase();
-    const scholarshipCountry = (scholarship.country || "").toLowerCase();
-    const countryMatch = !scholarship.country || studentCountries.includes(scholarshipCountry);
+    const studentCountries = extractValues(user.preferredCountries).map(normalize);
+    const scholarshipCountry = normalize(scholarship.country || "");
+    const countryMatch = !scholarship.country || studentCountries.some(c => 
+      c.includes(scholarshipCountry) || scholarshipCountry.includes(c) ||
+      (c === 'usa' && scholarshipCountry.includes('united states')) ||
+      (scholarshipCountry === 'usa' && c.includes('united states'))
+    );
 
     criteria.push({
       label: "Location",
-      studentValue: safeString(user.preferredCountries) || "Global",
+      studentValue: safeString(extractValues(user.preferredCountries)) || "Global",
       requiredValue: scholarship.country || "International",
       isMatched: countryMatch,
       icon: MapPin
@@ -113,24 +141,27 @@ export default function ScholarshipDetailsPage() {
     // 3. GPA Match
     const studentGpa = parseFloat(user.gpa || user.calculatedGpa || "0");
     const hasGpaReq = scholarship.requirements?.toLowerCase().includes("gpa");
-    const gpaMatch = studentGpa >= 3.0; 
+    const gpaMatch = !hasGpaReq || studentGpa >= 3.0; // If no GPA req, then it's a match!
 
     criteria.push({
       label: "Academic",
-      studentValue: `GPA: ${studentGpa || "N/A"}`,
+      studentValue: studentGpa > 0 ? `GPA: ${studentGpa}` : "N/A",
       requiredValue: hasGpaReq ? "Required" : "Flexible",
       isMatched: gpaMatch,
       icon: Target
     });
 
     // 4. Funding Type
-    const studentFunding = safeString(user.preferredFundingType || user.fundingRequirement).toLowerCase();
-    const scholarshipFunding = (scholarship.fundType || "").toLowerCase();
-    const fundingMatch = !scholarshipFunding || studentFunding.includes(scholarshipFunding) || scholarshipFunding.includes(studentFunding);
+    const studentFunding = [...extractValues(user.preferredFundingType), ...extractValues(user.fundingRequirement)].map(normalize);
+    const scholarshipFunding = normalize(scholarship.fundType || "");
+    const fundingMatch = !scholarshipFunding || studentFunding.length === 0 || studentFunding.some(f => 
+      f.includes(scholarshipFunding) || scholarshipFunding.includes(f) ||
+      (f.includes('fully') && scholarshipFunding.includes('full'))
+    );
 
     criteria.push({
       label: "Funding",
-      studentValue: safeString(user.preferredFundingType) || "Any",
+      studentValue: safeString(extractValues(user.preferredFundingType)) || safeString(user.fundingRequirement) || "Any",
       requiredValue: scholarship.fundType || "Grant",
       isMatched: fundingMatch,
       icon: DollarSign

@@ -14,7 +14,7 @@ export const PayoutHistory = () => {
         const fetchPayouts = async () => {
             try {
                 const res = await api.get('/counselors/me/payouts');
-                setPayouts(res.data.data || []);
+                setPayouts(res.data || []);
             } catch (error) {
                 console.error("Failed to fetch payouts", error);
                 toast.error("Could not load payout history");

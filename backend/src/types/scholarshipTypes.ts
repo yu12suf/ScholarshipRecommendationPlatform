@@ -27,6 +27,6 @@ export interface MatchedScholarship {
     degreeLevels: string[];
     country: string | null;
     originalUrl: string;
-    matchScore: number;
-    matchReason?: string | null;
+    match_score: number;
+    match_reason?: string | null;
 }

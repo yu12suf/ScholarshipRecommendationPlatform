@@ -33,7 +33,7 @@ export interface CreateCounselorDto {
     certificateUrls?: string;
 }
 
-export interface UpdateCounselorDto extends Partial<CreateCounselorDto> {}
+export interface UpdateCounselorDto extends Partial<CreateCounselorDto> { }
 
 export type ConsultationMode = "chat" | "audio" | "video";
 
@@ -67,7 +67,12 @@ export interface UpdateSlotDto {
 }
 
 export interface BookingStatusDto {
-    status: 'confirmed' | 'started' | 'completed' | 'cancelled' | 'disputed';
+    status: 'confirmed' | 'started' | 'completed' | 'cancelled' | 'disputed' | 'awaiting_confirmation';
+}
+
+export interface StudentReviewAndConfirmDto {
+    rating: number;
+    comment?: string;
 }
 
 export interface CounselorResponse {
@@ -82,6 +87,15 @@ export interface CounselorResponse {
     verificationStatus: 'pending' | 'verified' | 'rejected';
     isActive: boolean;
     rating: number;
+    ratingPercentage: number;
+    totalReviews: number;
+    ratingDistribution: {
+        1: number;
+        2: number;
+        3: number;
+        4: number;
+        5: number;
+    } | null;
     totalSessions: number;
     qualifications: string[];
     specializations: string[];
@@ -110,6 +124,8 @@ export interface CounselorResponse {
     profileImageUrl: string | null;
     cvUrl: string | null;
     certificateUrls: string | null;
+    pendingBalance?: number | string | null;
+    totalEarned?: number | string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -194,6 +210,24 @@ export interface AdminVerificationDto {
 export interface AdminVisibilityDto {
     isActive: boolean;
 }
+
+export interface CounselorPayoutRequestDto {
+    amount: number;
+    payoutMethod: 'bank_transfer' | 'fana' | 'telebirr';
+    payoutDetails: {
+        accountNumber?: string;
+        bankName?: string;
+        accountHolderName?: string;
+        phoneNumber?: string; // for mobile money
+    };
+}
+
+export interface AdminPayoutActionDto {
+    status: 'approved' | 'rejected' | 'completed';
+    adminNote?: string;
+    transactionReference?: string;
+}
+
 
 export interface DashboardOverviewResponse {
     assignedStudents: number;

@@ -114,7 +114,7 @@ export const ScholarshipExplorer = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-2 border-b border-border/50">
           {/* Tabs */}
           <div className="flex gap-8">
-            {['matched', 'saved', 'applied'].map((id) => (
+            {['explore', 'matched', 'saved', 'applied'].map((id) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}

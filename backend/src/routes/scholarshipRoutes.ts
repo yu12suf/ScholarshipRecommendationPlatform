@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Define routes
 router.post("/trigger-discovery", ScholarshipController.triggerDiscovery);
+router.get("/", authenticate, ScholarshipController.list);
 router.get("/sources", ScholarshipController.getSources);
 router.get("/match", authenticate, ScholarshipController.getMatches);
 router.get("/recommendations", authenticate, ScholarshipController.getRecommendations);

@@ -30,8 +30,8 @@ export class ScholarshipTrackingService {
                 // Use the userId passed from controller for matching consistency
                 const matchData = await MatchingService.getMatchById(userId, plainItem.scholarshipId);
                 if (matchData && plainItem.scholarship) {
-                    plainItem.scholarship.matchScore = matchData.matchScore;
-                    plainItem.scholarship.matchReason = matchData.matchReason;
+                    plainItem.scholarship.match_score = matchData.match_score;
+                    plainItem.scholarship.match_reason = matchData.match_reason;
                 }
             } catch (err) {
                 console.warn(`[Watchlist] Failed to hydrate match for ${item.scholarshipId}:`, err);
@@ -41,8 +41,8 @@ export class ScholarshipTrackingService {
 
         // Sort by match score descending so top matches are first
         hydrated.sort((a, b) => {
-            const scoreA = a.scholarship?.matchScore ?? 0;
-            const scoreB = b.scholarship?.matchScore ?? 0;
+            const scoreA = a.scholarship?.match_score ?? 0;
+            const scoreB = b.scholarship?.match_score ?? 0;
             return scoreB - scoreA;
         });
 

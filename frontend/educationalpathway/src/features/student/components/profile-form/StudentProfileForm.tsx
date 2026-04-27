@@ -108,6 +108,7 @@ const STEPS: Step[] = [
       "preferredDegreeLevel",
       "preferredFundingType",
       "studyMode",
+      "targetLocation",
       "preferredCountries",
       "preferredUniversities",
       "workExperience",
@@ -862,16 +863,42 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                     </div>
                   </div>
 
-                  {/* Preferred Countries */}
+                  {/* Preferred Destinations */}
                   <div className="space-y-4">
                     <h3 className="text-md font-semibold text-foreground">
                       Preferred Destinations
                     </h3>
-                    <div className="space-y-1">
-                      <label className="text-label">
-                        Preferred Countries
-                      </label>
-                      <Select
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-1">
+                        <label className="text-label">
+                          Target Location (Primary Interest)
+                        </label>
+                        <Select
+                          options={countries.map((c) => ({
+                            value: c.name,
+                            label: c.name,
+                            flag: c.flag,
+                          }))}
+                          value={watch("targetLocation") ? { 
+                            value: watch("targetLocation"), 
+                            label: watch("targetLocation"), 
+                            flag: countries.find(c => c.name === watch("targetLocation"))?.flag || "" 
+                          } : null}
+                          onChange={(
+                            val: SingleValue<any>,
+                          ) => setValue("targetLocation", val?.value || "")}
+                          classNamePrefix="react-select"
+                          placeholder={loadingCountries ? "Loading..." : "Select target location"}
+                          isDisabled={loadingCountries}
+                          formatOptionLabel={formatCountryOption}
+                          isClearable
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-label">
+                          Other Preferred Countries
+                        </label>
+                        <Select
                         isMulti
                         options={countries.map((c) => ({
                           value: c.name,
@@ -897,9 +924,10 @@ export const StudentProfileForm: React.FC<MultiStepFormProps> = ({
                         formatOptionLabel={formatCountryOption}
                       />
                     </div>
+                  </div>
 
-                    {/* Preferred Universities */}
-                    <div className="space-y-4">
+                  {/* Preferred Universities */}
+                  <div className="space-y-4">
                       <div className="space-y-1">
                         <label className="text-label">
                           Preferred Universities

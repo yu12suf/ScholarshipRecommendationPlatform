@@ -72,9 +72,9 @@ export class CounselorReview extends Model {
     })
     declare updatedAt: Date;
 
-    @BelongsTo(() => Student)
+    @BelongsTo(() => Student, { as: 'student' })
     student!: Student;
 
-    @BelongsTo(() => Counselor)
+    @BelongsTo(() => Counselor, { as: 'counselor' })
     counselor!: Counselor;
 }

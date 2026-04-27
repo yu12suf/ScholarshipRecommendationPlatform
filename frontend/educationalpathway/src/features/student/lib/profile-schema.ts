@@ -35,6 +35,7 @@ export const profileSchema = z.object({
   studyMode: z.enum(STUDY_MODES),
 
   // Step 4: Preferred Countries
+  targetLocation: z.string().optional(),
   preferredCountries: z.array(z.string()).min(1, "Select at least one country"),
 
   // Step 5: Preferred Universities

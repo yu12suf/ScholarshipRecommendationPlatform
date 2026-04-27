@@ -1,11 +1,97 @@
 'use client';
 
-import { Users, Search, Award, Calendar, Loader2 } from 'lucide-react';
+import { Users, Search, Award, Calendar, Loader2, Star } from 'lucide-react';
 import { Input, Button } from '@/components/ui';
 import { useEffect, useState } from 'react';
-import { getRecommendedCounselors } from '../api/counselor-api';
+import { getRecommendedCounselors, getCounselors } from '../api/counselor-api';
 import { StudentBookingModal } from './StudentBookingModal';
+import { CounselorReviews } from './CounselorReviews';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const CounselorCard = ({ counselor, onBook }: { counselor: any; onBook: (c: any) => void }) => {
+  const [showReviews, setShowReviews] = useState(false);
+
+  return (
+    <div className="divide-y divide-border/50">
+      <div
+        className="flex flex-col md:flex-row md:items-center justify-between p-8 hover:bg-muted/30 transition gap-8"
+      >
+        {/* Left */}
+        <div className="flex items-start gap-6">
+          <div className="h-16 w-16 rounded-2xl primary-gradient flex items-center justify-center font-black text-white shadow-lg shrink-0 text-xl">
+            {counselor?.name ? counselor.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'A'}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <h3 className="font-black text-xl text-foreground group-hover:text-primary transition-colors">
+                {counselor?.name || 'Anonymous Expert'}
+              </h3>
+              {(counselor?.recommendationScore || 0) >= 8 && (
+                <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full uppercase tracking-widest border border-emerald-500/20">
+                  Top Match
+                </div>
+              )}
+            </div>
+
+            <p className="text-sm font-bold text-muted-foreground flex items-center gap-2">
+              {counselor?.areasOfExpertise || 'Academic Expert'}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 mt-3">
+              <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-600 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                <Star size={14} className="fill-amber-500" />
+                <span className="text-xs font-black">{Number(counselor?.rating || 0).toFixed(1)}</span>
+                <span className="text-[10px] opacity-60 font-bold uppercase ml-1">({counselor?.totalReviews || 0} reviews)</span>
+              </div>
+
+              {counselor?.matchReasons?.slice(0, 2).map((reason: string, idx: number) => (
+                <span key={idx} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10">
+                  <Award size={12} />
+                  {reason}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <Button
+            variant="ghost"
+            onClick={() => setShowReviews(!showReviews)}
+            className="h-12 px-6 font-black uppercase tracking-widest text-[10px] border border-border hover:bg-muted"
+          >
+            {showReviews ? 'Hide Reviews' : 'View Reviews'}
+          </Button>
+          <Button
+            onClick={() => onBook(counselor)}
+            className="h-12 px-8 font-black uppercase tracking-widest text-[10px] primary-gradient text-white shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all"
+          >
+            Book Session
+          </Button>
+        </div>
+      </div>
+
+      {/* Reviews Section */}
+      <AnimatePresence>
+        {showReviews && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden bg-muted/10"
+          >
+            <div className="p-8 md:px-12 border-t border-border/50">
+              <CounselorReviews counselorId={counselor.id} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 export const CounselorSearch = () => {
   const [counselors, setCounselors] = useState<any[]>([]);
@@ -16,11 +102,14 @@ export const CounselorSearch = () => {
 
   useEffect(() => {
     const fetchCounselors = async () => {
+      setLoading(true);
       try {
-        const data = await getRecommendedCounselors();
-        setCounselors(data);
+        // Fetch all counselors from the directory
+        const data = await getCounselors();
+        setCounselors(data.rows || []);
       } catch (error) {
-        console.error('Failed to fetch recommended counselors:', error);
+        console.error('Failed to fetch counselors:', error);
+        toast.error('Failed to load counselors');
       } finally {
         setLoading(false);
       }
@@ -75,60 +164,11 @@ export const CounselorSearch = () => {
           </div>
         ) : counselors?.length > 0 ? (
           counselors.map((counselor) => (
-            <div
-              key={counselor.id}
-              className="flex flex-col md:flex-row md:items-center justify-between p-6 hover:bg-muted transition gap-6"
-            >
-
-              {/* Left */}
-              <div className="flex items-center gap-6">
-
-                <div className="h-14 w-14 rounded-full primary-gradient flex items-center justify-center font-bold text-white shadow-md shrink-0">
-                  {counselor?.name ? counselor.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'A'}
-                </div>
-
-                <div className="space-y-1">
-
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg text-foreground hover:text-primary transition-colors cursor-pointer">
-                      {counselor?.name || 'Anonymous Expert'}
-                    </h3>
-                    {(counselor?.recommendationScore || 0) >= 8 && (
-                      <div className="px-2 py-0.5 bg-success/10 text-success text-[10px] font-black rounded-full uppercase tracking-tighter">
-                        Top Match
-                      </div>
-                    )}
-                  </div>
-
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {counselor?.areasOfExpertise || 'Academic Expert'}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {counselor?.matchReasons?.slice(0, 2).map((reason: string, idx: number) => (
-                      <span key={idx} className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
-                        <Award size={10} />
-                        {reason}
-                      </span>
-                    ))}
-                  </div>
-
-                </div>
-
-              </div>
-
-              {/* Right */}
-              <div className="flex items-center gap-4 shrink-0">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedCounselor(counselor)}
-                  className="h-10 px-6 font-semibold border-2 hover:bg-primary hover:text-white transition-all cursor-pointer"
-                >
-                  Book Session
-                </Button>
-              </div>
-
-            </div>
+            <CounselorCard 
+              key={counselor.id} 
+              counselor={counselor} 
+              onBook={setSelectedCounselor} 
+            />
           ))
         ) : (
           <div className="p-24 text-center">

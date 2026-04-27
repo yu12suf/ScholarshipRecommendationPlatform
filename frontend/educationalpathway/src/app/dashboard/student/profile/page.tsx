@@ -43,6 +43,7 @@ const mapUserToFormValues = (userData: any): Partial<ProfileFormValues> => {
     studyMode: userData.studyMode || "",
     preferredDegreeLevel: safeParse(userData.preferredDegreeLevel, []),
     preferredFundingType: userData.fundingRequirement || "",
+    targetLocation: userData.countryInterest || "",
     preferredCountries: safeParse(userData.preferredCountries, []),
     preferredUniversities: safeParse(userData.preferredUniversities, []),
     workExperience: safeParse(userData.workExperience, []),
@@ -81,8 +82,12 @@ export default function StudentProfilePage() {
 
   const handleSubmit = async (data: ProfileFormValues) => {
     try {
-      await updateProfile(data);
-      updateUser({ ...user, ...data, isOnboarded: true });
+      const payload = {
+        ...data,
+        countryInterest: data.targetLocation,
+      };
+      await updateProfile(payload);
+      updateUser({ ...user, ...data, countryInterest: data.targetLocation, isOnboarded: true });
       setTimeout(() => {
         router.push("/dashboard");
       }, 1500); // Give time for the user to see the inline success message

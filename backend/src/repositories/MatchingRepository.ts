@@ -10,117 +10,59 @@ export class MatchingRepository {
   /**
    * Executes the optimized pgvector SQL search with hard filters and optional query filters.
    */
-  static async findTopMatches(
-    student: Student,
-    vectorStr: string,
-    filters?: any,
-  ): Promise<MatchedScholarship[]> {
-    const hardWhereConditions: any[] = [];
-    const optionalWhereConditions: any[] = [];
+  /**
+   * Executes the optimized pgvector SQL search with hard filters.
+   */
+  static async findTopMatches(student: Student, vectorStr: string): Promise<MatchedScholarship[]> {
+    const whereConditions: any[] = [];
 
-    const safeParse = (str: any) => {
-      if (!str) return [];
-      try {
-        if (typeof str === "string") return JSON.parse(str);
-        return str;
-      } catch {
-        return [];
-      }
-    };
+    // Log for debugging
+    const totalWithEmbeds = await Scholarship.count({ where: Sequelize.literal('embedding IS NOT NULL') as any });
+    console.log(`[Matching] Debug: Total scholarships in DB with embeddings: ${totalWithEmbeds}`);
+    console.log(`[Matching] Finding matches for Student ${student.id} using vector length: ${vectorStr?.length || 0}`);
 
-    // Removed rigid SQL profile constraints to allow true AI vector discovery.
-    // Geographical and Academic alignment is evaluated holistically during Scoring.
+    // if (student.countryInterest) {
+    //   whereConditions.push(
+    //     Sequelize.literal(`(country = '${student.countryInterest.replace(/'/g, "''")}' OR country IS NULL)`)
+    //   );
+    // }
 
-    // --- OPTIONAL FILTERS (From Search Bar/UI) ---
-    if (filters) {
-      if (filters.query) {
-        optionalWhereConditions.push({
-          [Op.or]: [
-            { title: { [Op.iLike]: `%${filters.query}%` } },
-            { description: { [Op.iLike]: `%${filters.query}%` } },
-          ],
-        });
-      }
-      if (filters.country) {
-        optionalWhereConditions.push({ country: filters.country });
-      }
-      if (filters.degreeLevel || filters.degree_level) {
-        const levelToFilter = filters.degreeLevel || filters.degree_level;
-        optionalWhereConditions.push(
-          Sequelize.literal(
-            `degree_levels @> '["${levelToFilter.replace(/"/g, "")}"]'::jsonb`,
-          ),
-        );
-      }
-      if (filters.fundType || filters.fund_type) {
-        optionalWhereConditions.push({
-          fundType: filters.fundType || filters.fund_type,
-        });
-      }
-    }
+    // if (student.academicStatus) {
+    //   whereConditions.push(
+    //     Sequelize.literal(`(degree_levels @> '["${student.academicStatus.replace(/"/g, "")}"]'::jsonb OR degree_levels IS NULL)`)
+    //   );
+    // }
 
-    const mapResult = (scholarship: Scholarship) => {
-      const data = scholarship.get({ plain: true });
+    const matches = await Scholarship.findAll({
+      where: whereConditions.length > 0
+        ? { [Op.and]: whereConditions } as any
+        : {},
+      attributes: {
+        include: [
+          [
+            Sequelize.literal(`(1 - (embedding <=> '${vectorStr}'::vector)) * 100`),
+            'match_score'
+          ]
+        ]
+      },
+      order: [
+        Sequelize.literal(`embedding <=> '${vectorStr}' ASC`)
+      ],
+      limit: 5,
+      raw: true
+    });
+
+    console.log(`[Matching] Found ${matches.length} candidates in database.`);
+
+    // Cast to MatchedScholarship interface
+    return matches.map(m => {
+      const score = parseFloat((m as any).match_score?.toString() || "0");
+      console.log(`[Matching] Scholarship: ${m.title} | Score: ${score}%`);
       return {
-        ...data,
-        matchScore: parseFloat(
-          (scholarship as any).getDataValue("matchScore")?.toString() || "0",
-        ),
-      } as any;
-    };
-
-    // Only apply the UI filters strictly at the DB query level.
-    // Profile-based matching (Country, Level) is handled gracefully by the Heuristic AI Scoring in MatchingService.
-    const strictWhere = optionalWhereConditions.length > 0
-        ? { [Op.and]: optionalWhereConditions }
-        : {};
-
-    const runQuery = async (
-      whereClause: any,
-    ): Promise<MatchedScholarship[]> => {
-      if (hasVectorExtension && vectorStr && vectorStr.length > 5) {
-        try {
-          const matches = await Scholarship.findAll({
-            where: whereClause,
-            attributes: {
-              include: [
-                [
-                  Sequelize.literal(
-                    `(1 - (embedding <=> '${vectorStr}'::vector)) * 100`,
-                  ),
-                  "matchScore",
-                ],
-              ],
-            },
-            order: [
-              Sequelize.literal(
-                `CAST(embedding::text AS vector) <=> '${vectorStr}'::vector ASC`,
-              ),
-            ],
-            limit: 20,
-          });
-          return matches.map(mapResult);
-        } catch (err: any) {
-          console.error(
-            "[MatchingRepository] Vector search failed:",
-            err.message,
-          );
-        }
-      }
-
-      const matches = await Scholarship.findAll({
-        where: whereClause,
-        attributes: {
-          include: [[Sequelize.literal("0"), "matchScore"]],
-        },
-        order: [["createdAt", "DESC"]],
-        limit: 20,
-      });
-      return matches.map(mapResult);
-    };
-
-    const strictMatches = await runQuery(strictWhere);
-    return strictMatches;
+        ...m,
+        match_score: score
+      };
+    }) as unknown as MatchedScholarship[];
   }
 
   /**
@@ -137,14 +79,14 @@ export class MatchingRepository {
       attributes: {
         include: hasVector
           ? [
-              [
-                Sequelize.literal(
-                  `(1 - (embedding <=> '${vectorStr}'::vector)) * 100`,
-                ),
-                "matchScore",
-              ],
-            ]
-          : [[Sequelize.literal("0"), "matchScore"]],
+            [
+              Sequelize.literal(
+                `((1 - (embedding <=> '${vectorStr}'::vector)) * 100)`,
+              ),
+              "match_score",
+            ],
+          ]
+          : [[Sequelize.literal("0"), "match_score"]],
       },
     });
 
@@ -153,8 +95,8 @@ export class MatchingRepository {
     const data = scholarship.get({ plain: true });
     return {
       ...data,
-      matchScore: parseFloat(
-        (scholarship as any).getDataValue("matchScore")?.toString() || "0",
+      match_score: parseFloat(
+        (scholarship as any).getDataValue("match_score")?.toString() || "0",
       ),
     } as any;
   }
@@ -206,7 +148,12 @@ export class MatchingRepository {
     threshold: number = 75,
   ): Promise<any[]> {
     const students = await Student.findAll({
-      where: Sequelize.literal("embedding IS NOT NULL") as any,
+      where: {
+        [Op.and]: [
+          Sequelize.literal("embedding IS NOT NULL"),
+          Sequelize.literal(`(1 - (embedding <=> '${scholarshipEmbedding}'::vector)) * 100 > ${threshold}`)
+        ]
+      } as any,
       attributes: [
         "id",
         "userId",
@@ -226,11 +173,6 @@ export class MatchingRepository {
       having: Sequelize.literal(
         `(1 - (embedding <=> '${scholarshipEmbedding}'::vector)) * 100 > ${threshold}`,
       ),
-      order: [
-        Sequelize.literal(
-          `embedding <=> '${scholarshipEmbedding}'::vector ASC`,
-        ),
-      ],
       raw: true,
       nest: true,
     });

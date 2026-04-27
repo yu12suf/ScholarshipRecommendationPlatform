@@ -115,10 +115,12 @@ export const BookingManager = () => {
                     <div className="flex justify-between items-center mb-2">
                       <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
                         booking.status === 'confirmed' ? 'bg-success/10 text-success' : 
+                        booking.status === 'started' ? 'bg-primary/10 text-primary' :
+                        booking.status === 'awaiting_confirmation' ? 'bg-warning/10 text-warning' :
                         booking.status === 'cancelled' ? 'bg-destructive/10 text-destructive' : 
                         'bg-warning/10 text-warning'
                       }`}>
-                        {booking.status}
+                        {booking.status.replace(/_/g, ' ')}
                       </span>
                       <span className="text-xs text-muted-foreground">ID: #{booking.id.toString().slice(-4)}</span>
                     </div>
@@ -183,32 +185,88 @@ export const BookingManager = () => {
                       </div>
                     )}
 
-                    {booking.status === 'confirmed' && booking.meetingLink && (
-                      <a
-                        href={booking.meetingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
+                    {booking.status === 'confirmed' && (
+                      <div className="space-y-2 pt-4">
                         <Button
                           size="sm"
-                          className="w-full primary-gradient text-white font-bold h-10"
+                          onClick={() => handleStatusUpdate(booking.id, 'started')}
+                          className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-10"
                         >
                           <Video size={16} className="mr-2" />
-                          Join Session
+                          Start Session
                         </Button>
-                      </a>
+                        <div className="flex gap-2">
+                          <a
+                            href={booking.meetingLink || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1"
+                            onClick={(e) => {
+                              if (!booking.meetingLink) {
+                                e.preventDefault();
+                                toast.success('Meeting link will be available soon.');
+                              }
+                            }}
+                          >
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full font-bold h-10"
+                            >
+                              Join Meeting
+                            </Button>
+                          </a>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleStatusUpdate(booking.id, 'cancelled')}
+                            className="flex-1 font-bold h-10"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
                     )}
 
-                    {booking.status === 'confirmed' && !booking.meetingLink && (
-                      <Button
-                        size="sm"
-                        className="w-full primary-gradient text-white font-bold h-10"
-                        onClick={() => toast.success('Meeting link will be available soon.')}
-                      >
-                        <Video size={16} className="mr-2" />
-                        Join Session
-                      </Button>
+                    {booking.status === 'started' && (
+                      <div className="space-y-2 pt-4">
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusUpdate(booking.id, 'awaiting_confirmation')}
+                          className="w-full bg-success hover:bg-success/90 text-white font-bold h-10"
+                        >
+                          <CheckCircle2 size={16} className="mr-2" />
+                          Mark Completed
+                        </Button>
+                        <a
+                          href={booking.meetingLink || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                          onClick={(e) => {
+                            if (!booking.meetingLink) {
+                              e.preventDefault();
+                              toast.success('Meeting link will be available soon.');
+                            }
+                          }}
+                        >
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full font-bold h-10"
+                          >
+                            Re-join Session
+                          </Button>
+                        </a>
+                      </div>
+                    )}
+
+                    {booking.status === 'awaiting_confirmation' && (
+                      <div className="pt-4">
+                        <div className="w-full bg-muted text-muted-foreground font-medium h-10 flex items-center justify-center rounded-lg text-sm italic">
+                          Waiting for student to confirm and rate...
+                        </div>
+                      </div>
                     )}
                   </CardBody>
                 </Card>
