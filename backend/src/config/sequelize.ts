@@ -57,7 +57,7 @@ const dbOptions: SequelizeOptions = {
   //   },
   // },
 };
-const globalForSequelize = global as unknown as { sequelize: Sequelize };
+
 export const sequelize = new Sequelize({
   dialect: "postgres",
   ...dbOptions,
